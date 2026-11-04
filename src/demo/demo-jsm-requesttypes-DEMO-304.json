@@ -1,0 +1,30 @@
+{
+  "_demo": "Réponse real-shaped de GET /rest/servicedeskapi/servicedesk/12/requesttype (JSM REST API v3) : les deux types de demande du même service desk. Écrit par le slot 1 le 04/11/2026.",
+  "_links": { "base": "https://tgg-dev.atlassian.net", "context": "/rest/servicedeskapi" },
+  "values": [
+    {
+      "id": "41",
+      "name": "Réinitialisation du mot de passe",
+      "helpText": "Renseignez l'adresse e-mail professionnelle utilisée pour votre compte. Le code de réinitialisation est envoyé immédiatement.",
+      "issueTypeId": "9001",
+      "serviceDeskId": "12",
+      "portalId": "77",
+      "groupIds": ["g-1"],
+      "icon": { "id": "i-1", "_links": {} },
+      "restrictionStatus": "OPEN",
+      "canCreateRequest": true
+    },
+    {
+      "id": "42",
+      "name": "Demande de facture",
+      "helpText": "",
+      "issueTypeId": "9002",
+      "serviceDeskId": "12",
+      "portalId": "77",
+      "groupIds": ["g-1"],
+      "icon": { "id": "i-2", "_links": {} },
+      "restrictionStatus": "OPEN",
+      "canCreateRequest": true
+    }
+  ]
+}

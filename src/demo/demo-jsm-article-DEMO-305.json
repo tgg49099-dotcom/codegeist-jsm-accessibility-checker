@@ -1,0 +1,15 @@
+{
+  "_demo": "Réponse real-shaped de GET /rest/servicedeskapi/knowledgebase/article/DEMO-305 (JSM REST API v3). Écrit par le slot 1 le 04/11/2026. L'article de la base de connaissances est une page Confluence : c'est ce que dit source.type, et c'est pourquoi le corps se vérifie via l'API Confluence (voir demo-confluence-page-DEMO-202.json).",
+  "_links": {
+    "base": "https://tgg-dev.atlassian.net",
+    "context": "/rest/servicedeskapi",
+    "self": "https://tgg-dev.atlassian.net/rest/servicedeskapi/knowledgebase/article/DEMO-305"
+  },
+  "id": "DEMO-305",
+  "title": "Mise à jour",
+  "excerpt": "Les informations de suivi de votre demande.",
+  "source": { "type": "confluence" },
+  "content": {
+    "iframeSrc": "https://tgg-dev.atlassian.net/wiki/spaces/DS/pages/20202"
+  }
+}

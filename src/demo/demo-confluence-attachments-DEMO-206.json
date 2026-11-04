@@ -1,0 +1,39 @@
+{
+  "_demo": "Réponse real-shaped de GET /wiki/api/v2/pages/20202/attachments (Confluence Cloud REST API v2). Écrit par le slot 1 le 04/11/2026. Le schéma officiel ne contient PAS de champ 'filename' : le nom de fichier se lit dans le downloadLink.",
+  "results": [
+    {
+      "id": "att-9001",
+      "status": "current",
+      "title": "Tutoriel du portail client",
+      "createdAt": "2026-10-28T09:12:00.000Z",
+      "pageId": "20202",
+      "mediaType": "video/mp4",
+      "mediaTypeDescription": "Video (mp4)",
+      "comment": "",
+      "fileId": "4478e39c-cf9b-41d1-ba92-68589487cd75",
+      "fileSize": 18453210,
+      "webuiLink": "/wiki/attachments/20202/tuto-portail.mp4",
+      "downloadLink": "/wiki/download/attachments/20202/tuto-portail.mp4",
+      "version": { "number": 1, "when": "2026-10-28T09:12:00.000Z" }
+    },
+    {
+      "id": "att-9002",
+      "status": "current",
+      "title": "Capture du formulaire",
+      "createdAt": "2026-10-28T09:14:00.000Z",
+      "pageId": "20202",
+      "mediaType": "image/png",
+      "mediaTypeDescription": "Image (png)",
+      "comment": "",
+      "fileId": "9f2e4c10-3a6b-4d8e-b5c9-7e1f2a3b4c5d",
+      "fileSize": 482113,
+      "webuiLink": "/wiki/attachments/20202/capture-formulaire.png",
+      "downloadLink": "/wiki/download/attachments/20202/capture-formulaire.png",
+      "version": { "number": 1, "when": "2026-10-28T09:14:00.000Z" }
+    }
+  ],
+  "_links": {
+    "base": "https://tgg-dev.atlassian.net",
+    "context": "/wiki"
+  }
+}

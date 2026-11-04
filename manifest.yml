@@ -1,0 +1,22 @@
+modules:
+  webtrigger:
+    - key: scan-trigger
+      function: scan-fn
+      urlFormat: v2
+      request:
+        authentication: none
+      response:
+        type: dynamic
+  function:
+    - key: scan-fn
+      handler: index.run
+app:
+  runtime:
+    name: nodejs24.x
+    memoryMB: 256
+    architecture: arm64
+  id: ari:cloud:ecosystem::app/33f1227e-0df1-4008-b181-ea9c50b116f5
+permissions:
+  scopes:
+    - read:jira-work
+    - read:servicedesk-request

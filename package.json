@@ -1,0 +1,9 @@
+{
+  "name": "pac-jsm",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.js",
+  "dependencies": {
+    "@forge/api": "3.9.2"
+  }
+}

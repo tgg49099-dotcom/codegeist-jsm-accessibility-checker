@@ -1,0 +1,72 @@
+{
+  "_demo": "Réponse real-shaped de GET /rest/servicedeskapi/servicedesk/12/requesttype/41/field (Jira Service Management REST API v3). Écrit par le slot 1 le 04/11/2026. Les 4 entrées sont les 4 champs du formulaire de demande vu par le client dans le portail.",
+  "requestTypeFields": [
+    {
+      "fieldId": "customfield_10110",
+      "name": "",
+      "description": "",
+      "required": true,
+      "visible": true,
+      "presetValues": [],
+      "defaultValues": [],
+      "validValues": [
+        { "value": "email", "label": "Adresse e-mail", "children": [] },
+        { "value": "phone", "label": "Téléphone", "children": [] }
+      ],
+      "jiraSchema": {
+        "type": "string",
+        "system": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
+        "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
+        "customId": 10110
+      }
+    },
+    {
+      "fieldId": "customfield_10111",
+      "name": "Référence",
+      "description": "",
+      "required": false,
+      "visible": true,
+      "presetValues": [],
+      "defaultValues": [],
+      "validValues": [],
+      "jiraSchema": {
+        "type": "string",
+        "system": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
+        "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
+        "customId": 10111
+      }
+    },
+    {
+      "fieldId": "customfield_10112",
+      "name": "Adresse e-mail",
+      "description": "Saisissez votre adresse e-mail professionnelle. Le lien de réinitialisation y sera envoyé.",
+      "required": true,
+      "visible": true,
+      "presetValues": [],
+      "defaultValues": [],
+      "validValues": [],
+      "jiraSchema": {
+        "type": "string",
+        "system": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
+        "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
+        "customId": 10112
+      }
+    },
+    {
+      "fieldId": "customfield_10113",
+      "name": "Votre nom",
+      "description": "Indiquez votre nom de famille.",
+      "required": true,
+      "visible": true,
+      "presetValues": [],
+      "defaultValues": [],
+      "validValues": [],
+      "jiraSchema": {
+        "type": "string",
+        "system": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
+        "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
+        "customId": 10113
+      }
+    }
+  ]
+}

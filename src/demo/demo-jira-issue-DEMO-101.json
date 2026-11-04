@@ -1,0 +1,190 @@
+{
+  "_demo": "Réponse réelle-shaped de GET /rest/api/3/issue/DEMO-101?fields=description (champs non pertinents retirés). Écrit par le slot 1 le 04/11/2026 pour servir de jeu de données au contrôleur WCAG. Les valeurs fautives sont marquées DEMO-xx dans le README-demo.md.",
+  "id": "10101",
+  "key": "DEMO-101",
+  "self": "https://tgg-dev.atlassian.net/rest/api/3/issue/10101",
+  "fields": {
+    "summary": "Réinitialisation du mot de passe",
+    "description": {
+      "version": 1,
+      "type": "doc",
+      "content": [
+        {
+          "type": "heading",
+          "attrs": { "level": 1 },
+          "content": [{ "type": "text", "text": "Réinitialisation du mot de passe" }]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            { "type": "text", "text": "Votre accès a été réinitialisé. " },
+            {
+              "type": "text",
+              "text": "cliquez ici",
+              "marks": [{ "type": "link", "attrs": { "href": "https://exemple.test/reinit" } }]
+            }
+          ]
+        },
+        {
+          "type": "mediaSingle",
+          "attrs": { "layout": "center", "width": 100, "widthType": "percentage" },
+          "content": [
+            {
+              "type": "media",
+              "attrs": {
+                "id": "4478e39c-cf9b-41d1-ba92-68589487cd75",
+                "type": "file",
+                "collection": "MediaServicesSample",
+                "width": 225,
+                "height": 225
+              }
+            }
+          ]
+        },
+        {
+          "type": "mediaSingle",
+          "attrs": { "layout": "center", "width": 100, "widthType": "percentage" },
+          "content": [
+            {
+              "type": "media",
+              "attrs": {
+                "id": "5a2c9d10-7f4e-4a1c-9b3d-2e6f8c0d1a22",
+                "type": "file",
+                "collection": "MediaServicesSample",
+                "alt": "",
+                "width": 320,
+                "height": 180
+              }
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "attrs": { "level": 3 },
+          "content": [{ "type": "text", "text": "Renvoi du mot de passe" }]
+        },
+        {
+          "type": "table",
+          "attrs": { "isNumberColumnEnabled": false, "layout": "default", "width": 480 },
+          "content": [
+            {
+              "type": "tableRow",
+              "content": [
+                {
+                  "type": "tableCell",
+                  "attrs": { "colspan": 1, "rowspan": 1, "colwidth": [240], "valign": "top" },
+                  "content": [
+                    { "type": "paragraph", "content": [{ "type": "text", "text": "Étape" }] }
+                  ]
+                },
+                {
+                  "type": "tableCell",
+                  "attrs": { "colspan": 1, "rowspan": 1, "colwidth": [240], "valign": "top" },
+                  "content": [
+                    { "type": "paragraph", "content": [{ "type": "text", "text": "Délai" }] }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "tableRow",
+              "content": [
+                {
+                  "type": "tableCell",
+                  "attrs": { "colspan": 1, "rowspan": 1, "colwidth": [240], "valign": "top" },
+                  "content": [
+                    { "type": "paragraph", "content": [{ "type": "text", "text": "Envoi du code" }] }
+                  ]
+                },
+                {
+                  "type": "tableCell",
+                  "attrs": { "colspan": 1, "rowspan": 1, "colwidth": [240], "valign": "top" },
+                  "content": [
+                    { "type": "paragraph", "content": [{ "type": "text", "text": "5 minutes" }] }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "●",
+              "marks": [{ "type": "textColor", "attrs": { "color": "#c62828" } }]
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "attrs": { "level": 2 },
+          "content": [{ "type": "text", "text": "Détails" }]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "https://exemple.test/doc-reinit",
+              "marks": [{ "type": "link", "attrs": { "href": "https://exemple.test/doc-reinit" } }]
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            { "type": "text", "text": "État de la demande : " },
+            {
+              "type": "status",
+              "attrs": { "localId": "abcdef12-abcd-abcd-abcd-abcdef123456", "text": "En cours", "color": "blue" }
+            }
+          ]
+        },
+        {
+          "type": "taskList",
+          "attrs": { "localId": "tl-001" },
+          "content": [
+            {
+              "type": "taskItem",
+              "attrs": { "localId": "ti-001", "state": "DONE" },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Envoyer le code de réinitialisation à l'adresse demandée"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "mention",
+              "attrs": { "id": "5b10a2844c20165700ede21g", "userType": "DEFAULT" }
+            }
+          ]
+        },
+        {
+          "type": "mediaSingle",
+          "attrs": { "layout": "center", "width": 100, "widthType": "percentage" },
+          "content": [
+            {
+              "type": "media",
+              "attrs": {
+                "id": "7c9d1b22-8a55-4b7d-91e0-3f4a5b6c7d88",
+                "type": "file",
+                "collection": "MediaServicesSample",
+                "alt": "Capture d'écran du formulaire de réinitialisation du mot de passe",
+                "width": 640,
+                "height": 360
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

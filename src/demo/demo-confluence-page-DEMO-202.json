@@ -1,0 +1,111 @@
+{
+  "_demo": "Réponse real-shaped de GET /wiki/api/v2/pages/20202?body-format=atlas_doc_format (Confluence Cloud REST API v2). Écrit par le slot 1 le 04/11/2026. La page est la page Confluence qui porte l'article JSM DEMO-305 (voir demo-jsm-article-DEMO-305.json).",
+  "id": "20202",
+  "status": "current",
+  "title": "Page",
+  "spaceId": "4410",
+  "parentId": "20001",
+  "parentType": "page",
+  "authorId": "5b10a2844c20165700ede21g",
+  "ownerId": "5b10a2844c20165700ede21g",
+  "createdAt": "2026-10-02T08:14:00.000Z",
+  "version": { "number": 7, "when": "2026-11-03T16:41:12.000Z" },
+  "body": {
+    "representation": "atlas_doc_format",
+    "value": {
+      "version": 1,
+      "type": "doc",
+      "content": [
+        {
+          "type": "heading",
+          "attrs": { "level": 1 },
+          "content": [{ "type": "text", "text": "Suivi de votre demande" }]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            { "type": "text", "text": "Vous pouvez consulter l'avancement à tout moment : " },
+            {
+              "type": "text",
+              "text": "cliquez ici",
+              "marks": [{ "type": "link", "attrs": { "href": "https://exemple.test/suivi" } }]
+            }
+          ]
+        },
+        {
+          "type": "mediaSingle",
+          "attrs": { "layout": "center", "width": 100, "widthType": "percentage" },
+          "content": [
+            {
+              "type": "media",
+              "attrs": {
+                "id": "9f2e4c10-3a6b-4d8e-b5c9-7e1f2a3b4c5d",
+                "type": "file",
+                "collection": "MediaServicesSample",
+                "width": 800,
+                "height": 450
+              }
+            }
+          ]
+        },
+        {
+          "type": "table",
+          "attrs": { "isNumberColumnEnabled": false, "layout": "default", "width": 480 },
+          "content": [
+            {
+              "type": "tableRow",
+              "content": [
+                {
+                  "type": "tableCell",
+                  "attrs": { "colspan": 1, "rowspan": 1, "colwidth": [240], "valign": "top" },
+                  "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Statut" }] }]
+                },
+                {
+                  "type": "tableCell",
+                  "attrs": { "colspan": 1, "rowspan": 1, "colwidth": [240], "valign": "top" },
+                  "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Délai de traitement" }] }]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "attrs": { "level": 4 },
+          "content": [{ "type": "text", "text": "Escalade" }]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "●",
+              "marks": [{ "type": "textColor", "attrs": { "color": "#b71c1c" } }]
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Merci de votre patience",
+              "marks": [{ "type": "textColor", "attrs": { "color": "#f2c200" } }]
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Cliquez sur le bouton rouge en haut à droite du formulaire pour continuer."
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "labels": { "results": [], "meta": {} },
+  "properties": { "results": [], "meta": {} }
+}
