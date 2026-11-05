@@ -9,8 +9,9 @@ findings — as findings to verify, never as a compliance verdict.**
 | **Runs on** | Atlassian Forge — on Atlassian's infrastructure, inside your own site |
 | **Price** | Free (hackathon prototype, Codegeist 2026) |
 | **Data leaves your site** | No. The app declares **no egress at all** |
+| **Personal data in the answer** | A `nom` or an `e-mail` **carried by the request** is masked, never in clear text. The content read from your site is returned **as it is** — it is what the app checks (see below) |
 | **Permissions** | Read-only: `read:jira-work`, `read:servicedesk-request` |
-| **App version** | 2.1.0 — deployed to the **production** environment on 2026-11-04 |
+| **App version** | 2.4.0 — deployed to the **production** environment on 2026-11-05 (14:16 UTC) |
 
 ## What it does
 
@@ -27,6 +28,46 @@ equivalent: custom fields, field descriptions, create-screen metadata and issue
 summaries. The report records which mode ran (`mode: "jsm"` or `mode:
 "jira-fallback"`) and the raw probe result (`jsmProbe`), so nothing is claimed
 that was not measured.
+
+## The HTTP contract of the web trigger
+
+The trigger is a public URL (`authentication: none`): anyone who has it can start a scan and read
+its answer. A caller may put a name or an e-mail address in the request — `?nom=…&e-mail=…` — for
+example to say who asked for the scan. The app never gives that value back in clear text.
+
+**The rule, in one sentence: a value received in the `nom` or `e-mail` field of a request is never
+returned in clear text — the answer carries a mask instead, and every value of a repeated parameter
+is masked, whatever the channel it arrived in.**
+
+| | |
+|---|---|
+| Fields watched | `nom` (alias `name`) and `e-mail` (aliases `email`, `e_mail`) |
+| Where they are looked for | the query parameters (`{ [key]: string[] }`, the documented shape), the body (object, JSON, `application/x-www-form-urlencoded` text or Buffer), the HTTP headers, and the raw trigger URL. The name of the field is read with **the spaces around it ignored** (` nom ` is `nom`) |
+| What comes back | a mask: `C***` for a name, `c***@***` for an e-mail address (first character only; the domain is never returned) |
+| Absent field | **never invented** — no `null`, no empty string, no placeholder. `receivedFields` is empty and `maskedValues` is `{}` |
+| Repeated parameter | **every** value is collected and masked, not only the first one (`?nom=V1&nom=V2` masks both) |
+| Elsewhere in the answer | a received value of **3 characters or more is masked wherever it appears**, including in the content read from your site |
+| Shorter values | a value of **less than 3 characters** is masked in `maskedValues` but cannot be masked throughout the answer without destroying the report — the answer says so in `privacy.limits` |
+| Logs | the request is never logged: the app contains **no logging statement at all** |
+
+Every answer carries the contract in a `privacy` block, so it can be checked by reading the answer:
+
+```json
+"privacy": {
+  "statement": "This app reads your site content through Atlassian read-only REST APIs, stores nothing, and sends nothing outside your Atlassian tenant. A name or e-mail address that it receives in the request is returned as a mask, never in clear text. The content it reads from your site is returned as it is, because that content is what it checks.",
+  "rule": "The values received in the \"nom\" and \"e-mail\" fields of the request are never returned in clear text: the app returns a mask instead, and only for the fields that were actually received.",
+  "receivedFields": ["nom", "e-mail"],
+  "maskedValues": { "nom": "C***", "e-mail": "c***@***" },
+  "limits": ["…"]
+}
+```
+
+The rule is implemented in `src/index.js` (section *contrat HTTP*), and it is proved three times: by
+an offline test suite (`node test-contrat-http.js`, 51 checks), by its counter-proof
+(`node test-contrat-http-contre-epreuve.js`, 19 checks — the suite must turn **red** when the
+contract is broken), and by **five calls to the production trigger** (version 2.4.0): the recognised
+channel, the field name with spaces around it, a repeated parameter, a form-urlencoded body, and a
+call with no personal field at all. The full notice is in [PRIVACY.md](PRIVACY.md).
 
 ## The 13 WCAG 2.2 criteria it checks
 
@@ -79,18 +120,26 @@ npm install
 node test-demo.js                  # 55 checks — demo fixtures: 23/23 faults, 0 false positives
 node test-app-demo.js              # 33 checks — the app entry point returns the 23/23 verdict
 node test-contre-epreuve.js        # 13 checks — the harness turns RED when a rule is sabotaged
+node test-contrat-http.js          # 51 checks — the HTTP contract (masking, absent fields, logs)
+node test-contrat-http-contre-epreuve.js   # 19 checks — that harness turns RED when the contract is broken
 node test-rules.js <fields.json> <issues.json>   # 16 checks — live-site rule behaviour (see below)
 ```
 
 `test-rules.js` needs two JSON files you can export from any Jira site you
 administer: `GET /rest/api/3/field` and `POST /rest/api/3/search/jql`.
 `test-demo.js` and `test-contre-epreuve.js` have no dependency at all;
-`test-app-demo.js` needs `@forge/api` present (it loads the real app entry
-point), which `npm install` provides.
+`test-app-demo.js`, `test-contrat-http.js` and their counter-proof need
+`@forge/api` present (they load the real app entry point), which `npm install`
+provides.
 
 `test-contre-epreuve.js` is a counter-proof suite: it breaks the rule engine on
 purpose and requires the test harness to fail — a green suite that cannot turn
 red proves nothing, so the ability to fail is itself tested.
+`test-contrat-http-contre-epreuve.js` does the same for the HTTP contract: it
+sabotages the app six ways (mask removed, body sweep disabled, absent fields
+invented, request ignored, the displayed sentence made stronger than the code,
+site content masked) and requires the contract suite to fail **by naming
+the broken check** — a suite that fails by crashing would prove nothing.
 
 ## Deploy it on your own site
 
@@ -114,12 +163,16 @@ The last command prints the URL to call. The response is the JSON report.
 ```
 manifest.yml      1 webtrigger (scan-trigger, urlFormat v2, dynamic response)
                   1 function    (scan-fn -> src/index.js)
-src/index.js      entry point: JSM probe, mode selection, REST reads, findings
+src/index.js      entry point: JSM probe, mode selection, REST reads, findings,
+                  and the HTTP contract (masking of the personal data received)
 src/regles.js     the WCAG 2.2 rule engine — pure functions, zero Atlassian imports,
                   shared by the live scan and the demo mode
 src/demo.js       demo mode driver over src/demo/*.json fixtures
 docs/             the criterion-by-criterion basis (French), incl. what REST can prove
-test-*.js         offline harness (117 checks total across the four suites)
+scripts/          appel-webtrigger.sh — the two production calls (red case, green case)
+PRIVACY.md        the privacy notice (what is read, where it goes, how long it is kept)
+test-*.js         offline harness (171 checks across the five suites that need no
+                  site export; test-rules.js adds 16 more and needs two JSON exports)
 ```
 
 One rule engine, two data sources. No data is stored, no content is modified:
@@ -133,6 +186,15 @@ the app reads and reports.
 - Partial criteria produce *signals to verify*, not proof — the finding itself
   says which of the two it is.
 - The report is machine-readable JSON; there is no UI panel in this prototype.
+- One limit of the HTTP contract, stated rather than hidden: a personal value of
+  **less than 3 characters** is masked in the `privacy` block, but cannot be masked
+  throughout the answer without destroying the report. The answer repeats that limit
+  in `privacy.limits` on every call.
+- The masking covers the values **received in the request**. The content read from
+  your site is returned **as it is** — a ticket title or a field label that happens
+  to contain a name is part of the report, because it is the content the app checks.
+  The app says so in its `privacy.statement` on every call, and
+  [PRIVACY.md](PRIVACY.md) § 3 spells it out.
 
 ## License
 
