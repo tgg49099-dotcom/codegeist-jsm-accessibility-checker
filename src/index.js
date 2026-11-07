@@ -1,24 +1,26 @@
 /**
- * Portal Accessibility Checker for JSM — scan (04/11/2026).
+ * Portal Accessibility Checker for JSM — scan engine (04/11/2026, rev. 05/11/2026).
  *
- * Deux modes, UNE SEULE implémentation de règles (src/regles.js) :
+ * Two modes, ONE implementation of the rules (src/regles.js):
  *
- *  1. le SCAN, exécuté sur le site : lit le contenu via l'API REST (JSM si le
- *     produit est actif, sinon repli Jira) et applique les contrôles WCAG 2.2
- *     (cible AA) sur les valeurs lues ;
- *  2. le MODE DÉMO (`?demo=1`) : fait tourner le MÊME moteur sur les 6
- *     fichiers JSON de démonstration, sans compte et sans tenant, et publie
- *     la preuve que les règles détectent les 23 fautives documentées sans
- *     produire de faux positif sur les 6 contrôles négatifs.
+ *  1. the SCAN, run on the site: reads the content through the REST API (JSM
+ *     if the product is active, Jira as a fallback) and applies the WCAG 2.2
+ *     checks (AA target) to what was read;
+ *  2. the DEMO mode: runs the SAME engine on the 6 bundled demo fixtures — no
+ *     account, no tenant — and publishes the proof that the rules detect the
+ *     23 seeded issues without a false positive on the 6 negative controls.
  *
- * Les règles applicatives portent sur 13 critères WCAG 2.2 (7 « REST
- * vérifiable », 6 « contenu seulement (partiel) ») — voir
- * docs/CRITERES-WCAG-2.2-AA.md. Chaque constat est renvoyé au format de la
- * fiche (§0.4) : critere, niveau, source, ressource, emplacement, valeur,
- * message, a_verifier.
+ * The application rules cover 13 WCAG 2.2 criteria (7 "REST-verifiable",
+ * 6 "content only (partial)") — see docs/CRITERES-WCAG-2.2-AA.md. Every
+ * finding is returned in the format of the submission (§0.4): critere, niveau,
+ * source, ressource, emplacement, valeur, message, a_verifier.
  *
- * Appelé par le web trigger `scan-trigger`. Réponse : JSON brut horodaté
- * contenant les données lues (read.*) et les constats (findings[]).
+ * ENTRY POINT. Since cycle 128 (05/11/2026) this file is NOT an HTTP handler
+ * any more: the public trigger module has been REMOVED from the manifest and
+ * replaced by a `jira:adminPage` module. This file is the ENGINE; it is called
+ * by the resolver (src/resolvers.js), which the platform only lets a logged-in
+ * Jira administrator reach. See the entry-point section at the bottom of this
+ * file.
  */
 
 const api = require('@forge/api');
@@ -42,13 +44,13 @@ const isInternalLabel = (name) => {
   if (/^[a-z0-9 ._\'-]+$/.test(name) && /[a-z]/.test(name)) {
     return {
       hit: true,
-      why: 'étiquette rédigée comme un nom technique interne en minuscules, jamais pour l\'utilisateur final',
+      why: 'label written as an internal technical name in lower case, never for the end user',
     };
   }
   if (/\d{4,}/.test(name)) {
     return {
       hit: true,
-      why: 'étiquette contenant un identifiant numérique interne (série de >= 4 chiffres)',
+      why: 'label containing an internal numeric identifier (a run of 4 or more digits)',
     };
   }
   return { hit: false, why: '' };
@@ -106,7 +108,15 @@ async function jget(path, headers) {
   return { status: res.status, body };
 }
 
-async function jpost(path, payload) {
+/**
+ * The ONE POST of the app — and it writes nothing.
+ *
+ * Atlassian's JQL search endpoint (`/rest/api/3/search/jql`) takes the query
+ * in the BODY of a POST; it is a READ (a search), it creates nothing, and it
+ * needs no write scope. There is no other POST in the app: the app declares
+ * only the two read scopes, and it cannot write even if it wanted to.
+ */
+async function jsearch(path, payload) {
   const res = await api.asApp().requestJira(path, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
@@ -121,66 +131,7 @@ async function jpost(path, payload) {
   return { status: res.status, body };
 }
 
-// ---------- mode démo : détection du drapeau ----------
-
-/**
- * Le mode démo s'active par `?demo=1` (et `?demo=1&format=csv` pour l'export
- * CSV). On regarde plusieurs endroits parce que la forme exacte de l'objet
- * `request` reçue par un web trigger n'est pas garantie par la doc : le
- * détecteur renvoie en plus le nom de l'endroit où il a trouvé le drapeau
- * (il est recopié dans la réponse : on peut vérifier ce qui a été lu).
- *
- * D'après la référence officielle, `queryParameters` est de la forme
- * `{ [clé: string]: string[] }` : chaque paramètre est un TABLEAU de
- * chaînes. On normalise donc les tableaux avant de lire la valeur.
- */
-function detecterDemo(req) {
-  const requete = req || {};
-  const premier = (v) => (Array.isArray(v) ? v[0] : v);
-  const vrai = (v) => {
-    const x = premier(v);
-    return x === true || x === '1' || x === 'true' || x === 'demo' || x === 'yes';
-  };
-
-  const qp = requete.queryParameters;
-  if (qp && typeof qp === 'object') {
-    if (qp.demo !== undefined) {
-      return { demo: vrai(qp.demo), declencheur: 'queryParameters.demo', format: premier(qp.format) };
-    }
-    if (qp.mode !== undefined && String(premier(qp.mode)).toLowerCase() === 'demo') {
-      return { demo: true, declencheur: 'queryParameters.mode', format: premier(qp.format) };
-    }
-  }
-
-  for (const cle of ['queryString', 'url', 'rawUrl', 'path', 'userPath']) {
-    const valeur = requete[cle];
-    if (typeof valeur !== 'string') continue;
-    // `demo` peut être en tête de query string ("demo=1") ou après un
-    // séparateur ("?demo=1", "&demo=1") : les deux formes sont admises.
-    const trouve = /(^|[?&])demo=([^&]*)/i.exec(valeur);
-    if (trouve) {
-      const format = /(^|[?&])format=([^&]*)/i.exec(valeur);
-      return {
-        demo: vrai(trouve[2]),
-        declencheur: cle,
-        format: format ? format[2] : undefined,
-      };
-    }
-  }
-
-  if (requete.body && typeof requete.body === 'object' && !Buffer.isBuffer(requete.body)) {
-    if (requete.body.demo !== undefined) {
-      return {
-        demo: vrai(requete.body.demo),
-        declencheur: 'body.demo',
-        format: premier(requete.body.format),
-      };
-    }
-  }
-  return { demo: false, declencheur: null, format: undefined };
-}
-
-// ---------- contrat HTTP : une donnée personnelle reçue ne revient jamais en clair ----------
+// ---------- contrat de confidentialité : une donnée personnelle reçue ne revient jamais en clair ----------
 
 /**
  * Les deux champs de requête qui portent une donnée personnelle.
@@ -215,7 +166,7 @@ const SEUIL_BALAYAGE = 3;
  * (`nom`, `e-mail`), et uniquement celles-ci : c'est ce que la phrase dit.
  */
 const PHRASE_PV =
-  'This app reads your site content through Atlassian read-only REST APIs, stores nothing, and sends nothing outside your Atlassian tenant. A name or e-mail address that it receives in the request is returned as a mask, never in clear text. The content it reads from your site is returned as it is, because that content is what it checks.';
+  'This app reads your site content through Atlassian read-only REST APIs and stores nothing. It calls no external service. Scan results are returned only to the logged-in user who started the scan. A name or e-mail address that it receives in the request is returned as a mask, never in clear text. The content it reads from your site is returned as it is, because that content is what it checks.';
 
 /** Normalise un ensemble de valeurs pour un paramètre (tableau ou valeur unique). */
 const extraireValeurs = (v) => {
@@ -418,30 +369,6 @@ function sectionPrivacy(pvRecus) {
   };
 }
 
-/** Réponse du mode démo : rapport JSON complet, ou export CSV. */
-function reponseDemo(detection, horodatage, pvRecus) {
-  const remplacements = remplacementsPv(pvRecus);
-  if (detection.format === 'csv') {
-    // Le CSV n'a pas de section `privacy` (le format est un CSV) ; le
-    // masquage, lui, s'applique au corps.
-    return {
-      body: balayerNoeud(demo.csv(), remplacements),
-      headers: { 'Content-Type': ['text/csv; charset=utf-8'] },
-      statusCode: 200,
-      statusText: 'OK',
-    };
-  }
-  const rapport = demo.rapport(horodatage);
-  rapport.mode_declare_par = detection.declencheur;
-  rapport.privacy = sectionPrivacy(pvRecus);
-  return {
-    body: JSON.stringify(balayerNoeud(rapport, remplacements), null, 1),
-    headers: { 'Content-Type': ['application/json; charset=utf-8'] },
-    statusCode: 200,
-    statusText: 'OK',
-  };
-}
-
 // ---------- scan JSM (exécuté seulement si JSM est actif sur le site) ----------
 
 async function scanJsm() {
@@ -530,7 +457,7 @@ async function scanJsm() {
               `${desk.projectName} > ${rt.name}`,
               `requestTypeFields[${i}].name`,
               f.name,
-              `Étiquette de champ non descriptive : ${il.why}. Une étiquette doit décrire le sujet ou la finalité du champ pour l'utilisateur final.`,
+              `Non-descriptive field label: ${il.why}. A label must describe the subject or the purpose of the field for the end user.`,
               true
             )
           );
@@ -581,7 +508,7 @@ async function scanJira() {
     }
   }
   sources['GET /rest/api/3/issue/createmeta/{projet}/issuetypes/{id}'] = {
-    note: 'union des champs affichés sur les écrans de création des projets scannés',
+    note: 'union of the fields shown on the create screens of the scanned projects',
     httpStatus: 200,
     excerpt: onScreen,
   };
@@ -590,7 +517,7 @@ async function scanJira() {
     projectKeys.length > 0
       ? `project IN (${projectKeys.join(',')}) ORDER BY created DESC`
       : 'created >= -30d';
-  const search = await jpost(route`/rest/api/3/search/jql`, {
+  const search = await jsearch(route`/rest/api/3/search/jql`, {
     jql,
     maxResults: 20,
     fields: ['summary', 'description'],
@@ -614,10 +541,10 @@ async function scanJira() {
           '2.4.6',
           'AA',
           'J1',
-          `champ personnalisé ${f.id}`,
+          `custom field ${f.id}`,
           `fields[${f.id}].name`,
           f.name,
-          `Étiquette de champ non descriptive : ${il.why}. Une étiquette doit décrire le sujet ou la finalité du champ pour l'utilisateur final.`,
+          `Non-descriptive field label: ${il.why}. A label must describe the subject or the purpose of the field for the end user.`,
           true
         )
       );
@@ -628,10 +555,10 @@ async function scanJira() {
           '3.3.2',
           'A',
           'J1',
-          `champ personnalisé ${f.id}`,
+          `custom field ${f.id}`,
           `fields[${f.id}].description`,
           `type=${f.schema.type}, description="${(f.description || '').trim()}"`,
-          'Champ à saisie ambiguë (date ou couleur) dont les métadonnées ne comportent aucune instruction : le format attendu n\'est indiqué nulle part dans ce que l\'API expose. Le sélecteur graphique peut atténuer le problème au rendu — l\'API REST ne permet pas de le vérifier.',
+          'Ambiguous input field (date or colour) whose metadata carries no instruction: the expected format is nowhere in what the API exposes. A graphical picker may soften the problem when rendered — the REST API cannot verify this.',
           true
         )
       );
@@ -676,7 +603,7 @@ async function scanJira() {
           i.key,
           'fields.summary',
           JSON.stringify(i.summary),
-          'Titre de page trop court : le titre de la page de ticket est le résumé ; moins de 4 caractères ne peuvent pas décrire le sujet de la page.',
+          'Page title too short: the title of the issue page is the summary; fewer than 4 characters cannot describe the subject of the page.',
           false
         )
       );
@@ -687,23 +614,35 @@ async function scanJira() {
   return { sources, findings };
 }
 
-// ---------- point d'entrée (web trigger) ----------
+// ---------------------------------------------------------------------------
+// Entry point — THE SCAN ENGINE.
+//
+// CYCLE 128 (05/11/2026): THE PUBLIC TRIGGER IS GONE.
+//
+// This app used to expose a public trigger module whose request was
+// UNAUTHENTICATED (`authentication: none`): anyone who knew the URL could run
+// a scan of the customer's site and read the findings in clear text. The
+// manifest now declares a `jira:adminPage` module instead (see manifest.yml)
+// and this file is no longer an HTTP handler. It is the ENGINE, and it is
+// called by the resolver (src/resolvers.js), which is only reachable from the
+// administration page of a logged-in Jira administrator.
+//
+// Nothing is duplicated: `executerScan()` runs the very same REST reads and
+// the very same rules (src/regles.js) as the code that used to answer the
+// public trigger. The resolver adds the caller check and the transport; it
+// does not re-implement any rule.
+// ---------------------------------------------------------------------------
 
-exports.run = async (req) => {
-  const generatedAt = new Date().toISOString();
-
-  // Contrat HTTP : les données personnelles éventuellement reçues dans la
-  // requête ne seront jamais renvoyées en clair (voir §README « Contrat HTTP
-  // du web trigger »). Elles sont collectedes AVANT toute autre chose, et
-  // seuls les champs RÉELLEMENT présents sont retenus.
-  const pvRecus = champsPvRecus(req);
-
-  // Mode démo : aucun appel à un site, aucun compte, aucun tenant.
-  const detection = detecterDemo(req);
-  if (detection.demo) {
-    return reponseDemo(detection, generatedAt, pvRecus);
-  }
-
+/**
+ * Runs the scan ON THE SITE and returns the raw scan result.
+ *
+ * The site is read with the app's own identity (`asApp`) and the two read-only
+ * scopes the manifest declares (`read:jira-work`, `read:servicedesk-request`).
+ * Nothing is written, and no external service is called.
+ *
+ * @returns {Promise<{mode: string, jsmProbe: object, scan: object}>}
+ */
+async function executerScan() {
   const info = await jget(route`/rest/servicedeskapi/info`, JSM_HDRS);
   const jsmProbe = {
     endpoint: 'GET /rest/servicedeskapi/info',
@@ -711,8 +650,8 @@ exports.run = async (req) => {
     isLicensedForUse: info.status === 200 ? info.body.isLicensedForUse : null,
     note:
       info.status === 200 && info.body.isLicensedForUse === false
-        ? 'l\'API JSM du site répond elle-même que JSM n\'y est pas licencié/activé : repli sur les tickets Jira (même API REST, contenu équivalent au portail : étiquettes de champs, descriptions, résumés)'
-        : 'JSM actif',
+        ? "the site's own JSM API reports that JSM is not licensed or not active on it: falling back to Jira issues (same REST API, content equivalent to the portal: field labels, descriptions, summaries)"
+        : 'JSM is active',
   };
 
   let mode = 'jira-fallback';
@@ -723,40 +662,94 @@ exports.run = async (req) => {
   } else {
     scan = await scanJira();
   }
+  return { mode, jsmProbe, scan };
+}
 
-  const report = {
-    // Pas de numéro de version ici : la version déployée est celle de
-    // package.json (lue dans le README et la console Atlassian). Un numéro
-    // écrit en dur dans la réponse deviendrait faux à la version suivante.
+/**
+ * Builds the report the page displays.
+ *
+ * The shape is the one documented in the submission (§0.4): the data that was
+ * read (`read`), the findings (`findings`), what could not be checked
+ * (`limites`), and the privacy statement.
+ *
+ * @param {object} args
+ * @returns {object} the report (not yet masked)
+ */
+function construireRapport({ mode, jsmProbe, scan, horodatage, pvRecus }) {
+  return {
+    // No version number here: the deployed version is the one in
+    // package.json (read in the README and in the Atlassian console). A
+    // hard-coded number in the response would become false on the next
+    // version.
     scanner: 'Portal Accessibility Checker for JSM (app 33f1227e-0df1-4008-b181-ea9c50b116f5)',
-    generatedAt,
+    generatedAt: horodatage,
     mode,
     privacy: sectionPrivacy(pvRecus),
     jsmProbe,
     read: scan.sources,
     findings: scan.findings,
     limites: [
-      'lecture seule : ce scan n\'écrit rien sur le site',
-      'l\'API REST ne rend pas le portail : contraste (1.4.3), prise de focus (2.4.7), taille des cibles (2.5.8) et messages d\'état (4.1.3) ne sont PAS vérifiables ici',
-      'la présence d\'un champ sur un écran est lue via createmeta ; là où un champ n\'apparaît pas, le constat porte sur ses métadonnées, pas sur un rendu',
-      'un constat est une ALERTE à faire vérifier par un humain : l\'app ne certifie aucune conformité',
+      'read-only: this scan writes nothing on your site',
+      'the REST API does not render the portal: contrast (1.4.3), focus order (2.4.7), target size (2.5.8) and status messages (4.1.3) are NOT checkable here',
+      'the presence of a field on a screen is read through createmeta; where a field does not appear, the finding is about its metadata, not about a rendering',
+      'a finding is an ALERT to be checked by a human: the app does not certify any conformance',
     ],
-    modeDemo:
-      'ajouter ?demo=1 à l\'URL du déclencheur pour rejouer le scan sur le jeu de démonstration (sans compte, sans tenant) ; &format=csv pour l\'export CSV',
   };
+}
 
-  return {
-    body: JSON.stringify(balayerNoeud(report, remplacementsPv(pvRecus)), null, 1),
-    headers: { 'Content-Type': ['application/json; charset=utf-8'] },
-    statusCode: 200,
-    statusText: 'OK',
-  };
-};
+/**
+ * The scan, with the privacy contract applied.
+ *
+ * A personal value received in the request (fields `nom` and `e-mail`) is
+ * NEVER returned in clear text: it comes back as a mask, and only for the
+ * fields that were actually received.
+ *
+ * @param {object} args
+ * @param {object} args.pvRecus  the personal values received, as collected by
+ *                                `champsPvRecus`
+ * @returns {Promise<object>} the report, masked
+ */
+async function lancerScan({ pvRecus } = {}) {
+  const recues = pvRecus || {};
+  const horodatage = new Date().toISOString();
+  const { mode, jsmProbe, scan } = await executerScan();
+  const rapport = construireRapport({ mode, jsmProbe, scan, horodatage, pvRecus: recues });
+  return balayerNoeud(rapport, remplacementsPv(recues));
+}
 
-// règles pures exportées pour les tests hors ligne (aucun effet à l'exécution)
+/**
+ * The demo report: the SAME rules engine run on the 6 bundled demo fixtures.
+ * No site, no account, no tenant.
+ *
+ * @param {object} args
+ * @param {object} args.pvRecus
+ * @returns {object} the demo report, masked
+ */
+function rapportDemo({ pvRecus } = {}) {
+  const recues = pvRecus || {};
+  const horodatage = new Date().toISOString();
+  const rapport = demo.rapport(horodatage);
+  rapport.privacy = sectionPrivacy(recues);
+  return balayerNoeud(rapport, remplacementsPv(recues));
+}
+
+// ---------------------------------------------------------------------------
+// Exports — the engine is the single source of truth.
+// ---------------------------------------------------------------------------
+
+// The scan of the site. Called by the resolver (src/resolvers.js).
+exports.lancerScan = lancerScan;
+// The demo report (same engine, bundled fixtures).
+exports.rapportDemo = rapportDemo;
+// The personal values received in a request, as the engine collects them.
+exports.champsPvRecus = champsPvRecus;
+// The CSV export of a report's findings (same escaping rules as the demo CSV).
+exports.csvRapport = (rapport) =>
+  regles.versCsv((rapport && (rapport.findings || rapport.constats)) || []);
+
+// Pure rules exported for the offline tests (no effect at runtime).
 exports._rules = { isInternalLabel, isFormatAmbiguous, isAmbiguousWithoutInstructions, isSummaryTooShort };
-exports._detecterDemo = detecterDemo;
-// contrat HTTP : fonctions pures exportées pour les tests hors ligne
+// Privacy contract: pure functions exported for the offline tests.
 exports._contratPv = {
   CHAMPS_PV,
   SEUIL_BALAYAGE,

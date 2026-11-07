@@ -1,9 +1,28 @@
 {
   "name": "pac-jsm",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "private": true,
-  "main": "src/index.js",
+  "main": "src/resolvers.js",
   "dependencies": {
-    "@forge/api": "3.9.2"
+    "@forge/api": "3.9.2",
+    "@forge/bridge": "7.2.0",
+    "@forge/react": "12.3.1",
+    "@forge/resolver": "2.0.1",
+    "react": "18.3.1"
+  },
+  "description": "Portal Accessibility Checker for JSM — read-only WCAG 2.2 AA scan of a Jira Service Management customer portal, started from the Jira administration page (Forge app).",
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "lint": "forge lint",
+    "test": "node test-ihm-cycle129.js && node test-contrat-http.js && node test-app-demo.js && node test-demo.js && node test-contre-epreuve.js && node test-contrat-http-contre-epreuve.js",
+    "test:ihm": "node test-ihm-cycle129.js",
+    "test:contrat": "node test-contrat-http.js",
+    "test:contrat-contre-epreuve": "node test-contrat-http-contre-epreuve.js",
+    "test:demo": "node test-demo.js",
+    "test:app-demo": "node test-app-demo.js",
+    "test:contre-epreuve": "node test-contre-epreuve.js",
+    "verify:manifest": "python3 tools/verifier-manifest-cycle128.py"
   }
 }

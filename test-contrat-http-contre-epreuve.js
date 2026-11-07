@@ -1,7 +1,7 @@
 /**
- * Contre-épreuve du harnais du CONTRAT HTTP (test-contrat-http.js).
+ * Contre-épreuve du harnais du CONTRAT DU RESOLVER (test-contrat-http.js).
  *
- * Un harnais qui dit « 41 contrôles PASS » ne prouve rien tant qu'on n'a pas
+ * Un harnais qui dit « 59 contrôles PASS » ne prouve rien tant qu'on n'a pas
  * montré qu'il devient ROUGE quand le contrat est cassé. Ce script :
  *   1. rejoue le harnais sur une copie INTACTE de l'app (contrôle : il doit
  *      être vert) ;
@@ -9,6 +9,12 @@
  *      harnais devienne ROUGE, qu'il nomme le contrôle cassé, et qu'il n'ait
  *      pas simplement CRASHÉ (un crash ne distingue pas « détecté » de
  *      « cassé »).
+ *
+ * CYCLE 128 (05/11/2026) : deux sabotages supplémentaires portent sur le
+ * resolver lui-même — la gâche d'identité et l'appel AU MOTEUR. C'est la
+ * preuve que le harnais ne se fabrique pas son propre verdict : un resolver
+ * qui répondrait un panneau figé, ou qui accepterait un appel sans compte
+ * connecté, est détecté.
  *
  * Usage : node test-contrat-http-contre-epreuve.js
  * RC 0 = les contre-épreuves sont concluantes, RC 1 = au moins une ne l'est pas.
@@ -34,6 +40,7 @@ function copierApp(suffixe) {
   fs.mkdirSync(path.join(cible, 'src'), { recursive: true });
   fs.mkdirSync(path.join(cible, 'src', 'demo'), { recursive: true });
   fs.cpSync(path.join(APP, 'src', 'index.js'), path.join(cible, 'src', 'index.js'));
+  fs.cpSync(path.join(APP, 'src', 'resolvers.js'), path.join(cible, 'src', 'resolvers.js'));
   fs.cpSync(path.join(APP, 'src', 'demo.js'), path.join(cible, 'src', 'demo.js'));
   fs.cpSync(path.join(APP, 'src', 'regles.js'), path.join(cible, 'src', 'regles.js'));
   fs.cpSync(path.join(APP, 'src', 'demo'), path.join(cible, 'src', 'demo'), { recursive: true });
@@ -97,10 +104,10 @@ const SABOTAGES = [
     attendu: 'VERT-02',
   },
   {
-    nom: 'la collecte est désactivée : la requête est ignorée au lieu d\'être masquée',
+    nom: 'la collecte est désactivée : le payload de la page est ignoré au lieu d\'être masqué',
     fichier: 'src/index.js',
-    avant: '  ajouter(requete.queryParameters);',
-    apres: '  // sabotage : les paramètres de requête ne sont plus collectés',
+    avant: '  ajouter(corpsRequete(requete.body));',
+    apres: '  // sabotage : le corps de la requête n\'est plus collecté',
     attendu: 'ROUGE-05',
   },
   {
@@ -118,6 +125,29 @@ const SABOTAGES = [
     avant: '      id: f.id,\n      name: f.name,',
     apres: "      id: f.id,\n      name: '***',",
     attendu: 'SCAN-09',
+  },
+  {
+    nom: 'la gâche d\'identité est supprimée : un appel sans compte connecté est accepté',
+    fichier: 'src/resolvers.js',
+    avant: '  return principal.accountId || context.accountId || null;',
+    apres: "  return 'acc-quelconque';",
+    attendu: 'GATE-01',
+  },
+  {
+    nom: 'le resolver n\'appelle plus le moteur (panneau figé) en mode démo',
+    fichier: 'src/resolvers.js',
+    avant: '  const report = moteur.rapportDemo({ pvRecus });',
+    apres:
+      "  const report = { constats: [], findings: [], privacy: { receivedFields: [], maskedValues: {}, statement: '' } };",
+    attendu: 'ROUGE-09',
+  },
+  {
+    nom: 'le resolver n\'appelle plus le moteur (panneau figé) en mode scan',
+    fichier: 'src/resolvers.js',
+    avant: '  const report = await moteur.lancerScan({ pvRecus });',
+    apres:
+      "  const report = { findings: [], privacy: { receivedFields: [], maskedValues: {}, statement: '' } };",
+    attendu: 'SCAN-03',
   },
 ];
 
@@ -139,7 +169,10 @@ for (const test of SABOTAGES) {
   fs.writeFileSync(cheminFichier, patched);
   const res = lancerHarnais(dossier);
   const sortie = res.sortie;
-  const mentionne = sortie.includes(test.attendu);
+  // Le contrôle cassé doit être nommé SUR UNE LIGNE « FAIL » : le simple fait
+  // que son étiquette aparaisse quelque part (y compris sur une ligne PASS)
+  // ne prouverait rien.
+  const mentionne = new RegExp('^FAIL\\s+' + test.attendu + '\\b', 'm').test(sortie);
   const aEchoue = /ÉCHEC\(S\)/.test(sortie);
   const aCrash = /a levé une exception|Error:|TypeError:|ReferenceError:|SyntaxError:/.test(sortie);
   check(

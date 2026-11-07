@@ -1,22 +1,63 @@
+# Forge manifest — "Portal Accessibility Checker for JSM"
+# App id: ari:cloud:ecosystem::app/33f1227e-0df1-4008-b181-ea9c50b116f5
+#
+# CYCLE 128 (05/11/2026) — THE PUBLIC TRIGGER HAS BEEN REMOVED.
+#
+# Before this cycle the manifest declared a PUBLIC trigger module: an
+# unauthenticated URL (request authentication: none) that ran a scan of the
+# customer's site and returned the findings in clear text to whoever held the
+# URL. The jury review of 05/11/2026
+# (REVUE-JURY/20261105-1037-slot4-codegeist-140c.md, blocking point 1) called
+# it a blocking defect, and it was right: a Marketplace app that exposes a
+# customer's tenant on an open URL would very likely fail the security
+# review.
+#
+# NOW the manifest declares exactly TWO modules:
+#
+#   * `jira:adminPage` — the interface. Jira only renders it for a signed-in
+#     administrator, so the scan is started by a person, not by whoever finds
+#     a URL. This is the shape of the official `jira-admin-page-ui-kit`
+#     template (resource + resolver.function + render: native).
+#   * `function` — the resolver the page calls (src/resolvers.js). It answers
+#     ONLY to the signed-in user who pressed the button, and it refuses any
+#     call that carries no account id.
+#
+# There is NO public module left: `modules:` has two entries and that is all.
+# The absence is checkable by reading this file, and by
+# `python3 tools/verifier-manifest-cycle128.py`.
+#
+# The scopes are UNCHANGED and still read-only:
+#   read:jira-work             (Jira issues: descriptions, summaries, fields)
+#   read:servicedesk-request   (JSM: request types, form fields, help text)
+# The app writes nothing, calls no external service and stores nothing.
+#
+# The runtime stays nodejs24.x / 256 MB / arm64.
+
 modules:
-  webtrigger:
-    - key: scan-trigger
-      function: scan-fn
-      urlFormat: v2
-      request:
-        authentication: none
-      response:
-        type: dynamic
+  jira:adminPage:
+    - key: pac-jsm-admin-page
+      title: Portal Accessibility Checker for JSM
+      resource: admin
+      resolver:
+        function: resolver
+      render: native
   function:
-    - key: scan-fn
-      handler: index.run
-app:
-  runtime:
-    name: nodejs24.x
-    memoryMB: 256
-    architecture: arm64
-  id: ari:cloud:ecosystem::app/33f1227e-0df1-4008-b181-ea9c50b116f5
+    - key: resolver
+      handler: resolvers.handler
+
+resources:
+  - key: admin
+    path: src/frontend/admin.jsx
+
 permissions:
   scopes:
     - read:jira-work
     - read:servicedesk-request
+
+app:
+  id: ari:cloud:ecosystem::app/33f1227e-0df1-4008-b181-ea9c50b116f5
+  description: Reports WCAG 2.2 AA accessibility findings on your Jira Service Management customer portal; it reads only and never modifies anything
+  runtime:
+    name: nodejs24.x
+    memoryMB: 256
+    architecture: arm64

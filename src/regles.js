@@ -27,27 +27,27 @@
 // ---------------------------------------------------------------------------
 
 const CRITERES = {
-  '1.1.1': { niveau: 'A', confiance: 'REST vérifiable', titre: 'Non-text Content' },
-  '1.3.1': { niveau: 'A', confiance: 'REST vérifiable', titre: 'Info and Relationships' },
-  '2.4.4': { niveau: 'A', confiance: 'REST vérifiable', titre: 'Link Purpose (In Context)' },
-  '3.3.2': { niveau: 'A', confiance: 'REST vérifiable', titre: 'Labels or Instructions' },
-  '4.1.2': { niveau: 'A', confiance: 'REST vérifiable', titre: 'Name, Role, Value' },
-  '2.4.2': { niveau: 'A', confiance: 'REST vérifiable', titre: 'Page Titled' },
-  '3.2.6': { niveau: 'A', confiance: 'REST vérifiable', titre: 'Consistent Help' },
-  '1.4.1': { niveau: 'A', confiance: 'contenu seulement (partiel)', titre: 'Use of Color' },
-  '1.4.3': { niveau: 'AA', confiance: 'contenu seulement (partiel)', titre: 'Contrast (Minimum)' },
-  '1.2.2': { niveau: 'A', confiance: 'contenu seulement (partiel)', titre: 'Captions (Prerecorded)' },
-  '2.4.6': { niveau: 'AA', confiance: 'contenu seulement (partiel)', titre: 'Headings and Labels' },
-  '1.3.5': { niveau: 'AA', confiance: 'contenu seulement (partiel)', titre: 'Identify Input Purpose' },
-  '1.3.3': { niveau: 'A', confiance: 'contenu seulement (partiel)', titre: 'Sensory Characteristics' },
+  '1.1.1': { niveau: 'A', confiance: 'REST-verifiable', titre: 'Non-text Content' },
+  '1.3.1': { niveau: 'A', confiance: 'REST-verifiable', titre: 'Info and Relationships' },
+  '2.4.4': { niveau: 'A', confiance: 'REST-verifiable', titre: 'Link Purpose (In Context)' },
+  '3.3.2': { niveau: 'A', confiance: 'REST-verifiable', titre: 'Labels or Instructions' },
+  '4.1.2': { niveau: 'A', confiance: 'REST-verifiable', titre: 'Name, Role, Value' },
+  '2.4.2': { niveau: 'A', confiance: 'REST-verifiable', titre: 'Page Titled' },
+  '3.2.6': { niveau: 'A', confiance: 'REST-verifiable', titre: 'Consistent Help' },
+  '1.4.1': { niveau: 'A', confiance: 'content only (partial)', titre: 'Use of Color' },
+  '1.4.3': { niveau: 'AA', confiance: 'content only (partial)', titre: 'Contrast (Minimum)' },
+  '1.2.2': { niveau: 'A', confiance: 'content only (partial)', titre: 'Captions (Prerecorded)' },
+  '2.4.6': { niveau: 'AA', confiance: 'content only (partial)', titre: 'Headings and Labels' },
+  '1.3.5': { niveau: 'AA', confiance: 'content only (partial)', titre: 'Identify Input Purpose' },
+  '1.3.3': { niveau: 'A', confiance: 'content only (partial)', titre: 'Sensory Characteristics' },
 };
 
 // Les 3 constats que l'API REST ne permet PAS de faire (§15 de la fiche).
 // L'app ne dit rien dessus : elle le dit dans sa note de méthode.
 const CONSTATS_IMPOSSIBLES = [
-  'contraste rendu (fond et couleur de texte réels du portail)',
-  'ordre de lecture et ordre de focus à l’écran',
-  'libellés visibles (chaîne rendue par le portail)',
+  'rendered contrast (real portal background and text colour)',
+  'reading order and focus order on screen',
+  'visible labels (string rendered by the portal)',
 ];
 
 // ---------------------------------------------------------------------------
@@ -271,7 +271,7 @@ function regleTexteAlternatif(noeud, chemin, ctx) {
         ctx.ressource,
         prop(chemin, 'attrs'),
         null,
-        'Image sans texte alternatif',
+        'Image without alternative text',
         { aVerifier: false }
       )
     );
@@ -283,7 +283,7 @@ function regleTexteAlternatif(noeud, chemin, ctx) {
         ctx.ressource,
         prop(prop(chemin, 'attrs'), 'alt'),
         attrs.alt,
-        'Texte alternatif vide',
+        'Empty alternative text',
         { aVerifier: false }
       )
     );
@@ -308,7 +308,7 @@ function regleNiveauxTitres(noeud, chemin, ctx) {
         ctx.ressource,
         prop(prop(chemin, 'attrs'), 'level'),
         level,
-        'Niveau de titre sauté de ' + precedent + ' à ' + level,
+        'Heading level skipped from ' + precedent + ' to ' + level,
         { aVerifier: false }
       )
     );
@@ -335,7 +335,7 @@ function regleEnteteTableau(noeud, chemin, ctx) {
       ctx.ressource,
       prop(index(prop(cheminEnfant(chemin, 0), 'content'), 0), 'type'),
       premiereCellule ? premiereCellule.type : null,
-      'En-tête de tableau absent : la 1re ligne ne contient que des cellules',
+      'Table header missing: the first row contains only cells',
       { aVerifier: false }
     )
   );
@@ -365,8 +365,8 @@ function regleLiens(noeud, chemin, ctx) {
           prop(groupe.chemin, 'text'),
           brut,
           estUrl
-            ? 'Texte de lien non descriptif : le texte du lien est une URL brute'
-            : 'Texte de lien non descriptif : le libellé ne décrit pas la destination',
+            ? 'Non-descriptive link text: the link text is a raw URL'
+            : 'Non-descriptive link text: the label does not describe the destination',
           { aVerifier: false, evidence: 'href=' + groupe.href }
         )
       );
@@ -411,7 +411,7 @@ function regleNomRoleValeur(noeud, chemin, ctx) {
           ctx.ressource,
           prop(chemin, 'attrs'),
           'text' in attrs ? attrs.text : null,
-          'Nom de la mention non porté par le contenu (aucun `text`)',
+          'Mention name not carried by the content (no `text` attribute)',
           { aVerifier: false }
         )
       );
@@ -427,7 +427,7 @@ function regleNomRoleValeur(noeud, chemin, ctx) {
           ctx.ressource,
           prop(chemin, 'attrs'),
           'text' in attrs ? attrs.text : null,
-          'Statut sans libellé (`text` absent)',
+          'Status without a label (`text` attribute missing)',
           { aVerifier: false }
         )
       );
@@ -456,7 +456,7 @@ function regleCouleurSeule(noeud, chemin, ctx) {
       ctx.ressource,
       index(prop(chemin, 'marks'), iMarque),
       noeud.marks[iMarque],
-      'L\'information n\'est portée que par la couleur (glyphe seul coloré)',
+      'Information is carried by colour alone (coloured glyph on its own)',
       { aVerifier: true }
     )
   );
@@ -482,8 +482,8 @@ function regleContraste(noeud, chemin, ctx) {
       ctx.ressource,
       prop(index(prop(chemin, 'marks'), iMarque), 'attrs') + '.color',
       couleur,
-      'Contraste incertain : ratio ' + ratio.toFixed(2).replace('.', ',') + ':1 calculé sur fond blanc (hypothèse), sous le seuil de 4,5:1',
-      { aVerifier: true, hypothese: 'fond blanc', ratio }
+      'Uncertain contrast: ratio ' + ratio.toFixed(2) + ':1 computed on a white background (assumption), below the 4.5:1 threshold',
+      { aVerifier: true, hypothese: 'white background', ratio }
     )
   );
 }
@@ -511,7 +511,7 @@ function regleTitreVague(noeud, chemin, ctx) {
       ctx.ressource,
       prop(cheminTexte, 'text'),
       texte,
-      'Titre de section trop vague : il ne décrit ni le sujet ni le but',
+      'Section heading too vague: it describes neither the subject nor the purpose',
       { aVerifier: true }
     )
   );
@@ -535,7 +535,7 @@ function regleCaracteristiqueSensorielle(noeud, chemin, ctx) {
       ctx.ressource,
       prop(chemin, 'text'),
       texte,
-      'Instruction qui repose sur une caractéristique sensorielle (« ' + motif + ' »)',
+      'Instruction that relies on a sensory characteristic ("' + motif + '")',
       { aVerifier: true }
     )
   );
@@ -599,7 +599,7 @@ function analyserChampsJsm(champs, racine, source, ressource) {
           ressource,
           prop(chemin, 'name'),
           champ.name === undefined ? null : champ.name,
-          'Champ de formulaire sans étiquette (`name` vide)',
+          'Form field without a label (`name` is empty)',
           { aVerifier: false }
         )
       );
@@ -624,7 +624,7 @@ function analyserChampsJsm(champs, racine, source, ressource) {
           ressource,
           prop(chemin, 'description'),
           champ.description === undefined ? null : champ.description,
-          'Champ obligatoire sans instruction (`description` vide)',
+          'Required field without instructions (`description` is empty)',
           { aVerifier: true }
         )
       );
@@ -644,7 +644,7 @@ function analyserChampsJsm(champs, racine, source, ressource) {
             ressource,
             prop(chemin, 'name'),
             nom,
-            'Finalité du champ non annoncée (aucun mot-clé de finalité dans le nom ni la description)',
+            'Purpose of the field not stated (no purpose keyword in the name or the description)',
             { aVerifier: true }
           )
         );
@@ -689,7 +689,7 @@ function analyserTypesDemande(types, racine, source, ressource, champsParType) {
           ressource,
           prop(index(racine, i), 'helpText'),
           type.helpText === undefined ? null : type.helpText,
-          'Aide inconsistente entre types de demande : un autre type du même service desk a une aide, celui-ci n\'en a pas',
+          'Inconsistent help between request types: another request type of the same service desk has help text, this one has none',
           { aVerifier: true }
         )
       );
@@ -727,7 +727,7 @@ function analyserTypesDemande(types, racine, source, ressource, champsParType) {
             o.ressource,
             o.chemin,
             null,
-            'Aide inconsistente entre types de demande : le champ « ' + nom + ' » a une description dans un autre type et pas dans celui-ci',
+            'Inconsistent help between request types: the field "' + nom + '" has a description in another request type and none in this one',
             { aVerifier: true }
           )
         );
@@ -771,7 +771,7 @@ function analyserPieceJointes(attachments, racine, source, ressource) {
         ressource,
         prop(index(racine, i), 'mediaType'),
         piece.mediaType === undefined ? null : piece.mediaType,
-        'Média sans transcription disponible (aucune pièce jointe `text/vtt` ni piste `.vtt`/`.srt`)',
+        'Media without an available transcript (no `text/vtt` attachment and no `.vtt`/`.srt` track)',
         { aVerifier: true }
       )
     );
@@ -800,14 +800,14 @@ function analyserTitre(titre, racine, source, ressource, corpsTexte) {
   const motsTitre = norm.split(' ').filter((m) => m.length >= 4);
   let raison = null;
   if (norm === '') {
-    raison = 'Titre vide';
+    raison = 'Empty title';
   } else if (TITRES_ND.includes(norm)) {
-    raison = 'Titre non descriptif (« ' + String(titre) + ' » est un titre générique)';
+    raison = 'Non-descriptive title ("' + String(titre) + '" is a generic title)';
   } else if (typeof corpsTexte === 'string' && corpsTexte.trim() !== '' && motsTitre.length > 0) {
     const motsCorps = normaliser(corpsTexte).split(' ').filter(Boolean).slice(0, 10);
     const partage = motsTitre.some((m) => motsCorps.includes(m));
     if (!partage) {
-      raison = 'Titre non descriptif : aucun mot significatif en commun avec le début du contenu';
+      raison = 'Non-descriptive title: no significant word in common with the beginning of the content';
     }
   }
   if (!raison) return [];
@@ -843,7 +843,7 @@ function rapportParCritere(constats) {
       confiance: CRITERES[critere].confiance,
       constats: concerned.length,
       dont_a_verifier: aVerifier,
-      statut: concerned.length === 0 ? 'aucun constat' : aVerifier === concerned.length ? 'à vérifier' : 'constat',
+      statut: concerned.length === 0 ? 'no finding' : aVerifier === concerned.length ? 'to verify' : 'finding',
     };
   });
   const couverts = lignes.filter((l) => l.constats > 0).length;
@@ -856,25 +856,29 @@ function rapportParCritere(constats) {
 
 /** Export CSV des constats (colonnes stables, échappement RFC 4180). */
 function versCsv(constats) {
+  // Les en-têtes du CSV sont en anglais : c'est le format qui sort du
+  // produit (téléchargé par le juge). Les CLÉS du constat restent celles du
+  // contrat de sortie documenté (critere, niveau, …) : `colonnes` porte le
+  // couple (clé du constat, en-tête du CSV).
   const colonnes = [
-    'critere',
-    'niveau',
-    'confiance',
-    'source',
-    'ressource',
-    'emplacement',
-    'valeur',
-    'message',
-    'a_verifier',
+    ['critere', 'criterion'],
+    ['niveau', 'level'],
+    ['confiance', 'confidence'],
+    ['source', 'source'],
+    ['ressource', 'resource'],
+    ['emplacement', 'location'],
+    ['valeur', 'value'],
+    ['message', 'message'],
+    ['a_verifier', 'to_verify'],
   ];
   const echapper = (v) => {
     if (v === null || v === undefined) return '""';
     const s = typeof v === 'string' ? v : JSON.stringify(v);
     return '"' + s.replace(/"/g, '""') + '"';
   };
-  const lignes = [colonnes.map((c) => '\"' + c + '\"').join(',')];
+  const lignes = [colonnes.map((p) => '\"' + p[1] + '\"').join(',')];
   for (const c of constats) {
-    lignes.push(colonnes.map((col) => echapper(c[col])).join(','));
+    lignes.push(colonnes.map((p) => echapper(c[p[0]])).join(','));
   }
   return lignes.join('\r\n') + '\r\n';
 }

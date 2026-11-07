@@ -121,7 +121,7 @@ function constats() {
         champs.requestTypeFields,
         'requestTypeFields',
         'E4',
-        'service desk 12 / type de demande 41'
+        'service desk 12 / request type 41'
       ),
       'demo-jsm-requesttype-fields-DEMO-303.json'
     )
@@ -240,7 +240,7 @@ function rapport(horodatage) {
     application: 'Portal Accessibility Checker for JSM',
     mode: 'demo',
     generatedAt: horodatage || new Date().toISOString(),
-    nature: "Données de DÉMONSTRATION (6 réponses REST figées, écrites par le slot 1 le 04/11/2026) — aucun appel n'est fait sur un site Atlassian, aucun compte, aucun tenant.",
+    nature: "DEMONSTRATION data (6 frozen REST responses, written on 04/11/2026) — no call is made to any Atlassian site, no account, no tenant.",
     sources: {
       index_contrat: CONTRAT._source.index,
       md5_index_contrat: CONTRAT._source.md5_index,
@@ -252,10 +252,10 @@ function rapport(horodatage) {
     rapport_par_critere: rapportCritere,
     contrat: v,
     limites: [
-      'lecture seule : ce mode n\'écrit rien, il ne lit rien sur un site',
-      'contraste, ordre de lecture/focus et libellés visibles ne sont pas vérifiables par l\'API REST : l\'app ne statue pas dessus',
-      'un constat est une ALERTE à faire vérifier par un humain, jamais un verdict de conformité',
-      'les 6 contrôles négatifs SANTÉ-xx prouvent l\'absence de faux positif sur ces 6 cas, pas sur tout contenu possible',
+      'read-only: this mode writes nothing and reads nothing on any site',
+      'contrast, reading order / focus order and visible labels are not checkable through the REST API: the app does not rule on them',
+      'a finding is an ALERT to be checked by a human, never a verdict of conformance',
+      'the 6 negative controls SANTÉ-xx prove the absence of a false positive on those 6 cases, not on every possible content',
     ],
   };
 }

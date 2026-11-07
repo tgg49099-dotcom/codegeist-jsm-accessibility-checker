@@ -1,17 +1,23 @@
 /**
- * Test hors ligne du POINT D'ENTRÉE de l'app (src/index.js) en mode démo.
+ * Test hors ligne du point d'entrée de l'app en mode DÉMO, via le RESOLVER
+ * (src/resolvers.js).
  *
  * test-demo.js prouve que le MOTEUR (src/regles.js + src/demo.js) détecte les
- * 23 fautives. Ce test prouve que l'APP elle-même — le handler du web
- * trigger, c'est-à-dire le code qui sera réellement déployé — renvoie ce
- * verdict, et qu'elle ne fait AUCUN appel à un site en mode démo.
+ * 23 fautives. Ce test prouve que l'APP elle-même — le resolver que la page
+ * d'administration appelle, c'est-à-dire le code qui sera réellement
+ * déployé — renvoie ce verdict, et qu'elle ne fait AUCUN appel à un site en
+ * mode démo.
+ *
+ * CYCLE 128 (05/11/2026) : l'entrée est `invoke('scanDemo', …)`, pas une URL
+ * publique. Un appel sans compte connecté doit être refusé (GATE) : le mode
+ * démo n'est pas une porte dérobée.
  *
  * Usage : node test-app-demo.js
  * RC 0 = tout passe, RC 1 = au moins un contrôle échoue.
  */
 const path = require('path');
 const api = require('@forge/api');
-const app = require(path.join(__dirname, 'src', 'index.js'));
+const resolver = require(path.join(__dirname, 'src', 'resolvers.js'));
 
 let failures = 0;
 let checks = 0;
@@ -22,6 +28,16 @@ function check(label, ok, detail) {
   console.log((ok ? 'PASS' : 'FAIL') + '  ' + label + (detail ? '  ->  ' + detail : ''));
 }
 
+const COMPTE = 'acc-id-utilisateur-connecte';
+const runtime = { principal: { accountId: COMPTE } };
+
+function appelerDemo(payload) {
+  return resolver.handler(
+    { call: { functionKey: 'scanDemo', payload: payload || {} }, context: {} },
+    runtime
+  );
+}
+
 // --- 0. l'API Atlassian est neutralisée : le mode démo ne doit rien appeler --
 const asAppOriginal = api.asApp;
 let appelsApi = 0;
@@ -30,35 +46,34 @@ api.asApp = () => {
   throw new Error('APPEL API INTERDIT DANS LE MODE DÉMO');
 };
 
-// --- 1. le handler renvoie le rapport de démonstration ------------------------
+// --- 1. le resolver renvoie le rapport de démonstration ----------------------
 (async () => {
-  // La forme OFFICIELLE de `queryParameters` est `{ [clé]: string[] }`
-  // (référence Atlassian « Web triggers ») : c'est cette forme qui est testée
-  // en premier, parce que c'est celle que la plateforme envoie réellement.
-  const reponse = await app.run({ queryParameters: { demo: ['1'] } });
-  check('le handler répond 200', reponse.statusCode === 200, String(reponse.statusCode));
+  const sansCompte = await resolver.handler(
+    { call: { functionKey: 'scanDemo', payload: {} }, context: {} },
+    {}
+  );
   check(
-    'le Content-Type est du JSON',
-    (reponse.headers['Content-Type'][0] || '').indexOf('application/json') === 0,
-    reponse.headers['Content-Type'][0]
+    'le mode démo refuse un appel sans compte connecté',
+    sansCompte.ok === false && sansCompte.error === 'NOT_AUTHENTICATED',
+    JSON.stringify(sansCompte).slice(0, 100)
   );
 
-  let rapport = null;
-  try {
-    rapport = JSON.parse(reponse.body);
-  } catch (e) {
-    check('le corps est du JSON analysable', false, e.message);
-  }
+  const reponse = await appelerDemo();
+  check('le resolver répond ok', reponse.ok === true, JSON.stringify(reponse.ok));
+  check(
+    'le resolver répond « qui a demandé »',
+    reponse.requestedBy && reponse.requestedBy.accountId === COMPTE,
+    JSON.stringify(reponse.requestedBy)
+  );
+
+  const rapport = reponse.report;
+  check('le rapport est présent', !!rapport);
   if (!rapport) {
+    api.asApp = asAppOriginal;
     process.exit(1);
   }
 
   check('le rapport est en mode démo', rapport.mode === 'demo', rapport.mode);
-  check(
-    'le rapport dit d\'où le drapeau a été lu',
-    rapport.mode_declare_par === 'queryParameters.demo',
-    rapport.mode_declare_par
-  );
   check(
     'le rapport est horodaté (ISO 8601)',
     typeof rapport.generatedAt === 'string' && !isNaN(Date.parse(rapport.generatedAt)),
@@ -106,96 +121,45 @@ api.asApp = () => {
   );
   check(
     'le rapport rappelle que le mode démo ne lit rien sur un site',
-    rapport.nature.indexOf('aucun appel') !== -1 || rapport.limites.join(' ').indexOf('ne lit rien') !== -1
+    rapport.nature.indexOf('no call is made') !== -1 || rapport.limites.join(' ').indexOf('reads nothing') !== -1,
+    rapport.nature.slice(0, 80)
   );
   check(
     'le rapport rappelle qu\'un constat n\'est pas une conformité',
-    rapport.limites.join(' ').indexOf('jamais un verdict de conformité') !== -1
+    rapport.limites.join(' ').indexOf('never a verdict of conformance') !== -1,
+    rapport.limites.join(' | ').slice(0, 120)
   );
 
   // --- 2. aucun appel API n'a été fait --------------------------------------
   check('aucun appel à l\'API Atlassian en mode démo', appelsApi === 0, String(appelsApi));
 
   // --- 3. export CSV via le même point d'entrée -----------------------------
-  const reponseCsv = await app.run({ queryParameters: { demo: ['1'], format: ['csv'] } });
-  check(
-    'l\'export CSV répond en text/csv',
-    (reponseCsv.headers['Content-Type'][0] || '').indexOf('text/csv') === 0,
-    reponseCsv.headers['Content-Type'][0]
-  );
-  const lignesCsv = String(reponseCsv.body).trim().split('\r\n');
+  const reponseCsv = await appelerDemo();
+  const lignesCsv = String(reponseCsv.csv).trim().split('\r\n');
   check('le CSV a 24 lignes (1 en-tête + 23 constats)', lignesCsv.length === 24, String(lignesCsv.length));
   check(
-    'le CSV porte les 9 colonnes de la fiche',
-    lignesCsv[0] === '"critere","niveau","confiance","source","ressource","emplacement","valeur","message","a_verifier"',
+    'le CSV porte les 9 colonnes de la fiche, en anglais',
+    lignesCsv[0] === '"criterion","level","confidence","source","resource","location","value","message","to_verify"',
     lignesCsv[0]
   );
   check('aucun appel API pendant l\'export CSV', appelsApi === 0, String(appelsApi));
 
-  // --- 4. le détecteur ne se déclenche pas par accident ----------------------
-  const d = app._detecterDemo;
-  check('sans drapeau : pas de mode démo (requête vide)', d({}).demo === false);
+  // --- 4. le mode démo ne contient aucune donnée de site --------------------
+  const corps = JSON.stringify(reponse);
   check(
-    'sans drapeau : pas de mode démo (queryParameters vides)',
-    d({ queryParameters: {} }).demo === false
-  );
-  check(
-    'sans drapeau : pas de mode démo (autres paramètres)',
-    d({ queryParameters: { foo: 'bar' } }).demo === false
-  );
-  check(
-    'sans drapeau : pas de mode démo (URL sans demo)',
-    d({ queryString: 'format=csv' }).demo === false
-  );
-  check(
-    '?demo=1 dans la query string : mode démo',
-    d({ queryString: 'demo=1' }).demo === true && d({ queryString: 'demo=1' }).declencheur === 'queryString'
-  );
-  check(
-    '?demo=1&format=csv : mode démo avec le format CSV',
-    d({ queryString: 'demo=1&format=csv' }).format === 'csv'
-  );
-  check(
-    'body.demo = true : mode démo',
-    d({ body: { demo: true } }).demo === true && d({ body: { demo: true } }).declencheur === 'body.demo'
-  );
-  check(
-    'demo=0 : pas de mode démo',
-    d({ queryParameters: { demo: '0' } }).demo === false
-  );
-  // La forme documentée par Atlassian : chaque paramètre est un TABLEAU.
-  check(
-    'forme officielle {demo: ["1"]} : mode démo',
-    d({ queryParameters: { demo: ['1'] } }).demo === true &&
-      d({ queryParameters: { demo: ['1'] } }).declencheur === 'queryParameters.demo'
-  );
-  check(
-    'forme officielle {demo: ["0"]} : pas de mode démo',
-    d({ queryParameters: { demo: ['0'] } }).demo === false
-  );
-  check(
-    'forme officielle {demo: ["1"], format: ["csv"]} : export CSV',
-    d({ queryParameters: { demo: ['1'], format: ['csv'] } }).format === 'csv'
-  );
-  check(
-    'forme officielle {mode: ["demo"]} : mode démo',
-    d({ queryParameters: { mode: ['demo'] } }).demo === true
-  );
-
-  // --- 5. le mode démo est-il bien « sans compte » ? -------------------------
-  // (le rapport ne doit contenir aucune URL de site, aucun identifiant de
-  //  tenant, aucun jeton)
-  const corps = JSON.stringify(rapport);
-  check(
-    'le rapport ne contient ni URL de site ni jeton',
+    'la réponse ne contient ni URL de site ni jeton',
     !/https?:\/\/[^\s"]*atlassian\.net/.test(corps) && !/Bearer\s/.test(corps)
+  );
+  check(
+    'la réponse ne contient ni clé, ni mot de passe, ni secret',
+    !/(api[_-]?key|secret|password|passwd|token)\s*[=:]\s*["'][^"']{8,}/i.test(corps)
   );
 
   api.asApp = asAppOriginal;
 
   console.log('');
   if (failures === 0) {
-    console.log('== TOUT PASS (' + checks + ' contrôles) : le point d\'entrée de l\'app renvoie le verdict 23/23 ==');
+    console.log('== TOUT PASS (' + checks + ' contrôles) : le resolver renvoie le verdict 23/23 ==');
     process.exit(0);
   }
   console.log('== ' + failures + ' ÉCHEC(S) sur ' + checks + ' contrôles ==');

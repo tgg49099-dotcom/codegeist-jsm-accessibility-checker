@@ -1,15 +1,19 @@
 /**
- * Test hors ligne du CONTRAT HTTP du web trigger (src/index.js).
+ * Test hors ligne du CONTRAT DU RESOLVER (src/resolvers.js).
  *
- * Le contrat, en une phrase : **une donnée personnelle reçue dans la requête
+ * Le contrat, en une phrase : **une donnée personnelle reçue dans l'appel
  * (champs `nom` et `e-mail`) n'est JAMAIS renvoyée en clair**, et le masque
  * ne s'applique qu'aux champs RÉELLEMENT présents (un champ absent n'est
  * jamais inventé).
  *
- * Ce test couvre trois niveaux :
+ * CYCLE 128 (05/11/2026) : le point d'entrée testé n'est plus un handler
+ * HTTP public, c'est le resolver que la page d'administration appelle
+ * (`invoke('scan', …)` / `invoke('scanDemo', …)`). On teste donc :
  *   1. les fonctions pures (masque, collecte des champs, balayage) ;
- *   2. le point d'entrée réel de l'app, en mode DÉMO (aucun appel à un site) ;
- *   3. le point d'entrée réel de l'app, en mode SCAN, avec une API Atlassian
+ *   2. la GÂCHE D'IDENTITÉ : un appel sans compte connecté est REFUSÉ, un
+ *      appel avec un compte est accepté, et la réponse dit qui a demandé ;
+ *   3. le point d'entrée réel, en mode DÉMO (aucun appel à un site) ;
+ *   4. le point d'entrée réel, en mode SCAN, avec une API Atlassian
  *      neutralisée — et, surtout, avec des données de site qui contiennent
  *      LE NOM ET L'E-MAIL : on vérifie que le balayage les masque aussi, et
  *      pas seulement que l'app « oublie » de les renvoyer.
@@ -24,6 +28,7 @@ const fs = require('fs');
 const path = require('path');
 const api = require('@forge/api');
 const app = require(path.join(__dirname, 'src', 'index.js'));
+const resolver = require(path.join(__dirname, 'src', 'resolvers.js'));
 
 let failures = 0;
 let checks = 0;
@@ -38,6 +43,21 @@ const c = app._contratPv;
 const NOM = 'Camille Dupont';
 const EMAIL = 'camille.dupont@example.com';
 
+// The call shape @forge/resolver gives to a resolver function:
+//   handler({ call: { functionKey, payload }, context }, { principal: { accountId } })
+// The account of the signed-in user is carried by `principal.accountId`
+// (that is exactly where @forge/resolver reads it from — see
+// node_modules/@forge/resolver/out/index.js).
+const COMPTE = 'acc-id-utilisateur-connecte';
+const runtime = { principal: { accountId: COMPTE } };
+
+function appeler(functionKey, payload, contexte, runtimePayload) {
+  return resolver.handler(
+    { call: { functionKey: functionKey, payload: payload || {} }, context: contexte || {} },
+    runtimePayload === undefined ? runtime : runtimePayload
+  );
+}
+
 // --- 1. le masque (fonction pure) --------------------------------------------
 
 check('MASQUE-01 un nom de plus de 3 caractères ne rend que sa première lettre',
@@ -47,9 +67,9 @@ check('MASQUE-02 un e-mail ne rend ni la partie locale ni le domaine',
 check('MASQUE-03 une chaîne vide rend "***" (et jamais la valeur)',
   c.masquerValeur('') === '***', JSON.stringify(c.masquerValeur('')));
 check('MASQUE-04 une valeur de moins de 3 caractères rend "***" (jamais la valeur)',
-  c.masquerValeur('AB') === '***', c.masquerValeur('AB'));
+  c.masquerValeur('AB') === '***', JSON.stringify(c.masquerValeur('AB')));
 check('MASQUE-05 une valeur d\'un seul caractère rend "***" (jamais la valeur)',
-  c.masquerValeur('A') === '***', c.masquerValeur('A'));
+  c.masquerValeur('A') === '***', JSON.stringify(c.masquerValeur('A')));
 check('MASQUE-06 les caractères spéciaux ne fuient pas dans le masque',
   c.masquerValeur('O\'Brien "x" <b> & é') === 'O***', c.masquerValeur('O\'Brien "x" <b> & é'));
 check('MASQUE-07 un e-mail à partie locale courte rend "***@***"',
@@ -61,7 +81,7 @@ check('MASQUE-08 le masque ne contient jamais la valeur qu\'il masque',
 
 // --- 2. la collecte des champs présents ---------------------------------------
 
-check('RECU-01 une requête vide ne reçoit aucun champ',
+check('RECU-01 un appel vide ne reçoit aucun champ',
   Object.keys(c.champsPvRecus({})).length === 0);
 check('RECU-02 les paramètres de requête sont lus (forme officielle { nom: [..] })',
   c.champsPvRecus({ queryParameters: { nom: [NOM] } }).nom === NOM);
@@ -96,10 +116,44 @@ check('RECU-15 paramètres répétés : toutes les valeurs sont collectées pour
     const r = c.champsPvRecus({ queryParameters: { nom: ['Camille', 'Dupont'] } });
     return Array.isArray(r.nom) ? r.nom.includes('Camille') && r.nom.includes('Dupont') : r.nom === 'Camille,Dupont';
   })());
+check('RECU-16 le payload de la page (objet) est lu comme un corps',
+  c.champsPvRecus({ body: { nom: NOM, 'e-mail': EMAIL } })['e-mail'] === EMAIL);
 
-// --- 3. le point d'entrée de l'app, en mode DÉMO : cas rouge ------------------
+// --- 3. la GÂCHE D'IDENTITÉ : seul un utilisateur connecté déclenche un scan --
 
 (async () => {
+  const sansIdentite = await appeler('scanDemo', {}, {}, {});
+  check('GATE-01 un appel sans compte connecté est REFUSÉ',
+    sansIdentite.ok === false && sansIdentite.error === 'NOT_AUTHENTICATED',
+    JSON.stringify(sansIdentite).slice(0, 120));
+  check('GATE-02 le refus ne contient aucun rapport',
+    !sansIdentite.report && !sansIdentite.csv);
+
+  const avecIdentite = await appeler('scanDemo', {}, {}, runtime);
+  check('GATE-03 un appel avec un compte connecté est accepté',
+    avecIdentite.ok === true, JSON.stringify(avecIdentite).slice(0, 80));
+  check('GATE-04 la réponse dit QUI a lancé le scan',
+    avecIdentite.requestedBy && avecIdentite.requestedBy.accountId === COMPTE,
+    JSON.stringify(avecIdentite.requestedBy));
+
+  // Le compte peut aussi arriver par le contexte de l'appel : c'est le même
+  // compte, porté par l'autre canal. Le resolver ne doit pas le perdre.
+  const parContexte = await appeler('scanDemo', {}, { accountId: COMPTE }, {});
+  check('GATE-05 le compte porté par le contexte de l\'appel est accepté aussi',
+    parContexte.ok === true && parContexte.requestedBy.accountId === COMPTE);
+
+  const fonctionInconnue = await appeler('autreFonction', {}, {}, runtime);
+  check('GATE-06 une fonction inconnue est refusée sans planter',
+    fonctionInconnue.ok === false && fonctionInconnue.error === 'UNKNOWN_FUNCTION',
+    JSON.stringify(fonctionInconnue).slice(0, 120));
+
+  const renduPage = await resolver.handler({ context: {} }, runtime);
+  check('GATE-07 l\'affichage de la page ne lance aucun scan et ne plante pas',
+    renduPage.ok === true && renduPage.page === 'admin' && !renduPage.report,
+    JSON.stringify(renduPage).slice(0, 120));
+
+  // --- 4. le point d'entrée de l'app, en mode DÉMO : cas rouge ------------------
+
   const asAppOriginal = api.asApp;
   let appelsApi = 0;
   api.asApp = () => {
@@ -107,10 +161,8 @@ check('RECU-15 paramètres répétés : toutes les valeurs sont collectées pour
     throw new Error('APPEL API INTERDIT DANS LE MODE DÉMO');
   };
 
-  const rouge = await app.run({
-    queryParameters: { demo: ['1'], nom: [NOM], 'e-mail': [EMAIL] },
-  });
-  const corpsRouge = String(rouge.body);
+  const rouge = await appeler('scanDemo', { nom: NOM, 'e-mail': EMAIL });
+  const corpsRouge = JSON.stringify(rouge);
 
   check('ROUGE-01 la réponse ne contient pas le nom en clair',
     corpsRouge.indexOf(NOM) === -1, 'occurrence #' + corpsRouge.split(NOM).length);
@@ -119,13 +171,8 @@ check('RECU-15 paramètres répétés : toutes les valeurs sont collectées pour
   check('ROUGE-03 la réponse ne contient pas le nom en clair, sans distinction de casse',
     corpsRouge.toLowerCase().indexOf(NOM.toLowerCase()) === -1);
 
-  let rapportRouge = null;
-  try {
-    rapportRouge = JSON.parse(corpsRouge);
-    check('ROUGE-04 la réponse est du JSON valide', true);
-  } catch (e) {
-    check('ROUGE-04 la réponse est du JSON valide', false, e.message);
-  }
+  const rapportRouge = rouge.report;
+  check('ROUGE-04 la réponse contient un rapport', !!rapportRouge);
   if (!rapportRouge) {
     api.asApp = asAppOriginal;
     process.exit(1);
@@ -152,10 +199,10 @@ check('RECU-15 paramètres répétés : toutes les valeurs sont collectées pour
     rapportRouge.constats.length === 23, String(rapportRouge.constats.length));
   check('ROUGE-10 aucun appel à l\'API Atlassian en mode démo', appelsApi === 0, String(appelsApi));
 
-  // --- 4. le point d'entrée de l'app, en mode DÉMO : cas vert ----------------
+  // --- 5. le point d'entrée de l'app, en mode DÉMO : cas vert ----------------
 
-  const vert = await app.run({ queryParameters: { demo: ['1'] } });
-  const rapportVert = JSON.parse(String(vert.body));
+  const vert = await appeler('scanDemo', {});
+  const rapportVert = vert.report;
   check('VERT-01 l\'app ne déclare aucun champ reçu',
     Array.isArray(rapportVert.privacy.receivedFields) &&
       rapportVert.privacy.receivedFields.length === 0,
@@ -171,20 +218,19 @@ check('RECU-15 paramètres répétés : toutes les valeurs sont collectées pour
       rapportVert.privacy.receivedFields.indexOf('e-mail') === -1);
   check('VERT-04 le scan de démonstration est inchangé (23 constats)',
     rapportVert.constats.length === 23, String(rapportVert.constats.length));
-  check('VERT-05 la réponse du cas vert est du JSON valide', !!rapportVert);
+  check('VERT-05 la réponse du cas vert contient bien un rapport', !!rapportVert);
 
-  // --- 5. l'export CSV applique le contrat lui aussi ------------------------
+  // --- 6. l'export CSV applique le contrat lui aussi ------------------------
 
-  const csv = await app.run({
-    queryParameters: { demo: ['1'], format: ['csv'], nom: [NOM] },
-  });
+  const csvRep = await appeler('scanDemo', { nom: NOM });
+  const csv = String(csvRep.csv);
   check('CSV-01 l\'export CSV ne contient pas le nom en clair',
-    String(csv.body).indexOf(NOM) === -1);
+    csv.indexOf(NOM) === -1);
   check('CSV-02 l\'export CSV reste un CSV (24 lignes)',
-    String(csv.body).trim().split('\r\n').length === 24,
-    String(String(csv.body).trim().split('\r\n').length));
+    csv.trim().split('\r\n').length === 24,
+    String(csv.trim().split('\r\n').length));
 
-  // --- 6. mode SCAN : le balayage s'applique aussi aux données du site ------
+  // --- 7. mode SCAN : le balayage s'applique aussi aux données du site ------
   // L'API Atlassian est neutralisée par un faux site dont les DONNÉES
   // contiennent le nom et l'e-mail : on vérifie que la réponse les masque
   // (et pas qu'ils ont simplement disparu du faux site).
@@ -209,81 +255,73 @@ check('RECU-15 paramètres répétés : toutes les valeurs sont collectées pour
     },
   });
 
-  const scan = await app.run({ queryParameters: { nom: [NOM], 'e-mail': [EMAIL] } });
-  const corpsScan = String(scan.body);
+  const scanRep = await appeler('scan', { nom: NOM, 'e-mail': EMAIL });
+  const corpsScan = JSON.stringify(scanRep);
   check('SCAN-01 la réponse du scan ne contient pas le nom en clair',
     corpsScan.indexOf(NOM) === -1, 'occurrence #' + corpsScan.split(NOM).length);
   check('SCAN-02 la réponse du scan ne contient pas l\'e-mail en clair',
     corpsScan.indexOf(EMAIL) === -1, 'occurrence #' + corpsScan.split(EMAIL).length);
   check('SCAN-03 le scan a bien lu les données du site (elles sont masquées, pas absentes)',
     corpsScan.indexOf('C***') !== -1 && corpsScan.indexOf('c***@***') !== -1);
-  check('SCAN-04 la réponse du scan est du JSON valide',
-    (() => {
-      try {
-        JSON.parse(corpsScan);
-        return true;
-      } catch (e) {
-        return false;
-      }
-    })());
-  const rapportScan = JSON.parse(corpsScan);
+  check('SCAN-04 la réponse du scan contient un rapport',
+    !!scanRep.report && Array.isArray(scanRep.report.findings));
+  const rapportScan = scanRep.report;
   check('SCAN-05 la section privacy est présente dans le rapport de scan',
     !!rapportScan.privacy &&
       rapportScan.privacy.receivedFields.join(',') === 'nom,e-mail' &&
       rapportScan.privacy.maskedValues.nom === 'C***');
 
   // Fuite par espaces autour du champ, par corps texte/buffer et paramètres répétés dans le scan
-  const scanFuites = await app.run({
-    queryParameters: { ' nom ': ['Camille', 'Dupont'] },
-    body: Buffer.from('email=camille.dupont%40example.com')
-  });
-  const corpsScanFuites = String(scanFuites.body);
+  const scanFuites = await appeler('scan', { ' nom ': ['Camille', 'Dupont'] });
+  const corpsScanFuites = JSON.stringify(scanFuites);
   check('SCAN-06 les données avec espaces autour du nom ne fuient pas dans la réponse',
     corpsScanFuites.indexOf('Camille') === -1);
   check('SCAN-07 les paramètres répétés ne fuient pas dans la réponse',
     corpsScanFuites.indexOf('Dupont') === -1);
-  check('SCAN-08 le corps Buffer url-encoded ne fuit pas dans la réponse',
+  check('SCAN-08 le corps url-encoded ne fuit pas dans la réponse',
     corpsScanFuites.indexOf('camille.dupont@example.com') === -1);
 
   // Le contenu lu SUR LE SITE est renvoyé tel quel : c'est ce contenu que
   // l'app vérifie, et c'est ce que dit la phrase affichée dans la réponse.
   // Ce contrôle lie la phrase au comportement : si le contenu du site était
   // masqué un jour, la phrase devrait le dire — et ce test le signalerait.
-  const scanSansRecu = await app.run({ queryParameters: {} });
-  const corpsSansRecu = String(scanSansRecu.body);
+  const scanSansRecu = await appeler('scan', {});
+  const corpsSansRecu = JSON.stringify(scanSansRecu);
   check('SCAN-09 le contenu du site non reçu dans la requête est renvoyé tel quel',
     corpsSansRecu.indexOf(NOM) !== -1 && corpsSansRecu.indexOf(EMAIL) !== -1,
     'nom #' + corpsSansRecu.split(NOM).length + ' / e-mail #' + corpsSansRecu.split(EMAIL).length);
 
   api.asApp = asAppOriginal;
 
-  // --- 7. la requête n'est jamais journalisée --------------------------------
-  // Le contrôle porte sur le CODE (arbre syntaxique), pas sur la texte : un
+  // --- 8. la requête n'est jamais journalisée --------------------------------
+  // Le contrôle porte sur le CODE (arbre syntaxique), pas sur le texte : un
   // « console.log » dans un commentaire ne compte pas, et inversement.
   const acorn = require('acorn');
-  const source = fs.readFileSync(path.join(__dirname, 'src', 'index.js'), 'utf8');
-  const arbre = acorn.parse(source, { ecmaVersion: 2022 });
   let appelsConsole = 0;
-  (function parcourir(noeud) {
-    if (!noeud || typeof noeud !== 'object') return;
-    if (Array.isArray(noeud)) {
-      noeud.forEach(parcourir);
-      return;
-    }
-    if (noeud.type === 'MemberExpression' && noeud.object && noeud.object.name === 'console') {
-      appelsConsole += 1;
-    }
-    for (const cle of Object.keys(noeud)) {
-      if (cle === 'type' || cle === 'start' || cle === 'end' || cle === 'loc') continue;
-      parcourir(noeud[cle]);
-    }
-  })(arbre);
+  for (const fichier of ['index.js', 'resolvers.js']) {
+    const source = fs.readFileSync(path.join(__dirname, 'src', fichier), 'utf8');
+    const arbre = acorn.parse(source, { ecmaVersion: 2022 });
+    (function parcourir(noeud) {
+      if (!noeud || typeof noeud !== 'object') return;
+      if (Array.isArray(noeud)) {
+        noeud.forEach(parcourir);
+        return;
+      }
+      if (noeud.type === 'MemberExpression' && noeud.object && noeud.object.name === 'console') {
+        appelsConsole += 1;
+      }
+      for (const cle of Object.keys(noeud)) {
+        if (cle === 'type' || cle === 'start' || cle === 'end' || cle === 'loc') continue;
+        parcourir(noeud[cle]);
+      }
+    })(arbre);
+  }
   check('LOG-01 le code de l\'app ne contient AUCUNE instruction de journalisation',
     appelsConsole === 0, String(appelsConsole));
 
   console.log('');
   if (failures === 0) {
-    console.log('== TOUT PASS (' + checks + ' contrôles) : le contrat HTTP du web trigger tient ==');
+    console.log('== TOUT PASS (' + checks + ' contrôles) : le contrat du resolver tient ==');
     process.exit(0);
   }
   console.log('== ' + failures + ' ÉCHEC(S) sur ' + checks + ' contrôles ==');

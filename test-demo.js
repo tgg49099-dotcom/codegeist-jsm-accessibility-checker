@@ -96,7 +96,7 @@ check(
   String(Object.keys(regles.CRITERES).length)
 );
 const restVerifiables = Object.keys(regles.CRITERES).filter(
-  (c) => regles.CRITERES[c].confiance === 'REST vérifiable'
+  (c) => regles.CRITERES[c].confiance === 'REST-verifiable'
 );
 check(
   'les 7 critères « REST vérifiable » sont ceux de la fiche',
@@ -115,7 +115,7 @@ for (const critere of restVerifiables) {
   );
 }
 const partiels = Object.keys(regles.CRITERES).filter(
-  (c) => regles.CRITERES[c].confiance === 'contenu seulement (partiel)'
+  (c) => regles.CRITERES[c].confiance === 'content only (partial)'
 );
 check(
   'les 6 critères « contenu seulement (partiel) » sont ceux de la fiche',
@@ -155,7 +155,7 @@ const lignesCsv = csv.trim().split('\r\n');
 check('CSV : une ligne d\'en-tête + 23 lignes de constats', lignesCsv.length === 24, String(lignesCsv.length));
 check(
   'CSV : en-tête avec les 9 colonnes attendues',
-  lignesCsv[0] === '"critere","niveau","confiance","source","ressource","emplacement","valeur","message","a_verifier"',
+  lignesCsv[0] === '"criterion","level","confidence","source","resource","location","value","message","to_verify"',
   lignesCsv[0]
 );
 check('CSV : terminé par un retour à la ligne', csv.endsWith('\r\n'));

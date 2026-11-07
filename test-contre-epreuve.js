@@ -117,7 +117,10 @@ for (const test of SABOTAGES) {
   fs.writeFileSync(cheminFichier, patched);
   const res = lancerHarnais(dossier);
   const sortie = res.sortie;
-  const mentionne = sortie.includes(test.attendu);
+  // Le contrôle cassé doit être nommé SUR UNE LIGNE « FAIL » : le simple fait
+  // que son étiquette apparaisse quelque part (y compris sur une ligne PASS)
+  // ne prouverait rien.
+  const mentionne = new RegExp('^FAIL\\s+' + test.attendu + '\\b', 'm').test(sortie);
   const aEchoue = /ÉCHEC\(S\)/.test(sortie);
   const aCrash = /\n\s+at\s|Error:|TypeError:|ReferenceError:/.test(sortie);
   check(
