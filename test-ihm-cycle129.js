@@ -3,11 +3,21 @@
  *
  * Ce que le cycle 128 a laissé en suspens : le code de l'interface existe,
  * mais rien ne prouve, hors ligne, que
- *   (1) le manifeste n'expose PLUS AUCUN module public ;
+ *   (1) le manifeste n'expose PLUS AUCUN module public appelable SANS
+ *       authentification (le module `rovo:mcp` du cycle 134 n'en est pas un :
+ *       c'est un serveur d'outils porté par l'identité de l'appelant) ;
  *   (2) le resolver refuse un appel sans compte connecté ;
  *   (3) l'interface n'utilise que des composants UI Kit 2 (@forge/react) ;
  *   (4) l'interface est en ANGLAIS ;
  *   (5) l'interface appelle le MÊME moteur de scan que le déclencheur d'hier.
+ *
+ * CYCLE 134 (09/11/2026) : le manifeste déclare désormais QUATRE types de
+ * modules (`jira:adminPage`, `function`, `action`, `rovo:mcp`). Les contrôles
+ * MANIFEST-02 et MANIFEST-05 ont donc été réécrits, et les contrôles
+ * MANIFEST-12 à MANIFEST-16 ont été ajoutés pour le module MCP : un seul
+ * serveur, deux outils, chaque outil est une action déclarée, chaque action
+ * pointe une fonction dont le handler existe, chaque description tient dans
+ * les 255 caractères imposés par Atlassian.
  *
  * POINT MÉTHODOLOGIQUE (leçon des cycles précédents) : chaque contrôle est
  * une FONCTION, appelée sur le fichier RÉEL, puis sur une COPIE SABOTÉE. Le
@@ -92,23 +102,133 @@ function scopesDuManifeste(texte) {
     .filter(Boolean);
 }
 
+/**
+ * Le BLOC d'un type de module, ancré sur sa section (jamais sur le fichier
+ * entier) : sans cette ancre, un contrôle « le module X expose 2 outils »
+ * pourrait être satisfait par un mot écrit dans un commentaire ou ailleurs
+ * dans le fichier.
+ */
+function blocType(code, type) {
+  const lignes = code.split('\n');
+  let debut = -1;
+  for (let i = 0; i < lignes.length; i++) {
+    const m = /^ {2}([a-zA-Z][\w:.-]*):\s*$/.exec(lignes[i]);
+    if (m && m[1] === type) {
+      debut = i;
+      break;
+    }
+  }
+  if (debut === -1) return '';
+  const bloc = [];
+  for (let i = debut + 1; i < lignes.length; i++) {
+    const l = lignes[i];
+    if (!l.trim()) {
+      bloc.push(l);
+      continue;
+    }
+    const ind = l.length - l.replace(/^ +/, '').length;
+    if (ind <= 2) break;
+    bloc.push(l);
+  }
+  return bloc.join('\n');
+}
+
+/**
+ * Les ITEMS d'un type de module : pour chacun, sa clé, sa fonction, son
+ * handler, sa liste d'outils et sa description (scalaire plié compris).
+ */
+function itemsType(code, type) {
+  const bloc = blocType(code, type);
+  const lignes = bloc.split('\n');
+  const items = [];
+  let courant = null;
+  let style = null;
+  let tampon = [];
+  for (const l of lignes) {
+    if (!l.trim()) continue;
+    const ind = l.length - l.replace(/^ +/, '').length;
+    if (style) {
+      if (ind > style) {
+        tampon.push(l.trim());
+        continue;
+      }
+      if (courant) courant.description = tampon.join(' ').trim();
+      style = null;
+      tampon = [];
+    }
+    const mk = /^ {4}- key:\s*(\S+)\s*$/.exec(l);
+    if (mk) {
+      if (courant) items.push(courant);
+      courant = { key: mk[1], fonction: null, handler: null, tools: [], description: null, nom: null };
+      continue;
+    }
+    if (!courant) continue;
+    const mf = /^ {6}function:\s*(\S+)\s*$/.exec(l);
+    if (mf) {
+      courant.fonction = mf[1];
+      continue;
+    }
+    const mh = /^ {6}handler:\s*(\S+)\s*$/.exec(l);
+    if (mh) {
+      courant.handler = mh[1];
+      continue;
+    }
+    const mn = /^ {6}name:\s*(\S.*)$/.exec(l);
+    if (mn) {
+      courant.nom = mn[1].trim();
+      continue;
+    }
+    const md = /^ {6}description:\s*(.+)$/.exec(l);
+    if (md) {
+      const v = md[1].trim();
+      if (v === '>' || v === '|') {
+        style = 6;
+        tampon = [];
+      } else {
+        courant.description = v;
+      }
+      continue;
+    }
+    const mt = /^ {8}-\s+(\S+)\s*$/.exec(l);
+    if (mt) courant.tools.push(mt[1]);
+  }
+  if (courant) items.push(courant);
+  return items;
+}
+
 function controlesManifeste(texte) {
   const brut = texte;
   const code = sansCommentaires(texte);
   const modules = modulesDuManifeste(code);
   const types = modules.map((m) => m.type);
+  // Les modules publics = des points d'entrée appelables par quiconque trouve
+  // une URL. `rovo:mcp` n'en est pas un : c'est un serveur d'outils dont
+  // l'appel est porté par l'identité de l'appelant (vérifié par le code,
+  // src/mcp.js). Le contrôle porte donc sur les types EXACTS.
+  const PUBLICS = ['webtrigger', 'productTrigger', 'scheduleTrigger', 'trigger'];
+  const publics = types.filter((t) => PUBLICS.indexOf(t) !== -1);
+
+  const mcps = itemsType(code, 'rovo:mcp');
+  const actions = itemsType(code, 'action');
+  const fonctions = itemsType(code, 'function');
+  const outils = mcps.length ? mcps[0].tools : [];
+
   return {
     'MANIFEST-01 aucun module webtrigger':
       !/webtrigger/i.test(code) && !types.includes('webtrigger'),
-    'MANIFEST-02 aucun module public (productTrigger, scheduleTrigger, webtrigger, rovo)':
-      !types.some((t) => /webtrigger|productTrigger|scheduleTrigger|rovo|trigger/i.test(t)),
+    'MANIFEST-02 aucun module public appelable sans authentification':
+      publics.length === 0,
     'MANIFEST-03 le module d\'interface jira:adminPage est déclaré':
       types.includes('jira:adminPage'),
     'MANIFEST-04 le module de fonction resolver est déclaré':
       types.includes('function') &&
       modules.filter((m) => m.type === 'function')[0].keys.indexOf('resolver') !== -1,
-    'MANIFEST-05 exactement deux types de modules':
-      types.length === 2 && types.indexOf('jira:adminPage') !== -1 && types.indexOf('function') !== -1,
+    'MANIFEST-05 exactement quatre types de modules (jira:adminPage, function, action, rovo:mcp)':
+      types.length === 4 &&
+      types.indexOf('jira:adminPage') !== -1 &&
+      types.indexOf('function') !== -1 &&
+      types.indexOf('action') !== -1 &&
+      types.indexOf('rovo:mcp') !== -1,
     'MANIFEST-06 aucune sortie réseau (egress) déclarée':
       !/^\s*external\s*:/m.test(code) && !/remote\s*:/m.test(code),
     'MANIFEST-07 aucun joker de domaine':
@@ -123,6 +243,29 @@ function controlesManifeste(texte) {
       /exports\.handler\s*=/.test(fs.readFileSync(path.join(APP, 'src/resolvers.js'), 'utf8')),
     'MANIFEST-11 le commentaire d\'en-tête DOCumente le retrait du déclencheur public':
       /public trigger|webtrigger/i.test(brut),
+    'MANIFEST-12 exactement un module rovo:mcp exposant deux outils':
+      mcps.length === 1 && outils.length === 2,
+    'MANIFEST-13 chaque outil MCP est une action déclarée':
+      outils.length > 0 &&
+      outils.every((o) => actions.some((a) => a.key === o)),
+    'MANIFEST-14 chaque action pointe une fonction déclarée dont le handler existe':
+      actions.length > 0 &&
+      actions.every((a) => {
+        const f = fonctions.find((x) => x.key === a.fonction);
+        if (!f || !f.handler) return false;
+        const pieces = f.handler.split('.');
+        const fichier = path.join(APP, 'src', pieces[0] + '.js');
+        if (!fs.existsSync(fichier)) return false;
+        return fs.readFileSync(fichier, 'utf8').indexOf('exports.' + pieces[pieces.length - 1]) !== -1;
+      }),
+    'MANIFEST-15 chaque action a une description d\'au plus 255 caractères':
+      actions.length > 0 &&
+      actions.every((a) => typeof a.description === 'string' && a.description.length > 0 && a.description.length <= 255),
+    'MANIFEST-16 le nom du serveur MCP fait au plus 30 caractères':
+      mcps.length === 1 &&
+      typeof mcps[0].nom === 'string' &&
+      mcps[0].nom.length > 0 &&
+      mcps[0].nom.length <= 30,
   };
 }
 
@@ -313,7 +456,7 @@ function controlesInterface(texteJsx, composants) {
   const jsx = fs.readFileSync(path.join(APP, 'src', 'frontend', 'admin.jsx'), 'utf8');
   const composants = composantsUIKit2();
 
-  console.log('== 1. LE MANIFESTE (aucun module public) ==');
+  console.log('== 1. LE MANIFESTE (aucun module public sans authentification) ==');
   const cm = controlesManifeste(manifeste);
   Object.keys(cm).forEach((k) => check(k, cm[k]));
 
@@ -366,6 +509,33 @@ function controlesInterface(texteJsx, composants) {
       mutant: (t) => t.replace('Run the scan', 'Lancer le scan'),
       famille: 'UI',
       attendu: 'UI-10 tous les textes affichés sont en anglais',
+    },
+    // --- sabotages du cycle 134 : le module rovo:mcp et ses deux outils -----
+    {
+      nom: 'un outil MCP ne pointe plus vers une action déclarée',
+      mutant: (t) => t.replace('        - scan_accessibility\n', '        - outil_qui_nexiste_pas\n'),
+      famille: 'MANIFEST',
+      attendu: 'MANIFEST-13 chaque outil MCP est une action déclarée',
+    },
+    {
+      nom: 'un deuxième serveur MCP est déclaré',
+      mutant: (t) =>
+        t.replace(
+          '  rovo:mcp:\n',
+          '  rovo:mcp:\n    - key: pac-jsm-mcp-bis\n      name: Second serveur\n      tools:\n        - scan_accessibility\n'
+        ),
+      famille: 'MANIFEST',
+      attendu: 'MANIFEST-12 exactement un module rovo:mcp exposant deux outils',
+    },
+    {
+      nom: 'la description d\'une action dépasse 255 caractères',
+      mutant: (t) =>
+        t.replace(
+          '        permissions. Nothing is written or stored.\n',
+          '        permissions. Nothing is written or stored. ' + 'Ce texte est volontairement trop long. '.repeat(12) + '\n'
+        ),
+      famille: 'MANIFEST',
+      attendu: 'MANIFEST-15 chaque action a une description d\'au plus 255 caractères',
     },
   ];
 

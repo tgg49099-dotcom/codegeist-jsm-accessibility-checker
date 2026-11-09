@@ -44,25 +44,46 @@ administration area, **only for a signed-in administrator**. The scan is behind 
 `function` module (`resolver`) that refuses any call which carries no signed-in
 account — an anonymous visitor gets a refusal, never a report.
 
-`manifest.yml` declares **exactly two modules** and nothing else:
+`manifest.yml` declares **four module types** and nothing else:
 
 ```yaml
 modules:
   jira:adminPage:                 # the interface (render: native, resource: admin)
     - key: pac-jsm-admin-page
       ...
-  function:                       # the only code path to the scan
+  function:                       # the code paths to the scan
     - key: resolver
       handler: resolvers.handler
+    - key: mcp-scan
+      handler: mcp.scanAccessibility
+    - key: mcp-last-findings
+      handler: mcp.listLastFindings
+  action:                         # the two tools, exposed by the rovo:mcp module
+    - key: scan_accessibility
+      ...
+    - key: list_last_findings
+      ...
+  rovo:mcp:                       # ONE MCP server, exposing the two actions above
+    - key: pac-jsm-mcp
+      name: Portal Accessibility Checker
+      tools:
+        - scan_accessibility
+        - list_last_findings
 ```
 
 There is no `webtrigger`, no `productTrigger`, no `scheduleTrigger`, no `external`
 (egress) block and no domain wildcard. That is checkable by reading the manifest:
 
 ```
-python3 tools/verifier-manifest-cycle128.py     # 10 checks, RC 0
-python3 tools/contre-epreuve-verificateur.py     # the checker must turn RED on 4 sabotages
+python3 tools/verifier-manifest-cycle134.py     # 18 checks, RC 0
+python3 tools/contre-epreuve-verificateur.py     # the checker must turn RED on 9 sabotages
 ```
+
+> **The `rovo:mcp` module is in this source, not in the deployed app.** Production
+> **2.5.0** still declares the two modules of the version below (the interface and
+> the resolver); the MCP module is added in the source of this repository and is
+> deployed only when the owner deploys the next version. Nothing about the
+> deployed app changes until then.
 
 **Measured on 7 November 2026**, on both environments:
 
@@ -74,6 +95,42 @@ python3 tools/contre-epreuve-verificateur.py     # the checker must turn RED on 
   with 157 bytes and no scan data (they are no longer routable);
 * an anonymous request to the administration URL returns the Atlassian sign-in
   shell: 0 occurrence of the app name, 0 occurrence of the button, no finding.
+
+## The two tools on Atlassian's MCP server (in the source; not deployed yet)
+
+The source of this app declares **one** `rovo:mcp` module — Atlassian allows at
+most one per app — which exposes **two** actions as tools:
+
+| Tool | What it does |
+|---|---|
+| `scan_accessibility(url)` | runs the WCAG 2.2 AA scan of the customer portal and returns the findings, the endpoints that were read (path and HTTP status only) and the limits of the scan |
+| `list_last_findings()` | returns the same findings as a compact list |
+
+What the two tools do **not** do is the interesting part:
+
+* **they read the site with the caller's own permissions** (`asUser`), not with
+  the app's wider ones: an agent can never read what the person who called it
+  cannot read. The identity comes from the platform, never from a value the
+  model produced;
+* **they read nothing else**: the same relative `/rest/...` paths as the
+  administration page, through the same two read scopes. No scope was added;
+* **they never fetch the URL they are given**: it is compared with the host of
+  the site where the app is installed, and a URL pointing at another site is
+  refused;
+* **they write nothing and keep nothing**: no storage call, no external call.
+  The app keeps no history of the scans it has run, so `list_last_findings()`
+  returns the findings that are current at the time of the call, and says so;
+* **they refuse an unauthenticated caller**: the tools first ask the platform
+  who is calling, and a refusal (401) stops the tool before anything is read.
+
+The tools run the very same engine and the very same rules as the button
+(`src/regles.js` is not re-implemented here). `node test-mcp-cycle134.js`
+checks all of this offline, against a simulated platform, and checks that the
+harness turns red when each of these properties is broken.
+
+> This module is **in the source**, not in the deployed app: production 2.5.0
+> still exposes the administration page only. It becomes usable when the owner
+> deploys the next version and Rovo is activated on the site.
 
 ## The privacy contract of the scan request
 
@@ -148,14 +205,16 @@ verify.
 
 ```
 npm install
-node test-ihm-cycle129.js                 # 35 checks — the interface replaces the public trigger
+node test-ihm-cycle129.js                 # 43 checks — the interface replaces the public trigger
 node test-contrat-http.js                 # 59 checks — the privacy contract (masking, absent fields, logs)
 node test-app-demo.js                     # 22 checks — the resolver returns the 23/23 verdict
 node test-demo.js                         # 55 checks — detects all 23 seeded issues in the bundled demo data
 node test-contre-epreuve.js               # 13 checks — the harness turns RED when a rule is sabotaged
 node test-contrat-http-contre-epreuve.js  # 28 checks — that harness turns RED when the contract is broken
-python3 tools/verifier-manifest-cycle128.py       # 10 checks — no public module, no egress, two read scopes
-python3 tools/contre-epreuve-verificateur.py      # 13 checks — that checker turns RED on 4 sabotages
+node test-mcp-cycle134.js                  # 32 checks — the two MCP tools read the caller's site, and nothing else
+python3 tools/verifier-manifest-cycle134.py       # 18 checks — no public module, no egress, two read scopes,
+                                                   #           one rovo:mcp module with two tools
+python3 tools/contre-epreuve-verificateur.py      # 28 checks — that checker turns RED on 9 sabotages
 python3 tools/verifier-notice-pv.py               #  5 checks — § 8 of PRIVACY.md quotes the code verbatim,
                                                    #           and there is exactly ONE privacy URL
 ```
@@ -168,9 +227,14 @@ administer: `GET /rest/api/3/field` and `POST /rest/api/3/search/jql` (16 checks
 counter-proof suites: they break the product on purpose and require the test
 harness to fail — **by naming the broken check**, because a suite that fails by
 crashing would prove nothing. `test-ihm-cycle129.js` does the same for the
-interface (5 sabotages: a trigger reintroduced, a write scope, an egress, a raw
-HTML tag, a French message) and `tools/contre-epreuve-verificateur.py` does it
-for the manifest checker.
+interface (8 sabotages: a trigger reintroduced, a write scope, an egress, a raw
+HTML tag, a French message, an MCP tool pointing at a missing action, a second
+MCP server, an over-long action description) and
+`tools/contre-epreuve-verificateur.py` does it for the manifest checker
+(9 sabotages). `test-mcp-cycle134.js` does it for the two tools (6 sabotages:
+the tools read with the app's identity, the site check is disabled, the identity
+gate is disabled, the probe uses the app's identity, the URL is sent to an
+external service, the tools store the history).
 
 ## Deploy it on your own site
 
@@ -193,10 +257,14 @@ There is **no URL to call**: the interface is the entry point.
 
 ```
 manifest.yml      1 jira:adminPage (the interface, render: native, resource: admin)
-                  1 function       (resolver -> src/resolvers.js)
-src/resolvers.js  the only entry point: it checks the caller's account id
+                  3 function       (resolver -> src/resolvers.js, and the two MCP handlers)
+                  2 action         (the two tools exposed by the MCP server)
+                  1 rovo:mcp       (the MCP server, exposing those two actions)
+src/resolvers.js  the entry point of the interface: it checks the caller's account id
                   (backendRuntimePayload.principal.accountId or context.accountId),
                   refuses a call without one, and calls the engine
+src/mcp.js        the two tools: the identity gate, the host check, and the two
+                  answers (the report, the compact list)
 src/index.js      the engine: JSM probe, mode selection, REST reads, findings,
                   and the privacy contract (masking of the personal data received)
 src/regles.js     the WCAG 2.2 rule engine — pure functions, zero Atlassian imports,
@@ -208,7 +276,7 @@ docs/             the criterion-by-criterion basis, incl. what REST can prove
 tools/            the manifest checker (and its counter-proof) and the check that
                   the privacy notice quotes the code verbatim
 PRIVACY.md        the privacy notice (what is read, where it goes, how long it is kept)
-test-*.js         the offline harness (212 checks in six suites, plus 41 checks
+test-*.js         the offline harness (252 checks in seven suites, plus 51 checks
                   in the three tools of tools/)
 ```
 

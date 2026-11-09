@@ -12,7 +12,7 @@
 # customer's tenant on an open URL would very likely fail the security
 # review.
 #
-# NOW the manifest declares exactly TWO modules:
+# UNTIL CYCLE 134 (09/11/2026) the manifest declared exactly TWO modules:
 #
 #   * `jira:adminPage` — the interface. Jira only renders it for a signed-in
 #     administrator, so the scan is started by a person, not by whoever finds
@@ -24,7 +24,32 @@
 #
 # There is NO public module left: `modules:` has two entries and that is all.
 # The absence is checkable by reading this file, and by
-# `python3 tools/verifier-manifest-cycle128.py`.
+# `python3 tools/verifier-manifest-cycle134.py`.
+#
+# CYCLE 134 (09/11/2026) — THE ROVO MCP MODULE WAS ADDED (source only; the
+# deployed version is still 2.5.0 and is NOT changed by this commit).
+#
+# The Codegeist 2026 bonus "Best app with Atlassian MCP" asks for "a Forge
+# app that exposes tools via the Atlassian MCP server using the rovo:mcp
+# module" (https://codegeist2026.devpost.com/rules). The manifest therefore
+# declares ONE `rovo:mcp` module (Atlassian allows at most one per app),
+# which exposes TWO actions as tools:
+#
+#   * `rovo:mcp` — the MCP server. Its `tools` list names the two actions
+#     below; an action that is not named there is not exposed.
+#   * `action` — the two tools themselves, backed by two `function` modules
+#     (src/mcp.js): `scan_accessibility` and `list_last_findings`.
+#
+# WHAT THE TOOLS DO NOT CHANGE: the scopes. The two MCP tools read the site
+# with the CALLER's own Jira permissions and with the SAME two read-only
+# scopes; no scope was added, no scope was removed, and the app still
+# writes nothing, stores nothing and calls no external service.
+#
+# The two entry points are now: the administration page (a signed-in Jira
+# administrator) and the two MCP tools (the signed-in caller, with their own
+# permissions). There is STILL no unauthenticated public module: the
+# absence is checkable by reading this file, and by
+# `python3 tools/verifier-manifest-cycle134.py`.
 #
 # The scopes are UNCHANGED and still read-only:
 #   read:jira-work             (Jira issues: descriptions, summaries, fields)
@@ -44,6 +69,42 @@ modules:
   function:
     - key: resolver
       handler: resolvers.handler
+    - key: mcp-scan
+      handler: mcp.scanAccessibility
+    - key: mcp-last-findings
+      handler: mcp.listLastFindings
+  action:
+    - key: scan_accessibility
+      name: Scan the customer portal for accessibility
+      function: mcp-scan
+      actionVerb: GET
+      description: >
+        Runs the read-only WCAG 2.2 AA scan of the customer portal of the site where this
+        app is installed and returns the findings. The site is read with your own Jira
+        permissions. Nothing is written or stored.
+      inputs:
+        url:
+          title: Customer portal URL
+          type: string
+          required: true
+          description: >
+            The absolute URL of the customer portal to scan, for example
+            https://your-site.atlassian.net/servicedesk/customer/portals
+    - key: list_last_findings
+      name: List the current accessibility findings
+      function: mcp-last-findings
+      actionVerb: GET
+      description: >
+        Returns the current WCAG 2.2 AA findings of the site where this app is installed,
+        as a compact list. The site is read with your own Jira permissions. The app stores
+        nothing, so these are the findings current at the time of the call.
+      inputs: {}
+  rovo:mcp:
+    - key: pac-jsm-mcp
+      name: Portal Accessibility Checker
+      tools:
+        - scan_accessibility
+        - list_last_findings
 
 resources:
   - key: admin
@@ -56,7 +117,7 @@ permissions:
 
 app:
   id: ari:cloud:ecosystem::app/33f1227e-0df1-4008-b181-ea9c50b116f5
-  description: Reports WCAG 2.2 AA accessibility findings on your Jira Service Management customer portal; it reads only and never modifies anything
+  description: Reports WCAG 2.2 AA accessibility findings on your Jira Service Management customer portal; it reads only and never modifies anything; it also exposes two read-only tools to Atlassian's MCP server
   runtime:
     name: nodejs24.x
     memoryMB: 256

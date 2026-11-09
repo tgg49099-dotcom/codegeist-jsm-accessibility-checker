@@ -92,13 +92,32 @@ const constatApp = (critere, niveau, source, ressource, emplacement, valeur, mes
   a_verifier: aVerifier,
 });
 
-// ---------- appels REST asApp ----------
+// ---------- appels REST : asApp par défaut, asUser sur demande ----------
 
-async function jget(path, headers) {
+/**
+ * L'identité qui lit le site.
+ *
+ * `asApp` (le défaut, inchangé) = l'identité de l'app et ses deux scopes de
+ * lecture : c'est le comportement de la page d'administration, qui n'est
+ * atteignable que par un administrateur Jira connecté.
+ *
+ * `asUser` = les permissions Jira de la personne qui appelle. C'est ce que
+ * le module `rovo:mcp` utilise : un outil d'agent ne doit pas pouvoir lire
+ * ce que la personne qui l'appelle ne peut pas lire elle-même (la doc
+ * officielle le dit : « Using asUser() keeps the tool safe »).
+ *
+ * @param {object} opts  { asUser: boolean } — absent = asApp.
+ * @returns {object} le client REST (@forge/api)
+ */
+function client(opts) {
+  return opts && opts.asUser ? api.asUser() : api.asApp();
+}
+
+async function jget(path, headers, opts) {
   // @forge/api 3.9.2 : requestJira exige un objet route (tagged template) —
   // un simple string est refusé ("You must create your route using the 'route'
   // export"). requestJira couvre aussi les chemins /rest/servicedeskapi/*.
-  const res = await api.asApp().requestJira(path, { headers: headers || {} });
+  const res = await client(opts).requestJira(path, { headers: headers || {} });
   let body = null;
   try {
     body = await res.json();
@@ -116,8 +135,8 @@ async function jget(path, headers) {
  * needs no write scope. There is no other POST in the app: the app declares
  * only the two read scopes, and it cannot write even if it wanted to.
  */
-async function jsearch(path, payload) {
-  const res = await api.asApp().requestJira(path, {
+async function jsearch(path, payload, opts) {
+  const res = await client(opts).requestJira(path, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify(payload),
@@ -371,10 +390,10 @@ function sectionPrivacy(pvRecus) {
 
 // ---------- scan JSM (exécuté seulement si JSM est actif sur le site) ----------
 
-async function scanJsm() {
+async function scanJsm(opts) {
   const sources = {};
   const findings = [];
-  const desks = await jget(route`/rest/servicedeskapi/servicedesk`, JSM_HDRS);
+  const desks = await jget(route`/rest/servicedeskapi/servicedesk`, JSM_HDRS, opts);
   sources['GET /rest/servicedeskapi/servicedesk'] = {
     httpStatus: desks.status,
     excerpt: (desks.body.values || []).slice(0, 3).map((d) => ({ id: d.id, projectName: d.projectName })),
@@ -383,7 +402,7 @@ async function scanJsm() {
     return { sources, findings, error: 'service desk list unavailable (HTTP ' + desks.status + ')' };
   }
   for (const desk of (desks.body.values || []).slice(0, 3)) {
-    const rts = await jget(route`/rest/servicedeskapi/servicedesk/${desk.id}/requesttype`, JSM_HDRS);
+    const rts = await jget(route`/rest/servicedeskapi/servicedesk/${desk.id}/requesttype`, JSM_HDRS, opts);
     const values = (rts.body.values || []).slice(0, 5);
     sources[`GET /rest/servicedeskapi/servicedesk/${desk.id}/requesttype`] = {
       httpStatus: rts.status,
@@ -417,7 +436,8 @@ async function scanJsm() {
     for (const rt of values) {
       const flds = await jget(
         route`/rest/servicedeskapi/servicedesk/${desk.id}/requesttype/${rt.id}/field`,
-        JSM_HDRS
+        JSM_HDRS,
+        opts
       );
       const requestTypeFields = (flds.body.requestTypeFields || []).slice(0, 20);
       sources[`GET /rest/servicedeskapi/servicedesk/${desk.id}/requesttype/${rt.id}/field`] = {
@@ -471,12 +491,12 @@ async function scanJsm() {
 
 // ---------- scan Jira (repli : JSM non activé) ----------
 
-async function scanJira() {
+async function scanJira(opts) {
   const sources = {};
   const findings = [];
   const onScreen = {}; // fieldId -> nom vu sur l'écran de création
 
-  const flds = await jget(route`/rest/api/3/field`);
+  const flds = await jget(route`/rest/api/3/field`, undefined, opts);
   const allFields = Array.isArray(flds.body) ? flds.body : [];
   const customFields = allFields.filter((f) => f.custom === true).slice(0, 40);
   sources['GET /rest/api/3/field'] = {
@@ -490,7 +510,7 @@ async function scanJira() {
     })),
   };
 
-  const projs = await jget(route`/rest/api/3/project`);
+  const projs = await jget(route`/rest/api/3/project`, undefined, opts);
   const projectKeys = (Array.isArray(projs.body) ? projs.body : []).slice(0, 3).map((p) => p.key);
   sources['GET /rest/api/3/project'] = {
     httpStatus: projs.status,
@@ -498,10 +518,10 @@ async function scanJira() {
   };
 
   for (const key of projectKeys) {
-    const its = await jget(route`/rest/api/3/issue/createmeta/${key}/issuetypes`);
+    const its = await jget(route`/rest/api/3/issue/createmeta/${key}/issuetypes`, undefined, opts);
     const types = (its.body.issueTypes || []).slice(0, 4);
     for (const it of types) {
-      const meta = await jget(route`/rest/api/3/issue/createmeta/${key}/issuetypes/${it.id}`);
+      const meta = await jget(route`/rest/api/3/issue/createmeta/${key}/issuetypes/${it.id}`, undefined, opts);
       for (const f of meta.body.fields || []) {
         onScreen[f.fieldId] = f.name;
       }
@@ -521,7 +541,7 @@ async function scanJira() {
     jql,
     maxResults: 20,
     fields: ['summary', 'description'],
-  });
+  }, opts);
   const issues = (search.body.issues || []).map((i) => ({
     key: i.key,
     summary: i.fields.summary,
@@ -642,8 +662,8 @@ async function scanJira() {
  *
  * @returns {Promise<{mode: string, jsmProbe: object, scan: object}>}
  */
-async function executerScan() {
-  const info = await jget(route`/rest/servicedeskapi/info`, JSM_HDRS);
+async function executerScan(opts) {
+  const info = await jget(route`/rest/servicedeskapi/info`, JSM_HDRS, opts);
   const jsmProbe = {
     endpoint: 'GET /rest/servicedeskapi/info',
     httpStatus: info.status,
@@ -658,9 +678,9 @@ async function executerScan() {
   let scan = null;
   if (info.status === 200 && info.body.isLicensedForUse === true) {
     mode = 'jsm';
-    scan = await scanJsm();
+    scan = await scanJsm(opts);
   } else {
-    scan = await scanJira();
+    scan = await scanJira(opts);
   }
   return { mode, jsmProbe, scan };
 }
@@ -707,12 +727,16 @@ function construireRapport({ mode, jsmProbe, scan, horodatage, pvRecus }) {
  * @param {object} args
  * @param {object} args.pvRecus  the personal values received, as collected by
  *                                `champsPvRecus`
+ * @param {boolean} args.asUser  when true the site is read with the CALLER's
+ *                                own Jira permissions (`asUser`) instead of the
+ *                                app's own read-only scopes (`asApp`, the
+ *                                default). Used by the `rovo:mcp` tools.
  * @returns {Promise<object>} the report, masked
  */
-async function lancerScan({ pvRecus } = {}) {
+async function lancerScan({ pvRecus, asUser } = {}) {
   const recues = pvRecus || {};
   const horodatage = new Date().toISOString();
-  const { mode, jsmProbe, scan } = await executerScan();
+  const { mode, jsmProbe, scan } = await executerScan({ asUser: !!asUser });
   const rapport = construireRapport({ mode, jsmProbe, scan, horodatage, pvRecus: recues });
   return balayerNoeud(rapport, remplacementsPv(recues));
 }

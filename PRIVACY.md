@@ -147,6 +147,42 @@ outbound call to any host, no storage call, and no analytics or telemetry code.
 * The app holds no data after the scan, so there is nothing to export and no data to delete.
 * You can remove the app at any time from **Administration → Manage apps**.
 
+## The two Rovo MCP tools (in the source code; not deployed yet)
+
+*The source code of this app (the repository this file lives in) contains one more module than
+the deployed version does: a `rovo:mcp` module, which exposes two tools through Atlassian's MCP
+server. **Production 2.5.0 does not have it.** The section below describes what those tools do,
+so that the notice can be read next to the code; the published page
+(https://labs.chiffreo.ch/privacy.html) must be updated at the same time as the deployment, and
+not before.*
+
+**The two tools.** `scan_accessibility(url)` runs the same WCAG 2.2 AA scan as the button on the
+administration page and returns the findings. `list_last_findings()` returns the same findings as
+a compact list.
+
+**What they read.** The same relative `/rest/...` paths as § 2, through the same two read scopes
+(`read:jira-work`, `read:servicedesk-request`). **No scope was added and none was removed.**
+
+**Whose permissions they use.** The caller's own. When an agent calls a tool, the site is read
+*as the person who called it*, not with the app's wider permissions: an agent can therefore never
+read what the person calling it cannot read. If the platform refuses that identity (the caller has
+not granted the app access, or the call is not authenticated), the tool returns a refusal and
+reads nothing.
+
+**Whose site they read.** Only the site where the app is installed. The URL given to
+`scan_accessibility` is compared with the host of that site and is **never fetched**; a URL
+pointing at another site is refused, and nothing is scanned.
+
+**What they write and keep.** Nothing. The tools make no storage call, no write call and no call
+to an external service — the same promise as § 4 and § 5. In particular the app keeps **no
+history** of the scans it has run: `list_last_findings()` returns the findings that are current
+at the time of the call, and says so in its answer. The tool output lists the endpoints that were
+read with their HTTP status, and no content and no account identifier.
+
+**Who can call them.** A signed-in Atlassian user who has granted the app access, through
+Atlassian's MCP server. Whether MCP clients outside Atlassian may use them is a setting of your
+site, controlled by your administrators.
+
 ## 8. The exact sentence displayed in the app
 
 Every answer produced by the app — the JSON report and the demo report — carries this sentence in its

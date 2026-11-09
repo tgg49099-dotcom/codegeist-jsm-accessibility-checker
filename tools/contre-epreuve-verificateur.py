@@ -28,7 +28,7 @@ import subprocess
 import sys
 
 RACINE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-VERIF = os.path.join(RACINE, "tools", "verifier-manifest-cycle128.py")
+VERIF = os.path.join(RACINE, "tools", "verifier-manifest-cycle134.py")
 MANIFESTE = os.path.join(RACINE, "manifest.yml")
 
 PY = sys.executable or "python3"
@@ -58,12 +58,48 @@ SABOTAGES = [
     (
         "un scope d'écriture est réintroduit",
         lambda s: s.replace("    - read:jira-work\n", "    - write:jira-work\n", 1),
-        "VERIF-07",
+        "VERIF-08",
     ),
     (
         "le module d'interface est supprimé",
         lambda s: re.sub(r"\n  jira:adminPage:\n(?:    .*\n)+", "\n", s, count=1),
         "VERIF-03",
+    ),
+    # --- sabotages du cycle 134 : le module rovo:mcp et ses deux outils ------
+    (
+        "un outil MCP ne pointe plus vers une action déclarée",
+        lambda s: s.replace("\n        - scan_accessibility\n", "\n        - scan_qui_nexiste_pas\n", 1),
+        "VERIF-14",
+    ),
+    (
+        "le module rovo:mcp n'expose plus qu'un outil",
+        lambda s: s.replace("\n        - list_last_findings\n", "\n", 1),
+        "VERIF-13",
+    ),
+    (
+        "un deuxième serveur MCP est déclaré",
+        lambda s: s.replace(
+            "\n  rovo:mcp:\n",
+            "\n  rovo:mcp:\n    - key: pac-jsm-mcp-bis\n      name: Second MCP\n      tools:\n        - scan_accessibility\n",
+            1,
+        ),
+        "VERIF-12",
+    ),
+    (
+        "la description d'une action dépasse 255 caractères",
+        lambda s: s.replace(
+            "        permissions. Nothing is written or stored.\n",
+            "        permissions. Nothing is written or stored. "
+            + ("Ce texte est volontairement trop long. " * 12)
+            + "\n",
+            1,
+        ),
+        "VERIF-17",
+    ),
+    (
+        "le module action est supprimé",
+        lambda s: re.sub(r"\n  action:\n(?:    .*\n|      .*\n)+", "\n", s, count=1),
+        "VERIF-05",
     ),
 ]
 
