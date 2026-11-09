@@ -24,9 +24,11 @@ made by a person, on the deployed version.
 | 1 | `https://tgg-dev.atlassian.net` → Jira → *Settings (gear) → Apps → Portal Accessibility Checker for JSM* | the page is rendered by Jira, in the administration area |
 | 2 | the **Run the scan** button pressed, then the page reading the site | the **real** scan, on a **real** site |
 | 3 | the findings table (criterion, level, where, message, "human review" / "automatic") | the findings actually produced |
-| 4 | **Export the findings**: the CSV field (select + copy) **and** the *Download the findings as CSV* button | both ways out of the app (the field always works, the button depends on the browser) |
-| 5 | the **Run the demo scan (no site needed)** button → 23 findings | the same engine runs without a site |
-| 6 | the version, in a caption or in the voice-over | the filmed version is the installed version |
+| 4 | the **Run the demo scan (no site needed)** button → 23 findings | the same engine runs without a site |
+| 5 | the version, in a caption or in the voice-over | the filmed version is the installed version |
+
+> The export step is **not** in the script: the real click has never been observed in this
+> container, so the video does not promise it. If it is ever filmed, it is filmed as it is seen.
 
 ## 3. The site, the version, the account
 
@@ -35,8 +37,8 @@ made by a person, on the deployed version.
   `production` — on that site, `majorVersion: 2 (Latest)`, status `Up-to-date`).
 - **Version to film**: **the version live in production on the day of the capture**, and it must be
   **announced on screen or in the voice-over**. On 9 November 2026 that is **2.7.0** (the
-  server-side administrator check, and the CSV written in a field as well as offered as a
-  download), version id `09201e49-daac-48f6-bf92-c1c73e01ffcc`. If production has moved since,
+  server-side administrator check), version id
+  `09201e49-daac-48f6-bf92-c1c73e01ffcc`. If production has moved since,
   the Platform API (`api.atlassian.com/graphql`, `app(id:)` → `environmentsPage`) is the
   authority — it answers `isLatest: true` for the version that is really served.
 - **Account**: a **Jira administrator** of that site. The scan is **refused** to a signed-in

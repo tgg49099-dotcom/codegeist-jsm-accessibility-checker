@@ -466,22 +466,23 @@ is modified: the app reads and reports.
 ## Contest entry and Marketplace listing — state on 9 November 2026
 
 * **Codegeist 2026**: this app is entered in the category *Apps for Business
-  Teams*, and for **one** bonus prize: **Best app with Atlassian MCP** — the
-  manifest declares one `rovo:mcp` module, deployed in production since 2.6.0,
-  exposing the two read-only tools described above. The second prize of the
-  rules, *Best Marketplace published app*, is **not** claimed: the rules open it
-  to an app "published to the Marketplace or submitted for listing" and ask for
-  the link to the listing or to the Marketplace review ticket, and **neither
-  exists yet** — no listing, no review ticket. The same decision is written in
-  the same places: the `BONUS` block of the submission text and the owner's
-  checklist.
+  Teams*, and **two bonus prizes of the rules are open**: **Best app with
+  Atlassian MCP** — the manifest declares one `rovo:mcp` module, deployed in
+  production since 2.6.0, exposing the two read-only tools described above —
+  and **Best Marketplace published app**, which the rules open to an app
+  "published to the Marketplace or submitted for listing" and for which they
+  ask for the link to the listing or to the Marketplace review ticket. The app
+  is neither published nor in review yet, so that link does not exist today; it
+  will be added the day there is one. **Which of the two this entry claims is
+  written after the re-review**, in the same places: the `BONUS` block of the
+  submission text and the owner's checklist.
 * **Marketplace**: the app is **not published** and has **no listing**. Sharing
   is enabled so the judges can install it, but a listing is a separate, human
   step (partner profile, then listing, then review submission). Until that
   exists the app is **free** and its revenue is **0 $**.
 * **Demonstration video**: **none is published yet**. The rules ask for a public
   YouTube video of the version the judges will install; the capture plan — site,
-  version, the six shots, and what is needed to film — is written in
+  version, the five shots, and what is needed to film — is written in
   [`PLAN-CAPTURE-VIDEO.md`](PLAN-CAPTURE-VIDEO.md). The offline-built 2.5.0
   video is **not** a demonstration of this version and is not published as one.
 
