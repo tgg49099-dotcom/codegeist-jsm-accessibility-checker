@@ -75,8 +75,10 @@ and an excerpt of it can appear in the scan result.
 **There is no public URL.** The earlier version of this app (up to 2.4.0) was started by calling a
 web trigger declared with `authentication: none`: the scan URL was public, so anyone who had it could
 trigger a scan and read its result. That module has been **removed from the manifest**, and the
-deployed manifest of both environments now contains exactly two modules: the interface
-(`jira:adminPage`) and the function it calls. The function **refuses any call that carries no
+manifests uploaded for the two deployed environments declare **no public module at all**: no
+`webtrigger`, no `productTrigger`, no `scheduleTrigger`. They declare four kinds of module — the
+interface (`jira:adminPage`), three `function` handlers, two `action` modules and one `rovo:mcp`
+module (see the section on the Rovo tools below). The function **refuses any call that carries no
 signed-in account**, so an anonymous visitor gets a refusal and never a report. The two URLs of the
 former trigger were measured on 7 November 2026: they answer HTTP 424 with no scan data.
 
@@ -165,8 +167,8 @@ outbound call to any host, no storage call, and no analytics or telemetry code.
 ## The two Rovo MCP tools (deployed since production 2.6.0)
 
 *The deployed version of this app — **production 2.6.0**, deployed 9 November 2026 — contains
-one more module than the previous one: a `rovo:mcp` module, which exposes two tools through
-Atlassian's MCP server. The section below describes what those tools do, so that the notice can
+three more module entries than the previous version: two `action` modules and one `rovo:mcp`
+module, the last of which exposes two tools through Atlassian's MCP server. The section below describes what those tools do, so that the notice can
 be read next to the code; the published page (https://labs.chiffreo.ch/privacy.html) must be
 updated at the same time as the deployment, and not before.*
 

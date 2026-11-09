@@ -89,10 +89,14 @@ python3 tools/contre-epreuve-verificateur.py     # the checker must turn RED on 
 **Measured on 7 November 2026** (and re-measured on 9 November 2026, after the
 deployment of 2.6.0), on both environments:
 
-* `forge version details -e production --json` and `-e development --json` both
-  report `egresses: []`, `remotes: []`, `services: []`, the two read scopes, one
-  `jira:adminPage` module and one `function` module — **no trigger module in
-  either environment**;
+* the manifests **uploaded** for production 2.6.0 and for development 2.9.0 (both
+  packages are kept as evidence) declare `egresses: []`, `remotes: []`,
+  `services: []`, the **two read scopes** and **four** kinds of module —
+  `jira:adminPage`, three `function` handlers, two `action` modules and one
+  `rovo:mcp` module — and **no trigger module in either environment**
+  (`forge version details --json` needs a TTY and cannot run in this container:
+  the state was read from the **Platform API** and from the **uploaded packages**
+  themselves);
 * the two URLs of the former public trigger answer **HTTP 424 Failed Dependency**
   with 157 bytes and no scan data (they are no longer routable);
 * an anonymous request to the administration URL returns the Atlassian sign-in

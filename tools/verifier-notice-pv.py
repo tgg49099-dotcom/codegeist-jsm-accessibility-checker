@@ -13,7 +13,10 @@ TWO THINGS ARE CHECKED HERE, both of them things that silently drifted before:
   2. The notice and the README must carry **exactly one** privacy URL — the
      published one. Several copies of a privacy notice are several places to
      forget to update one of them (which is exactly what happened with the
-     public trigger in November 2026).
+     public trigger in November 2026). Any OTHER URL cited by the documents is
+     allowed only if it is listed, one by one, in `AUTORISEES_AUTRES` below:
+     a new URL has to be added to that list on purpose, so it shows up in the
+     diff.
 
 Usage : python3 tools/verifier-notice-pv.py [racine-du-depot]
 Code de sortie : 0 = tout passe, 1 = au moins un contrôle échoue.
@@ -26,6 +29,16 @@ import sys
 RACINE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 URL_PUBLIEE = "https://labs.chiffreo.ch/privacy.html"
+
+# Les URL autres que la page publiee, citees a dessein, une par une.
+# Ajouter une URL ici est un choix visible dans le diff ; l'absence dans cette
+# liste fait echouer le controle (contre-epreuve : tools/contre-epreuve-notice.py).
+AUTORISEES_AUTRES = {
+    # La source officielle d'Atlassian pour la restriction de Rovo (plans
+    # Standard / Premium / Enterprise). Ce n'est pas une copie de la notice :
+    # c'est la regle citee. (Ajoute le 09/11/2026, cycle 136.)
+    "https://www.atlassian.com/licensing/rovo",
+}
 
 echecs = []
 
@@ -86,17 +99,27 @@ def main(argv):
             "identique" if identique else "le code dit : " + pv[:90] + "… / la notice dit : " + cite[:90] + "…",
         )
 
-    # --- 2. une seule URL de confidentialité ------------------------------
+    # --- 2. une seule copie de la notice, et aucune URL non listée ---------
     for nom in ("README.md", "PRIVACY.md"):
         chemin = os.path.join(racine, nom)
         if not os.path.exists(chemin):
             controle("NOTICE-04 %s existe" % nom, False)
             continue
         trouvees = urls(lire(chemin))
+        # (a) les copies de la notice : il doit y en avoir exactement une,
+        #     celle qui est publiée ;
+        copies = [u for u in trouvees if "privacy" in u.lower() or "policy" in u.lower()]
         controle(
-            "NOTICE-04 %s ne contient qu'une seule URL, la page publiée" % nom,
-            trouvees == [URL_PUBLIEE],
+            "NOTICE-04 %s ne cite qu'une seule copie de la notice, la page publiée" % nom,
+            copies == [URL_PUBLIEE],
             "URL trouvées : " + (", ".join(trouvees) if trouvees else "aucune"),
+        )
+        # (b) les autres URL citées doivent être explicitement autorisées ;
+        autres = [u for u in trouvees if u != URL_PUBLIEE and u not in AUTORISEES_AUTRES]
+        controle(
+            "NOTICE-04 %s ne cite aucune URL hors liste blanche" % nom,
+            not autres,
+            ("URL non autorisées : " + ", ".join(autres)) if autres else "aucune",
         )
 
     print("")
