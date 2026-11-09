@@ -441,8 +441,8 @@ function controlesInterface(texteJsx, composants) {
   const coupables = chaines.filter((s) => francais.test(s));
   res['UI-10 tous les textes affichés sont en anglais'] =
     coupables.length === 0;
-  res['UI-11 l\'interface annonce la confidentialité et le mode de lecture'] =
-    /logged-in user who started the scan/.test(code) && /reads only/.test(code);
+  res['UI-11 l\'interface annonce la confidentialité et le contrôle d\'administration'] =
+    /signed-in Jira\s+administrator/.test(code) && /reads only/.test(code);
 
   return { res, importes, trouves, coupables };
 }

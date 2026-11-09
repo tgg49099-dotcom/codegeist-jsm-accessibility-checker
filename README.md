@@ -15,14 +15,28 @@ public URL: until version 2.4.0 the app answered a web trigger declared with
 | **Data leaves your site** | No. The app declares **no egress at all** |
 | **Personal data in the answer** | A name or an e-mail **typed in the page** is masked, never returned in clear text. The content read from your site is returned **as it is** — it is what the app checks (see below) |
 | **Permissions** | Read-only: `read:jira-work`, `read:servicedesk-request` |
-| **App version in this repository** | the code of **production 2.6.0**, deployed on 9 November 2026 (13:28 UTC); the development environment runs **2.9.0** |
+| **App version in this repository** | the code of **production 2.7.0**, deployed on 9 November 2026 (20:54 UTC, version id `09201e49-daac-48f6-bf92-c1c73e01ffcc`); the same code is in the development environment as **2.10.0**. Forge assigns those numbers itself (the manifest declares no `app.version`), so the two environments number the same code differently |
 
 ## What it does
 
 You open **Administration → Apps → Portal Accessibility Checker for JSM**, and you
 press **Run the scan**. The page reads your site content through the product REST
-APIs and shows the findings **in the page**, with a CSV export button
-(**Download the findings as CSV**).
+APIs and shows the findings **in the page**. The findings are also given as CSV:
+the CSV is written in a **read-only field** under the table — select it and copy
+it, a path that needs no browser API at all — and the button **Download the
+findings as CSV** offers the same file when the browser allows the download.
+
+Why the field comes first: UI Kit 2 has **no documented access to the page's
+DOM**. The official reference says "You won't have access to any of the
+underlying DOM, so features that depend on that will not work"
+(<https://developer.atlassian.com/platform/forge/ui-kit.md>, consulted on
+9 November 2026), and neither `URL.createObjectURL` nor `document.createElement`
+appears anywhere in the Forge documentation. The one documented UI Kit 2 download
+route is the `FileCard` component, whose `onDownload` callback may return a
+`Promise<Blob>` and then "automatically trigger a browser download"
+(<https://developer.atlassian.com/platform/forge/ui-kit/components/file-card.md>).
+So the interface promises the **copy field**, which works whatever the browser
+allows, and offers the button as a convenience that says what happened.
 
 The scanner probes Jira Service Management first (`GET /rest/servicedeskapi/info`).
 If JSM is licensed on the site, it scans the customer portal content: request
@@ -40,9 +54,53 @@ six bundled fixtures — no account, no site, no tenant.
 ## The interface, and the absence of a public entry point
 
 The interface is a `jira:adminPage` module: Jira itself renders it, in the
-administration area, **only for a signed-in administrator**. The scan is behind a
-`function` module (`resolver`) that refuses any call which carries no signed-in
-account — an anonymous visitor gets a refusal, never a report.
+administration area, at `/jira/settings/apps/{appId}/{envId}`. The official
+reference (<https://developer.atlassian.com/platform/forge/manifest-reference/modules/jira-admin-page.md>,
+consulted on 9 November 2026) says where the page appears and how its URL is
+built; it names **no role and no permission** for opening it. This app therefore
+does **not** claim that the page is administrator-only: a **signed-in user** who
+can open Jira administration can open the page, and the app checks the rights
+itself, on the server. The scan is behind a `function` module (`resolver`) that
+refuses any call which carries no signed-in account — an anonymous visitor gets a
+refusal, never a report.
+
+**The administrator check is made on the server, not in the page.** A page is a
+display: anything able to call the function would otherwise receive the findings
+of the customer's site. So `scan()` asks Jira, with the caller's own identity
+(`asUser`), what permissions that account holds:
+
+```
+GET /rest/api/3/mypermissions?permissions=ADMINISTER,SYSTEM_ADMIN
+```
+
+"Get my permissions", Jira Cloud REST API v3 — see
+<https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-permissions/>
+(consulted on 9 November 2026). `ADMINISTER` ("Administer Jira") and
+`SYSTEM_ADMIN` ("Jira System Administrators") are the two **global** permissions
+of a Jira site — the ones the site itself lists on `GET /rest/api/3/permissions`.
+No new scope is needed for this: the official page lists the classic scope
+`read:jira-work` as the recommended scope of that endpoint, and the app already
+declares it — so the manifest is unchanged and nothing has to be reinstalled.
+
+Those two names are the ones Forge itself uses for this kind of check: the
+display-conditions reference lists `hasGlobalPermission` (with the global keys
+`ADMINISTER` and `SYSTEM_ADMIN`) and `canAdministerJira`
+(<https://developer.atlassian.com/platform/forge/manifest-reference/display-conditions/jira.md>,
+consulted on 9 November 2026). This app does not use them to *hide* the page:
+hiding the entry would hide it from a reviewer who is not an administrator, and
+a refusal that says why is more useful than a missing menu. The names, though,
+come from the same official source as the check itself.
+
+The check **fails closed**: if the platform refuses it (401), if the answer says
+nothing about those two permissions, or if it cannot be read, the scan does not
+run and the caller gets a refusal. The site is not read once for a caller who is
+not an administrator. The demo scan reads no site at all, so it stays available
+to any signed-in user.
+
+The check is covered by `test-admin-cycle139.js` (17 checks, with three
+counter-proofs: without the check a non-administrator would get the report; a
+wrong permission key refuses the administrator; a check that fails open would let
+anybody through — the three sabotages must each turn the suite RED).
 
 `manifest.yml` declares **four module types** and nothing else:
 
@@ -85,11 +143,19 @@ python3 tools/contre-epreuve-verificateur.py     # the checker must turn RED on 
 > uploaded for 2.6.0 declares exactly one `rovo:mcp` module, the two `action`
 > modules and the three `function` handlers — and still no `webtrigger`, no
 > `productTrigger`, no `scheduleTrigger`.
+>
+> **Production now runs 2.7.0** (9 November 2026, 20:54 UTC), which is that same
+> code plus the **server-side administrator check** and the **CSV written in a
+> read-only field**. `forge deploy` numbers the versions itself: the manifest
+> declares no `app.version`, so the CLI increments the minor number of the
+> installed major version — production went 2.6.0 → **2.7.0**, development
+> 2.9.0 → **2.10.0**. The version id of the production version is
+> `09201e49-daac-48f6-bf92-c1c73e01ffcc`.
 
 **Measured on 7 November 2026** (and re-measured on 9 November 2026, after the
-deployment of 2.6.0), on both environments:
+deployment of 2.7.0), on both environments:
 
-* the manifests **uploaded** for production 2.6.0 and for development 2.9.0 (both
+* the manifests **uploaded** for production 2.7.0 and for development 2.10.0 (both
   packages are kept as evidence) declare `egresses: []`, `remotes: []`,
   `services: []`, the **two read scopes** and **four** kinds of module —
   `jira:adminPage`, three `function` handlers, two `action` modules and one
@@ -102,7 +168,8 @@ deployment of 2.6.0), on both environments:
 * an anonymous request to the administration URL returns the Atlassian sign-in
   shell: 0 occurrence of the app name, 0 occurrence of the button, no finding;
 * on 9 November 2026, the **Platform API** (GraphQL, `api.atlassian.com/graphql`)
-  answers `isLatest: true` for **production 2.6.0** and for **development 2.9.0**,
+  answers `isLatest: true` for **production 2.7.0** (version id
+  `09201e49-daac-48f6-bf92-c1c73e01ffcc`) and for **development 2.10.0**,
   and the package uploaded for that deployment (kept as evidence) declares the
   `rovo:mcp` module, the two `action` modules, the three `function` handlers, the
   two read scopes — **and no trigger module**.
@@ -179,7 +246,7 @@ The tools run the very same engine and the very same rules as the button
 checks all of this offline, against a simulated platform, and checks that the
 harness turns red when each of these properties is broken.
 
-> This module is **deployed**: production 2.6.0 (9 November 2026) declares the
+> This module is **deployed**: production 2.7.0 (9 November 2026) declares the
 > `rovo:mcp` module and the two actions. The tools become usable on a site where
 > **Rovo is activated** (a paid plan — see below).
 
@@ -361,6 +428,28 @@ is modified: the app reads and reports.
   The app says so in its `privacy.statement` on every call, and
   [PRIVACY.md](PRIVACY.md) § 3 spells it out.
 - The scan reflects the site **at the moment it is run**; the app keeps no history.
+
+## Contest entry and Marketplace listing — state on 9 November 2026
+
+* **Codegeist 2026**: this app is entered in the category *Apps for Business
+  Teams*, and for **one** bonus prize: **Best app with Atlassian MCP** — the
+  manifest declares one `rovo:mcp` module, deployed in production since 2.6.0,
+  exposing the two read-only tools described above. The second prize of the
+  rules, *Best Marketplace published app*, is **not** claimed: the rules open it
+  to an app "published to the Marketplace or submitted for listing" and ask for
+  the link to the listing or to the Marketplace review ticket, and **neither
+  exists yet** — no listing, no review ticket. The same decision is written in
+  the same places: the `BONUS` block of the submission text and the owner's
+  checklist.
+* **Marketplace**: the app is **not published** and has **no listing**. Sharing
+  is enabled so the judges can install it, but a listing is a separate, human
+  step (partner profile, then listing, then review submission). Until that
+  exists the app is **free** and its revenue is **0 $**.
+* **Demonstration video**: **none is published yet**. The rules ask for a public
+  YouTube video of the version the judges will install; the capture plan — site,
+  version, the six shots, and what is needed to film — is written in
+  [`PLAN-CAPTURE-VIDEO.md`](PLAN-CAPTURE-VIDEO.md). The offline-built 2.5.0
+  video is **not** a demonstration of this version and is not published as one.
 
 ## Privacy notice
 

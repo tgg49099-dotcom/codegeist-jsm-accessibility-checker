@@ -145,6 +145,16 @@ function scenarioJsm() {
   s['/rest/api/3/search/jql'] = { status: 200, body: { issues: [] } };
   s['/rest/api/3/field'] = { status: 200, body: [] };
   s['/rest/api/3/project'] = { status: 200, body: [] };
+  // Le contrôle d'administration du resolver (src/resolvers.js) : sur ce site
+  // de démonstration, le compte connecté EST administrateur.
+  s['/rest/api/3/mypermissions?permissions=ADMINISTER,SYSTEM_ADMIN'] = {
+    status: 200,
+    body: {
+      permissions: {
+        ADMINISTER: { key: 'ADMINISTER', name: 'Administer Jira', type: 'GLOBAL', havePermission: true },
+      },
+    },
+  };
   return s;
 }
 

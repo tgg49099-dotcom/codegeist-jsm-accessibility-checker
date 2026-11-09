@@ -38,6 +38,20 @@ AUTORISEES_AUTRES = {
     # Standard / Premium / Enterprise). Ce n'est pas une copie de la notice :
     # c'est la regle citee. (Ajoute le 09/11/2026, cycle 136.)
     "https://www.atlassian.com/licensing/rovo",
+    # Les pages officielles citees pour le controle d'administrateur et pour
+    # l'export CSV. Ce sont des regles citees, pas des copies de la notice.
+    # (Ajoute le 09/11/2026, cycle 139.)
+    # "Get my permissions", Jira Cloud REST API v3 : l'endpoint du controle.
+    "https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-permissions/",
+    # Les conditions d'affichage de Jira : `hasGlobalPermission` (ADMINISTER,
+    # SYSTEM_ADMIN) et `canAdministerJira`.
+    "https://developer.atlassian.com/platform/forge/manifest-reference/display-conditions/jira.md",
+    # Le module `jira:adminPage` : la page et son URL, sans role nomme.
+    "https://developer.atlassian.com/platform/forge/manifest-reference/modules/jira-admin-page.md",
+    # UI Kit 2 : pas d'acces au DOM de la page.
+    "https://developer.atlassian.com/platform/forge/ui-kit.md",
+    # UI Kit 2 : `FileCard`, la seule voie de telechargement documentee.
+    "https://developer.atlassian.com/platform/forge/ui-kit/components/file-card.md",
 }
 
 echecs = []

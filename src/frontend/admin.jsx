@@ -4,12 +4,12 @@
  * UI Kit 2 (@forge/react). ONE job: let a signed-in Jira administrator run
  * the accessibility scan and read its findings.
  *
- * CYCLE 128 (05/11/2026) — THIS PAGE REPLACES THE PUBLIC TRIGGER.
- * The app used to answer a public trigger module with `authentication: none`:
- * anyone who knew the URL could scan a customer's site and read the findings.
- * This page is the interface instead — it is only rendered by Jira for an
- * administrator, and the resolver behind it (src/resolvers.js) only answers
- * the signed-in user who pressed the button.
+ * The interface is the app's only entry point: the manifest declares one
+ * `jira:adminPage` module and no public module, so there is no URL anybody
+ * can call without an account. Jira renders this page in the administration
+ * area, and the resolver behind it (src/resolvers.js) answers only a
+ * signed-in Jira administrator — the check is made on the server, with the
+ * caller's own identity.
  *
  * Rules followed here (Atlassian's own template instructions):
  *   - only components exported by @forge/react; no raw HTML tag (`<div>`,
@@ -30,9 +30,11 @@ import ForgeReconciler, {
   SectionMessage,
   Spinner,
   Text,
+  TextArea,
   Textfield,
 } from "@forge/react";
 import { runScan, runDemoScan } from "./api.js";
+import { telechargerCsv } from "./csv.js";
 
 // UI Kit 2 reports a text change with an EVENT, not with the bare text. The
 // offline harness used to send a bare string, and being liberal about it
@@ -63,19 +65,9 @@ function sourcesOf(report) {
 }
 
 // The CSV is produced by the RESOLVER (server side, same escaping rules as
-// the demo export) and downloaded by the browser.
-function telechargerCsv(nomFichier, csv) {
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const lien = document.createElement("a");
-  lien.href = url;
-  lien.download = nomFichier;
-  lien.rel = "noopener";
-  document.body.appendChild(lien);
-  lien.click();
-  document.body.removeChild(lien);
-  setTimeout(() => URL.revokeObjectURL(url), 2000);
-}
+// the demo export). It leaves the page two ways: the download button, and the
+// read-only field that holds the same text — the field needs no browser API
+// at all, so it works even where a download is refused. See src/frontend/csv.js.
 
 function FindingsTable({ findings }) {
   if (!findings || findings.length === 0) {
@@ -124,6 +116,7 @@ function AdminPage() {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+  const [csvMessage, setCsvMessage] = useState(null);
   const [nom, setNom] = useState("");
   const [email, setEmail] = useState("");
 
@@ -156,6 +149,25 @@ function AdminPage() {
     }
   }
 
+  /**
+   * The download of the CSV. It never throws: when the page does not allow
+   * the download, the message says so and points at the field that always
+   * holds the same text.
+   */
+  function exporterCsv() {
+    const resultat = telechargerCsv(
+      "pac-jsm-findings.csv",
+      (result && result.csv) || ""
+    );
+    setCsvMessage(
+      resultat.ok
+        ? "The CSV was handed over to the browser. If no file was saved, select the CSV below and copy it."
+        : "This page cannot save a file (" +
+          resultat.raison +
+          "). Select the CSV below and copy it."
+    );
+  }
+
   const report = result ? result.report : null;
   const findings = findingsOf(report);
   const aVerifier = findings.filter((f) => f.a_verifier === true).length;
@@ -182,10 +194,13 @@ function AdminPage() {
       <SectionMessage appearance="information" title="What this app does">
         <Text>
           It reads only. It writes nothing on your site, calls no external
-          service and stores nothing. Scan results are returned only to the
-          logged-in user who started the scan. Checks that only exist in the
-          rendered page (contrast, keyboard focus, target size) are reported as
-          needing human review instead of being guessed.
+          service and stores nothing. The scan only runs for a signed-in Jira
+          administrator: the server checks that the account holds the global
+          "Administer Jira" permission, and refuses otherwise. The two fields
+          below are a privacy demonstration — type a name or an e-mail and
+          the answer shows the value masked, never in clear text. Checks that
+          only exist in the rendered page (contrast, keyboard focus, target
+          size) are reported as needing human review instead of being guessed.
         </Text>
       </SectionMessage>
 
@@ -280,11 +295,30 @@ function AdminPage() {
 
           <FindingsTable findings={findings} />
 
+          <Heading size="small">Export the findings</Heading>
+          <Text>
+            The CSV below is the export: select it and copy it — that works
+            whatever the browser allows the download button to do.
+          </Text>
+          <Heading id="csv-copier-titre" size="xsmall">
+            Findings as CSV (to copy)
+          </Heading>
+          <TextArea
+            id="csv-copier"
+            aria-labelledby="csv-copier-titre"
+            isReadOnly
+            isMonospaced
+            isCompact
+            minimumRows={4}
+            maxHeight={220}
+            value={(result && result.csv) || ""}
+          />
           <ButtonGroup>
-            <Button onClick={() => telechargerCsv("pac-jsm-findings.csv", result.csv || "")}>
+            <Button onClick={exporterCsv}>
               Download the findings as CSV
             </Button>
           </ButtonGroup>
+          {csvMessage ? <Text>{csvMessage}</Text> : null}
 
           {report.limites && report.limites.length > 0 ? (
             <>

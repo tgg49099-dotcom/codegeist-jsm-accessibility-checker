@@ -6,12 +6,12 @@
 **Published notice:** **https://labs.chiffreo.ch/privacy.html** — this is the **only** published privacy URL of this app; this file is the same notice, kept in the repository so that the code and the notice can be read side by side.
 
 *Last updated: 9 November 2026.* This notice describes the app as it is deployed today
-(production version **2.6.0**, deployed 9 November 2026 at 13:28 UTC; the development
-environment runs **2.9.0**). It replaces the version of 7 November 2026, which described
-the app as it was then (production 2.5.0). Two things changed since: the **identity of
+(production version **2.7.0**, deployed 9 November 2026 at 20:54 UTC; the development
+environment runs **2.10.0**). It replaces the version of 7 November 2026, which described
+the app as it was then (production 2.5.0). Three things changed since: the **identity of
 the reads** — the app now reads with `asUser` only, and refuses when the platform
-refuses (§ 2) — and the **two Rovo MCP tools**, which are now deployed (§ "The two Rovo
-MCP tools"). The masking contract, the sentence of § 8 and the whole of § 8's reasoning
+refuses (§ 2) — the **two Rovo MCP tools**, which are now deployed (§ "The two Rovo
+MCP tools"), and the **administrator check**, which is now made on the server (§ 1). The masking contract, the sentence of § 8 and the whole of § 8's reasoning
 are unchanged, because the rules that decide the findings did not change: the interface
 moved, the code that reads your site reads it with your own permissions.
 
@@ -25,7 +25,11 @@ set of WCAG 2.2 AA criteria. It does not change, create or delete anything on yo
 
 It is started **by a person, from a page**: you open
 **Administration → Apps → Portal Accessibility Checker for JSM** and press **Run the scan**.
-Jira renders that page only for a signed-in administrator.
+Jira renders that page in the administration area; the official Forge reference names no role
+for opening it, so this notice does **not** claim that the page is administrator-only. What
+decides is the app itself: the server asks Jira which permissions your account holds, and the
+scan runs only for an account that holds the global **"Administer Jira"** (or **"Jira System
+Administrators"**) permission. Any other signed-in user gets a refusal, never a report.
 
 ## 2. What the app reads
 
@@ -36,10 +40,13 @@ wider one. The manifest declares only the read scopes **`read:jira-work`** and
 
 **The app has no `asApp()` call at all.** The Marketplace security review requires an app to
 default to `asUser()` when it acts on behalf of a user, and to check the expected permissions
-before it widens the identity with `asApp()`. This app cannot make that permissions check (it
-declares two read scopes, and such a check would need a third), so it removes the wider identity
-instead of justifying it: **zero** `asApp()` calls in the code. The app can therefore never read
-anything that the person who started the scan could not read themselves.
+before it widens the identity with `asApp()`. This app never widens the identity, and it **does**
+make that permissions check: with the caller's own identity, on the permissions REST API
+(`GET /rest/api/3/mypermissions?permissions=ADMINISTER,SYSTEM_ADMIN` — the caller's own global
+permissions), and **without any extra scope** (the endpoint needs the classic scope
+`read:jira-work`, which the app already declares). **Zero** `asApp()` calls in the code. The app
+can therefore never read anything that the person who started the scan could not read themselves,
+and it never starts a scan for an account without the administration permission.
 
 If the platform refuses your identity — HTTP 401 or 403, when your account has not authorised the
 app to read the site on your behalf — the app **refuses** and tells you what to do. It does not
@@ -82,8 +89,9 @@ module (see the section on the Rovo tools below). The function **refuses any cal
 signed-in account**, so an anonymous visitor gets a refusal and never a report. The two URLs of the
 former trigger were measured on 7 November 2026: they answer HTTP 424 with no scan data.
 
-The consequence for you: the scan is now started by a named, signed-in administrator, and the
-findings are shown to that administrator and to nobody else. The advice of the previous version —
+The consequence for you: the scan is now started by a named, signed-in **administrator** — the
+server checks the account's global "Administer Jira" permission before reading anything, and
+refuses anyone else — and the findings are shown to that administrator and to nobody else. The advice of the previous version —
 "do not install the app on a site whose issue titles contain personal data you would not want a
 stranger to be able to read" — no longer applies, because there is no stranger-facing URL.
 
@@ -115,7 +123,7 @@ URL. The name of the field is read with **the spaces around it ignored** (` nom 
 **every** value of a repeated parameter is collected, not only the first one (`?nom=V1&nom=V2` masks
 both `V1` and `V2`). This multi-channel coverage was measured on the **production trigger of version
 2.4.0** — the version that still had the public URL — and the engine has not changed since. The
-version deployed today (2.6.0) has a **single** channel, the payload the page sends with the scan;
+version deployed today (2.7.0) has a **single** channel, the payload the page sends with the scan;
 the same masking rules apply to it, and they are proved offline by two suites of the public
 repository (`node test-contrat-http.js`, 59 checks, and its counter-proof, 28 checks).
 
@@ -166,7 +174,7 @@ outbound call to any host, no storage call, and no analytics or telemetry code.
 
 ## The two Rovo MCP tools (deployed since production 2.6.0)
 
-*The deployed version of this app — **production 2.6.0**, deployed 9 November 2026 — contains
+*The deployed version of this app — **production 2.7.0**, deployed 9 November 2026 — contains
 three more module entries than the previous version: two `action` modules and one `rovo:mcp`
 module, the last of which exposes two tools through Atlassian's MCP server. The section below describes what those tools do, so that the notice can
 be read next to the code; the published page (https://labs.chiffreo.ch/privacy.html) must be

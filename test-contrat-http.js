@@ -246,7 +246,15 @@ check('RECU-16 le payload de la page (objet) est lu comme un corps',
     requestJira: async (p) => {
       const chemin = String(p && p.value_ ? p.value_ : p);
       let body = {};
-      if (chemin.indexOf('/rest/servicedeskapi/info') !== -1) {
+      if (chemin.indexOf('/rest/api/3/mypermissions') !== -1) {
+        // Le contrôle d'administration du resolver (src/resolvers.js) : sur ce
+        // faux site, le compte connecté EST administrateur.
+        body = {
+          permissions: {
+            ADMINISTER: { key: 'ADMINISTER', name: 'Administer Jira', type: 'GLOBAL', havePermission: true },
+          },
+        };
+      } else if (chemin.indexOf('/rest/servicedeskapi/info') !== -1) {
         body = { isLicensedForUse: false };
       } else if (chemin.indexOf('/rest/api/3/field') !== -1) {
         body = [{ id: 'customfield_10001', name: NOM, description: EMAIL, custom: true, schema: { type: 'string' } }];

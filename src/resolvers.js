@@ -1,43 +1,87 @@
 /**
- * Portal Accessibility Checker for JSM — RESOLVER (the app's only entry point).
+ * Portal Accessibility Checker for JSM — the resolver (the app's only entry point).
  *
- * CYCLE 128 (05/11/2026). This file REPLACES the public trigger.
+ * WHAT THIS FILE IS
  *
- * BEFORE: the manifest declared a trigger module whose request was
- * UNAUTHENTICATED (`authentication: none`). Anyone who knew the URL could run
- * a scan of the customer's site and read the findings in clear text — a
- * public endpoint reading a customer's tenant.
+ * The manifest declares four module types (see manifest.yml): a
+ * `jira:adminPage` interface, a `function` module, an `action` module (the
+ * two MCP tools) and a `rovo:mcp` module (the Atlassian MCP server that
+ * exposes them). This file is the `function` module behind the page, and it
+ * is the ONLY code path to the scan. It enforces
+ * three rules, in this order:
  *
- * NOW: the manifest declares a `jira:adminPage` module (see manifest.yml).
- * The platform only renders that page for a logged-in Jira administrator, and
- * the resolver below is the ONLY way to reach the scan:
+ *   1. THE CALLER MUST BE SIGNED IN. A call that carries no account id is
+ *      refused.
+ *   2. THE CALLER MUST BE A JIRA ADMINISTRATOR. The check is made HERE, on
+ *      the server, with the caller's own identity — never in the page. A page
+ *      is a display: whoever can call the function directly would otherwise
+ *      receive the findings of the customer's site, so the decision belongs
+ *      to the resolver.
+ *   3. THE SITE IS READ WITH THE CALLER'S OWN PERMISSIONS (`asUser`) and the
+ *      two read-only scopes (`read:jira-work`, `read:servicedesk-request`).
+ *      The app writes nothing and calls no external service.
  *
- *   - there is NO public module left in the manifest (this is checkable by
- *     reading manifest.yml: `modules:` has exactly two entries, an interface
- *     module and a function module);
- *   - the resolver answers ONLY to a call made from the administration page of
- *     the signed-in user, and it returns the findings to that user only;
- *   - the scan reads the site with the CALLER's own identity (`asUser`) and
- *     the two read-only scopes (`read:jira-work`, `read:servicedesk-request`),
- *     writes nothing, and calls no external service.
+ * There is no public module: every module declared in manifest.yml is
+ * reachable only from an authenticated session, so there is no URL anybody can
+ * call without an account.
  *
- * IDENTITY (cycle 136, 09/11/2026). The administration page acts on behalf of
- * the person who clicks the button, so it reads with that person's own Jira
- * permissions (`asUser`). The Marketplace security requirements say so
- * (« An application must default to using asUser() when performing an
- * operation on behalf of the user »), and the application has NO `asApp()`
- * call at all — see src/index.js and test-identite-cycle136.js.
+ * THE ADMINISTRATOR CHECK — the endpoint, and why this one
+ *
+ *   - ENDPOINT: `GET /rest/api/3/mypermissions?permissions=ADMINISTER,SYSTEM_ADMIN`
+ *     "Get my permissions", Jira Cloud REST API v3, group "Permissions":
+ *     https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-permissions/
+ *     (consulted 09/11/2026). The endpoint answers with the permissions of
+ *     the USER the request is made for; called through `asUser()`, that user
+ *     is the person who clicked the button.
+ *   - THE PERMISSION KEYS are the global ones this same official endpoint
+ *     lists for a Jira site (GET /rest/api/3/permissions, HTTP 200 measured
+ *     on the app's own site on 09/11/2026):
+ *       ADMINISTER  = "Administer Jira"                (type GLOBAL)
+ *       SYSTEM_ADMIN = "Jira System Administrators"     (type GLOBAL)
+ *     No other name is used: a key that does not exist would simply answer
+ *     "no permission" for everybody.
+ *   - NO NEW SCOPE IS NEEDED: the official page lists the classic scope
+ *     `read:jira-work` as the (recommended) OAuth scope of that endpoint,
+ *     and the app already declares it — so manifest.yml is unchanged and
+ *     nothing has to be reinstalled.
+ *   - THE CHECK FAILS CLOSED. If the platform refuses the call (401/403), if
+ *     the answer says nothing about the administration permissions, or if it
+ *     cannot be read, the scan does not run: the caller gets a refusal, and
+ *     never a report.
+ *   - THE DEMO SCAN reads no site: it replays the bundled fixtures, so it
+ *     stays available to any signed-in user. `test-admin-cycle139.js` pins
+ *     that difference.
  *
  * NO DUPLICATION: `scan()` and `scanDemo()` call the engine in src/index.js
  * (`lancerScan` / `rapportDemo`) — the very same code, the very same rules
- * (src/regles.js) and the very same REST reads that the old public trigger
- * used. This file adds the caller check and the transport; it does not
+ * (src/regles.js) and the very same REST reads, for the demo and for a real
+ * site. This file adds the caller checks and the transport; it does not
  * re-implement a single rule.
  */
 
 const { makeResolver } = require('@forge/resolver');
+// The whole module, not a destructured `api`: `@forge/api` exports `asUser`,
+// `asApp` and `route` at the top level (there is no `api` export — `api` is
+// the name of the runtime global, not of the package).
+const forgeApi = require('@forge/api');
+const { route } = forgeApi;
 
 const moteur = require('./index.js');
+
+/**
+ * The global Jira permissions that mean "administrator of this site".
+ * Both are GLOBAL permissions of Jira (measured on the app's own site with
+ * GET /rest/api/3/permissions on 09/11/2026); they are the two roles that
+ * give access to the administration area of Jira.
+ */
+const PERMISSIONS_ADMINISTRATION = ['ADMINISTER', 'SYSTEM_ADMIN'];
+
+/**
+ * The official endpoint that answers which permissions the caller holds.
+ * It is asked with `asUser()`: the answer is about the person who clicked
+ * the button, not about the app.
+ */
+const URL_PERMISSIONS = route`/rest/api/3/mypermissions?permissions=ADMINISTER,SYSTEM_ADMIN`;
 
 /**
  * The personal values the page may send (fields `nom` and `e-mail`).
@@ -90,11 +134,74 @@ function runtimeAvecIdentite(req, backendRuntimePayload) {
   return runtime;
 }
 
+/**
+ * Whether the caller is a Jira administrator.
+ *
+ * The answer comes from Jira itself, asked with the caller's own identity:
+ * `GET /rest/api/3/mypermissions` returns the permissions of the user the
+ * request is made for. The caller's account id is NOT sent and cannot be
+ * forged: it is the account the platform authenticates.
+ *
+ * @returns {Promise<{ok: boolean, permission: string, raison: string}>}
+ */
+async function droitAdministration() {
+  let reponse;
+  try {
+    reponse = await forgeApi.asUser().requestJira(URL_PERMISSIONS);
+  } catch (e) {
+    return {
+      ok: false,
+      permission: '',
+      raison: 'the platform refused the administrator check: ' + ((e && e.message) || String(e)),
+    };
+  }
+
+  const status = reponse && reponse.status;
+  if (status !== 200) {
+    return {
+      ok: false,
+      permission: '',
+      raison: 'the administrator check answered HTTP ' + status,
+    };
+  }
+
+  let corps = null;
+  try {
+    corps = await reponse.json();
+  } catch (e) {
+    corps = null;
+  }
+  const permissions = (corps && corps.permissions) || {};
+
+  for (const cle of PERMISSIONS_ADMINISTRATION) {
+    const reponsePermission = permissions[cle];
+    if (reponsePermission && reponsePermission.havePermission === true) {
+      return { ok: true, permission: cle, raison: '' };
+    }
+  }
+
+  return {
+    ok: false,
+    permission: '',
+    raison:
+      'the signed-in account holds none of the global administration permissions (' +
+      PERMISSIONS_ADMINISTRATION.join(', ') +
+      ')',
+  };
+}
+
 const REPONSE_NON_AUTHENTIFIE = {
   ok: false,
   error: 'NOT_AUTHENTICATED',
   message:
     'The scan can only be started by a logged-in Jira user, from the administration page of this app.',
+};
+
+const REPONSE_NON_ADMINISTRATEUR = {
+  ok: false,
+  error: 'NOT_ADMINISTRATOR',
+  message:
+    'This scan is reserved to Jira administrators: the account signed in on this site does not hold the global permission "Administer Jira" (ADMINISTER). Nothing was read.',
 };
 
 const REPONSE_FONCTION_INCONNUE = {
@@ -106,14 +213,22 @@ const REPONSE_FONCTION_INCONNUE = {
 /**
  * The scan of the site.
  *
+ * The administrator check is made BEFORE any read of the site: a caller who
+ * is not an administrator gets a refusal and the site is never touched.
+ *
  * @param {object} req  { payload, context } — the shape @forge/resolver gives
- * @returns {Promise<object>} { ok, requestedBy, report, csv }
+ * @returns {Promise<object>} { ok, requestedBy, report, csv } or a refusal
  */
 async function scan(req) {
   const payload = (req && req.payload) || {};
   const context = (req && req.context) || {};
   const accountId = context.accountId || null;
   if (!accountId) return Object.assign({}, REPONSE_NON_AUTHENTIFIE);
+
+  const droit = await droitAdministration();
+  if (!droit.ok) {
+    return Object.assign({}, REPONSE_NON_ADMINISTRATEUR, { detail: droit.raison });
+  }
 
   const pvRecus = valeursRecues(payload);
   const report = await moteur.lancerScan({ pvRecus });
@@ -128,6 +243,7 @@ async function scan(req) {
 /**
  * The demo scan: the SAME engine run on the 6 bundled fixtures. No site, no
  * account, no tenant — useful to try the app before pointing it at a portal.
+ * It reads nothing, so it stays available to any signed-in user.
  *
  * @param {object} req  { payload, context }
  * @returns {Promise<object>} { ok, requestedBy, report, csv }
@@ -189,3 +305,5 @@ exports.handler = async function handler(req, backendRuntimePayload) {
 exports._scan = scan;
 exports._scanDemo = scanDemo;
 exports._identite = identite;
+exports._droitAdministration = droitAdministration;
+exports._PERMISSIONS_ADMINISTRATION = PERMISSIONS_ADMINISTRATION;

@@ -1,63 +1,36 @@
 # Forge manifest — "Portal Accessibility Checker for JSM"
 # App id: ari:cloud:ecosystem::app/33f1227e-0df1-4008-b181-ea9c50b116f5
 #
-# CYCLE 128 (05/11/2026) — THE PUBLIC TRIGGER HAS BEEN REMOVED.
+# MODULES — four, and nothing else:
 #
-# Before this cycle the manifest declared a PUBLIC trigger module: an
-# unauthenticated URL (request authentication: none) that ran a scan of the
-# customer's site and returned the findings in clear text to whoever held the
-# URL. The jury review of 05/11/2026
-# (REVUE-JURY/20261105-1037-slot4-codegeist-140c.md, blocking point 1) called
-# it a blocking defect, and it was right: a Marketplace app that exposes a
-# customer's tenant on an open URL would very likely fail the security
-# review.
+#   * `jira:adminPage` — the interface (render: native, UI Kit 2). The official
+#     reference (https://developer.atlassian.com/platform/forge/manifest-reference/modules/jira-admin-page.md)
+#     describes where the page appears and the URL it gets
+#     (/jira/settings/apps/{appId}/{envId}); it names NO role and NO permission
+#     for opening it. This app therefore does not claim that the page is
+#     administrator-only: a signed-in user who can open Jira administration can
+#     open the page, and the app checks the rights ITSELF, on the server
+#     (src/resolvers.js). The scan is refused to anyone who does not hold the
+#     global Jira permission ADMINISTER ("Administer Jira") or SYSTEM_ADMIN
+#     ("Jira System Administrators"). The check is made with the caller's own
+#     identity, through
+#     `GET /rest/api/3/mypermissions?permissions=ADMINISTER,SYSTEM_ADMIN`
+#     (Jira Cloud REST API v3, group "Permissions":
+#     https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-permissions/).
+#   * `function` — the resolver the page calls (src/resolvers.js) and the two
+#     handlers behind the MCP tools. It answers ONLY to the signed-in user who
+#     pressed the button, and it refuses any call that carries no account id.
+#   * `action` — the two MCP tools.
+#   * `rovo:mcp` — the Atlassian MCP server, which exposes those two tools.
 #
-# UNTIL CYCLE 134 (09/11/2026) the manifest declared exactly TWO modules:
-#
-#   * `jira:adminPage` — the interface. Jira only renders it for a signed-in
-#     administrator, so the scan is started by a person, not by whoever finds
-#     a URL. This is the shape of the official `jira-admin-page-ui-kit`
-#     template (resource + resolver.function + render: native).
-#   * `function` — the resolver the page calls (src/resolvers.js). It answers
-#     ONLY to the signed-in user who pressed the button, and it refuses any
-#     call that carries no account id.
-#
-# There is NO public module left: `modules:` has two entries and that is all.
-# The absence is checkable by reading this file, and by
+# There is NO public trigger: this manifest used to declare one — an
+# unauthenticated URL that ran a scan of the customer's site and answered in
+# clear text to whoever held it — and it was removed. Every module declared
+# below is reachable only from an authenticated session, so this app has no
+# public URL. The absence is checkable by reading this file, and by
 # `python3 tools/verifier-manifest-cycle134.py`.
 #
-# CYCLE 134 (09/11/2026) — THE ROVO MCP MODULE WAS ADDED (at that date it was
-# in the source only; the version deployed then was still 2.5.0).
-#
-# The Codegeist 2026 bonus "Best app with Atlassian MCP" asks for "a Forge
-# app that exposes tools via the Atlassian MCP server using the rovo:mcp
-# module" (https://codegeist2026.devpost.com/rules). The manifest therefore
-# declares ONE `rovo:mcp` module (Atlassian allows at most one per app),
-# which exposes TWO actions as tools:
-#
-#   * `rovo:mcp` — the MCP server. Its `tools` list names the two actions
-#     below; an action that is not named there is not exposed.
-#   * `action` — the two tools themselves, backed by two `function` modules
-#     (src/mcp.js): `scan_accessibility` and `list_last_findings`.
-#
-# WHAT THE TOOLS DO NOT CHANGE: the scopes. The two MCP tools read the site
-# with the CALLER's own Jira permissions and with the SAME two read-only
-# scopes; no scope was added, no scope was removed, and the app still
-# writes nothing, stores nothing and calls no external service.
-#
-# The two entry points are now: the administration page (a signed-in Jira
-# administrator) and the two MCP tools (the signed-in caller, with their own
-# permissions). There is STILL no unauthenticated public module: the
-# absence is checkable by reading this file, and by
-# `python3 tools/verifier-manifest-cycle134.py`.
-#
-# CYCLE 136 (09/11/2026) — THE IDENTITY OF THE READS WAS CORRECTED.
-#
-# Until this cycle, the administration page read the site with the APP's own
-# identity (`asApp`). The page was only ever rendered for a signed-in
-# administrator, but the READS were made with an identity wider than the one
-# of the person who asked for the scan.
-#
+# IDENTITY — this app acts on behalf of a person, so it reads with `asUser()`.
 # The Marketplace security review ("Security requirements for cloud apps",
 # section "Forge apps") says:
 #
@@ -67,25 +40,18 @@
 #      permissions (for example, from product context) with the permissions
 #      REST APIs."
 #
-# This app acts on behalf of a person — the administrator who presses the
-# button, the caller of an MCP tool — so it reads with `asUser()`. Rule 2
-# cannot be honoured here (the app declares two read scopes and cannot call
-# the permissions API), so the wider identity is REMOVED rather than
-# justified: this application contains ZERO `asApp()` call.
-#
-# WHAT THIS DOES NOT CHANGE: the scopes, and nothing else. Still
-# read:jira-work and read:servicedesk-request, nothing added, nothing
-# removed. The app still writes nothing, stores nothing and calls no external
-# service.
-#
-# The control: `node test-identite-cycle136.js` counts the identity calls in
-# the ACTIVE code (comments and strings removed) and requires 0 asApp() and
-# at least one asUser(); it also checks that the app REFUSES — never an empty
-# report — when the platform refuses the caller's identity.
+# Rule 1 is honoured everywhere. Rule 2 cannot apply here: this application
+# contains ZERO `asApp()` call, so there is no wider identity to justify. Where
+# rights must be checked (the administration permission), they are checked with
+# the caller's own identity through the permissions REST API — see
+# src/resolvers.js.
 #
 # The scopes are UNCHANGED and still read-only:
 #   read:jira-work             (Jira issues: descriptions, summaries, fields)
 #   read:servicedesk-request   (JSM: request types, form fields, help text)
+# The permissions REST API above needs no extra scope: the official page lists
+# the classic scope `read:jira-work`, which the app already declares.
+#
 # The app writes nothing, calls no external service and stores nothing.
 #
 # The runtime stays nodejs24.x / 256 MB / arm64.

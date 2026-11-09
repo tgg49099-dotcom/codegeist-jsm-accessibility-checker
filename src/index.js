@@ -112,12 +112,16 @@ const constatApp = (critere, niveau, source, ressource, emplacement, valeur, mes
  * instance, jamais plus.
  *
  * LA RAISON ÉCRITE DE L'ABSENCE DE `asApp()` : la règle 2 demande de vérifier
- * les permissions attendues AVANT d'élargir l'identité. Cette application ne
- * peut pas appeler l'API « permissions » (elle ne déclare que deux scopes de
- * lecture, et un contrôle de permissions supposerait d'en déclarer un
- * troisième) ; elle supprime donc l'appel `asApp()` plutôt que de le
- * justifier à moitié. Zéro appel `asApp()`, c'est un contrôle qu'on peut
+ * les permissions attendues AVANT d'élargir l'identité. Cette application
+ * n'élargit jamais l'identité : elle supprime l'appel `asApp()` plutôt que de
+ * le justifier à moitié. Zéro appel `asApp()`, c'est un contrôle qu'on peut
  * vérifier en une ligne : `grep -c "asApp(" src/index.js` → 0.
+ *
+ * Ce que l'API « permissions » sert, ici, c'est l'inverse : le contrôle
+ * d'administration est fait CÔTÉ SERVEUR, avec l'identité de l'appelant, dans
+ * `src/resolvers.js` (`GET /rest/api/3/mypermissions`). Aucun nouveau scope
+ * n'est nécessaire pour cela — l'endpoint officiel recommande le scope
+ * classique `read:jira-work`, que l'application déclare déjà.
  *
  * Conséquence : il n'existe aucun chemin dans le code qui puisse lire le site
  * avec une identité plus large que celle de l'appelant. Le contrôle
