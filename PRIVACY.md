@@ -5,13 +5,15 @@
 **Source code:** the repository this file lives in (MIT licence) — every line of the app is public, so the behaviour described below can be read in the code that implements it
 **Published notice:** **https://labs.chiffreo.ch/privacy.html** — this is the **only** published privacy URL of this app; this file is the same notice, kept in the repository so that the code and the notice can be read side by side.
 
-*Last updated: 7 November 2026.* This notice describes the app as it is deployed today
-(production version **2.5.0**, deployed 7 November 2026). It replaces the version of
-4 November 2026, which described an earlier shape: a **public trigger** (`authentication:
-none`) that anyone could call. That module has been **removed** — § 3 explains what
-changed, and § 3 also says exactly what did not change. The masking contract, the
-sentence of § 8 and the whole of § 8's reasoning are unchanged, because the engine
-(`src/index.js`) is unchanged: the interface moved, the code that reads your site did not.
+*Last updated: 9 November 2026.* This notice describes the app as it is deployed today
+(production version **2.6.0**, deployed 9 November 2026 at 13:28 UTC; the development
+environment runs **2.9.0**). It replaces the version of 7 November 2026, which described
+the app as it was then (production 2.5.0). Two things changed since: the **identity of
+the reads** — the app now reads with `asUser` only, and refuses when the platform
+refuses (§ 2) — and the **two Rovo MCP tools**, which are now deployed (§ "The two Rovo
+MCP tools"). The masking contract, the sentence of § 8 and the whole of § 8's reasoning
+are unchanged, because the rules that decide the findings did not change: the interface
+moved, the code that reads your site reads it with your own permissions.
 
 ---
 
@@ -111,7 +113,7 @@ URL. The name of the field is read with **the spaces around it ignored** (` nom 
 **every** value of a repeated parameter is collected, not only the first one (`?nom=V1&nom=V2` masks
 both `V1` and `V2`). This multi-channel coverage was measured on the **production trigger of version
 2.4.0** — the version that still had the public URL — and the engine has not changed since. The
-version deployed today (2.5.0) has a **single** channel, the payload the page sends with the scan;
+version deployed today (2.6.0) has a **single** channel, the payload the page sends with the scan;
 the same masking rules apply to it, and they are proved offline by two suites of the public
 repository (`node test-contrat-http.js`, 59 checks, and its counter-proof, 28 checks).
 
@@ -160,14 +162,13 @@ outbound call to any host, no storage call, and no analytics or telemetry code.
 * The app holds no data after the scan, so there is nothing to export and no data to delete.
 * You can remove the app at any time from **Administration → Manage apps**.
 
-## The two Rovo MCP tools (in the source code; not deployed yet)
+## The two Rovo MCP tools (deployed since production 2.6.0)
 
-*The source code of this app (the repository this file lives in) contains one more module than
-the deployed version does: a `rovo:mcp` module, which exposes two tools through Atlassian's MCP
-server. **Production 2.5.0 does not have it.** The section below describes what those tools do,
-so that the notice can be read next to the code; the published page
-(https://labs.chiffreo.ch/privacy.html) must be updated at the same time as the deployment, and
-not before.*
+*The deployed version of this app — **production 2.6.0**, deployed 9 November 2026 — contains
+one more module than the previous one: a `rovo:mcp` module, which exposes two tools through
+Atlassian's MCP server. The section below describes what those tools do, so that the notice can
+be read next to the code; the published page (https://labs.chiffreo.ch/privacy.html) must be
+updated at the same time as the deployment, and not before.*
 
 **The two tools.** `scan_accessibility(url)` runs the same WCAG 2.2 AA scan as the button on the
 administration page and returns the findings. `list_last_findings()` returns the same findings as

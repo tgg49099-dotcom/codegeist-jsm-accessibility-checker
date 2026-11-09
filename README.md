@@ -15,7 +15,7 @@ public URL: until version 2.4.0 the app answered a web trigger declared with
 | **Data leaves your site** | No. The app declares **no egress at all** |
 | **Personal data in the answer** | A name or an e-mail **typed in the page** is masked, never returned in clear text. The content read from your site is returned **as it is** — it is what the app checks (see below) |
 | **Permissions** | Read-only: `read:jira-work`, `read:servicedesk-request` |
-| **App version in this repository** | 2.5.0 — the code deployed to the **production** environment on 7 November 2026 (02:20 UTC). The development environment runs 2.8.0 |
+| **App version in this repository** | the code of **production 2.6.0**, deployed on 9 November 2026 (13:28 UTC); the development environment runs **2.9.0** |
 
 ## What it does
 
@@ -79,13 +79,15 @@ python3 tools/verifier-manifest-cycle134.py     # 18 checks, RC 0
 python3 tools/contre-epreuve-verificateur.py     # the checker must turn RED on 9 sabotages
 ```
 
-> **The `rovo:mcp` module is in this source, not in the deployed app.** Production
-> **2.5.0** still declares the two modules of the version below (the interface and
-> the resolver); the MCP module is added in the source of this repository and is
-> deployed only when the owner deploys the next version. Nothing about the
-> deployed app changes until then.
+> **The `rovo:mcp` module is deployed since production 2.6.0** (9 November 2026,
+> 13:28 UTC), together with the `asUser` identity. The previous production version
+> (2.5.0) declared only the interface and the resolver. The manifest that was
+> uploaded for 2.6.0 declares exactly one `rovo:mcp` module, the two `action`
+> modules and the three `function` handlers — and still no `webtrigger`, no
+> `productTrigger`, no `scheduleTrigger`.
 
-**Measured on 7 November 2026**, on both environments:
+**Measured on 7 November 2026** (and re-measured on 9 November 2026, after the
+deployment of 2.6.0), on both environments:
 
 * `forge version details -e production --json` and `-e development --json` both
   report `egresses: []`, `remotes: []`, `services: []`, the two read scopes, one
@@ -94,7 +96,12 @@ python3 tools/contre-epreuve-verificateur.py     # the checker must turn RED on 
 * the two URLs of the former public trigger answer **HTTP 424 Failed Dependency**
   with 157 bytes and no scan data (they are no longer routable);
 * an anonymous request to the administration URL returns the Atlassian sign-in
-  shell: 0 occurrence of the app name, 0 occurrence of the button, no finding.
+  shell: 0 occurrence of the app name, 0 occurrence of the button, no finding;
+* on 9 November 2026, the **Platform API** (GraphQL, `api.atlassian.com/graphql`)
+  answers `isLatest: true` for **production 2.6.0** and for **development 2.9.0**,
+  and the package uploaded for that deployment (kept as evidence) declares the
+  `rovo:mcp` module, the two `action` modules, the three `function` handlers, the
+  two read scopes — **and no trigger module**.
 
 ## The identity of the reads: `asUser`, always
 
@@ -136,7 +143,7 @@ node test-identite-cycle136.js            # 12 checks — 0 asApp() in the activ
                                           #            behaviour when the platform refuses
 ```
 
-## The two tools on Atlassian's MCP server (in the source; not deployed yet)
+## The two tools on Atlassian's MCP server (deployed since production 2.6.0)
 
 The source of this app declares **one** `rovo:mcp` module — Atlassian allows at
 most one per app — which exposes **two** actions as tools:
@@ -168,9 +175,9 @@ The tools run the very same engine and the very same rules as the button
 checks all of this offline, against a simulated platform, and checks that the
 harness turns red when each of these properties is broken.
 
-> This module is **in the source**, not in the deployed app: production 2.5.0
-> still exposes the administration page only. It becomes usable when the owner
-> deploys the next version and Rovo is activated on the site.
+> This module is **deployed**: production 2.6.0 (9 November 2026) declares the
+> `rovo:mcp` module and the two actions. The tools become usable on a site where
+> **Rovo is activated** (a paid plan — see below).
 
 > **Rovo is a paid Atlassian product, and the tools need it.** Atlassian states
 > that « Rovo, including Search, Chat, and Studio apps as well as agents, is
