@@ -114,14 +114,23 @@ const constatApp = (critere, niveau, source, ressource, emplacement, valeur, mes
  * LA RAISON ÉCRITE DE L'ABSENCE DE `asApp()` : la règle 2 demande de vérifier
  * les permissions attendues AVANT d'élargir l'identité. Cette application
  * n'élargit jamais l'identité : elle supprime l'appel `asApp()` plutôt que de
- * le justifier à moitié. Zéro appel `asApp()`, c'est un contrôle qu'on peut
- * vérifier en une ligne : `grep -c "asApp(" src/index.js` → 0.
+ * le justifier à moitié. Zéro appel `asApp()` dans le CODE — un contrôle
+ * qu'on peut vérifier en une ligne :
+ *
+ *   grep -v -e '^[[:space:]]*[*]' -e '^[[:space:]]*[/]' src/index.js | grep -c "asApp("   → 0
+ *
+ * (Le `grep -c "asApp("` BRUT, commentaires compris, renvoie 5 : ce sont les
+ * cinq mentions de `asApp()` de cette documentation, pas des appels. Une
+ * version antérieure de ce fichier annonçait « → 0 » pour la commande brute :
+ * c'était faux, et la commande ci-dessus est celle qui compte.)
  *
  * Ce que l'API « permissions » sert, ici, c'est l'inverse : le contrôle
  * d'administration est fait CÔTÉ SERVEUR, avec l'identité de l'appelant, dans
- * `src/resolvers.js` (`GET /rest/api/3/mypermissions`). Aucun nouveau scope
- * n'est nécessaire pour cela — l'endpoint officiel recommande le scope
- * classique `read:jira-work`, que l'application déclare déjà.
+ * `src/droits-admin.js` (`GET /rest/api/3/mypermissions`), appelé par le
+ * resolver (`src/resolvers.js`) ET par les deux outils MCP (`src/mcp.js`).
+ * Aucun nouveau scope n'est nécessaire pour cela — l'endpoint officiel
+ * recommande le scope classique `read:jira-work`, que l'application déclare
+ * déjà.
  *
  * Conséquence : il n'existe aucun chemin dans le code qui puisse lire le site
  * avec une identité plus large que celle de l'appelant. Le contrôle

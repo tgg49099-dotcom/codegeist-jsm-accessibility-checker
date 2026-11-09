@@ -6,7 +6,8 @@
 **Published notice:** **https://labs.chiffreo.ch/privacy.html** — this is the **only** published privacy URL of this app; this file is the same notice, kept in the repository so that the code and the notice can be read side by side.
 
 *Last updated: 9 November 2026.* This notice describes the app as it is deployed today
-(production version **2.7.0**, deployed 9 November 2026 at 20:54 UTC; the development
+(production version **2.7.0**, deployed 9 November 2026 at 20:00:06 UTC — 21:00:06 in
+Zurich, measured from the deployment record; the development
 environment runs **2.10.0**). It replaces the version of 7 November 2026, which described
 the app as it was then (production 2.5.0). Three things changed since: the **identity of
 the reads** — the app now reads with `asUser` only, and refuses when the platform

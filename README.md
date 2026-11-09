@@ -15,7 +15,7 @@ public URL: until version 2.4.0 the app answered a web trigger declared with
 | **Data leaves your site** | No. The app declares **no egress at all** |
 | **Personal data in the answer** | A name or an e-mail **typed in the page** is masked, never returned in clear text. The content read from your site is returned **as it is** — it is what the app checks (see below) |
 | **Permissions** | Read-only: `read:jira-work`, `read:servicedesk-request` |
-| **App version in this repository** | the code of **production 2.7.0**, deployed on 9 November 2026 (20:54 UTC, version id `09201e49-daac-48f6-bf92-c1c73e01ffcc`), and the same code in the development environment as **2.10.0**; **plus one change committed on 9 November 2026 and not yet deployed** — the administrator check on the two MCP tools (see the note in "Who can open the page"). Forge assigns the numbers itself (the manifest declares no `app.version`), so the two environments number the same code differently |
+| **App version in this repository** | the code of **production 2.7.0**, deployed on 9 November 2026 at 20:00:06 UTC (21:00:06 Zurich, version id `09201e49-daac-48f6-bf92-c1c73e01ffcc`), and the same code in the development environment as **2.10.0**; **plus one change committed on 9 November 2026 and not yet deployed** — the administrator check on the two MCP tools (see the note in "Who can open the page"). Forge assigns the numbers itself (the manifest declares no `app.version`), so the two environments number the same code differently |
 
 ## What it does
 
@@ -157,13 +157,19 @@ python3 tools/contre-epreuve-verificateur.py     # the checker must turn RED on 
 > modules and the three `function` handlers — and still no `webtrigger`, no
 > `productTrigger`, no `scheduleTrigger`.
 >
-> **Production now runs 2.7.0** (9 November 2026, 20:54 UTC), which is that same
+> **Production now runs 2.7.0** (deployed 9 November 2026 at **20:00:06 UTC**
+> = 21:00:06 in Zurich, measured from the deployment record of
+> `forge deploy list --json`; the version record was updated 22 seconds later,
+> at 20:00:28 UTC), which is that same
 > code plus the **server-side administrator check** and the **CSV written in a
 > read-only field**. `forge deploy` numbers the versions itself: the manifest
 > declares no `app.version`, so the CLI increments the minor number of the
 > installed major version — production went 2.6.0 → **2.7.0**, development
 > 2.9.0 → **2.10.0**. The version id of the production version is
-> `09201e49-daac-48f6-bf92-c1c73e01ffcc`.
+> `09201e49-daac-48f6-bf92-c1c73e01ffcc`. *(An earlier version of this file
+> gave "20:54 UTC" for that deployment: the measured value is 20:00:06 UTC —
+> the deployment record, the version record and the commit date are the
+> sources.)*
 
 **Measured on 7 November 2026** (and re-measured on 9 November 2026, after the
 deployment of 2.7.0), on both environments:
