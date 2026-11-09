@@ -151,7 +151,7 @@ npm install
 node test-ihm-cycle129.js                 # 35 checks — the interface replaces the public trigger
 node test-contrat-http.js                 # 59 checks — the privacy contract (masking, absent fields, logs)
 node test-app-demo.js                     # 22 checks — the resolver returns the 23/23 verdict
-node test-demo.js                         # 55 checks — demo fixtures: 23/23 faults, 0 false positives
+node test-demo.js                         # 55 checks — detects all 23 seeded issues in the bundled demo data
 node test-contre-epreuve.js               # 13 checks — the harness turns RED when a rule is sabotaged
 node test-contrat-http-contre-epreuve.js  # 28 checks — that harness turns RED when the contract is broken
 python3 tools/verifier-manifest-cycle128.py       # 10 checks — no public module, no egress, two read scopes
