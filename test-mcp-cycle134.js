@@ -43,6 +43,7 @@ const api = require('@forge/api');
 
 const APP = __dirname;
 const SRC_MCP = path.join(APP, 'src', 'mcp.js');
+const SRC_INDEX = path.join(APP, 'src', 'index.js');
 
 let failures = 0;
 let checks = 0;
@@ -273,8 +274,8 @@ async function controles() {
     { call: { functionKey: 'scan', payload: {} }, context: {} },
     { principal: { accountId: 'acc-2' } }
   );
-  res['MCP-24 la page d\'administration lit toujours avec l\'identité de l\'app (asApp)'] =
-    APPELS.length > 0 && APPELS.every((a) => a.identite === 'asApp');
+  res['MCP-24 la page d\'administration lit avec l\'identité de l\'appelant (asUser)'] =
+    APPELS.length > 0 && APPELS.every((a) => a.identite === 'asUser');
   res['MCP-25 la page d\'administration rend toujours son rapport'] =
     page && page.ok === true && !!page.report && !!page.report.findings;
 
@@ -304,6 +305,41 @@ function moduleSabotage(nom, mutation) {
   }
 }
 
+/**
+ * Sabotage du MOTEUR (src/index.js) : le module des outils est recompilé
+ * pour pointer sur le moteur saboté, sinon le sabotage ne servirait à rien.
+ *
+ * C'est le contrôle qui change de nature après le cycle 136 : l'identité
+ * n'est plus choisie par un drapeau, elle estUnique dans le code. Le
+ * sabotage vérifie donc que le contrôle voit l'identité RÉELLEMENT utilisée.
+ */
+function moduleSabotageMoteur(nom, mutation) {
+  const sourceMoteur = fs.readFileSync(SRC_INDEX, 'utf8');
+  const mutantMoteur = mutation(sourceMoteur);
+  if (mutantMoteur === sourceMoteur) return { erreur: 'la mutation n\'a rien changé' };
+  const cheminMoteur = path.join(APP, 'src', '.sabotage-' + nom + '-index.js');
+  fs.writeFileSync(cheminMoteur, mutantMoteur, 'utf8');
+  const sourceMcp = fs.readFileSync(SRC_MCP, 'utf8');
+  const mutantMcp = sourceMcp.replace(
+    "require('./index.js')",
+    "require('./.sabotage-" + nom + "-index.js')"
+  );
+  if (mutantMcp === sourceMcp) {
+    return { erreur: 'le mutant ne pointe pas vers le moteur saboté', cheminMoteur: cheminMoteur };
+  }
+  const chemin = path.join(APP, 'src', '.sabotage-' + nom + '.js');
+  fs.writeFileSync(chemin, mutantMcp, 'utf8');
+  try {
+    return { module: require(chemin), chemin: chemin, cheminMoteur: cheminMoteur };
+  } catch (e) {
+    return {
+      erreur: 'le mutant ne compile pas : ' + (e && e.message),
+      chemin: chemin,
+      cheminMoteur: cheminMoteur,
+    };
+  }
+}
+
 function remplacerTout(source, avant, apres) {
   return source.split(avant).join(apres);
 }
@@ -311,8 +347,9 @@ function remplacerTout(source, avant, apres) {
 /** Chaque sabotage : un mutant, un contrôle qui doit devenir FAUX. */
 const SABOTAGES = [
   {
-    nom: 'les outils lisent avec l\'identité de l\'app au lieu de celle de l\'appelant',
-    mutation: (s) => remplacerTout(s, 'asUser: true', 'asUser: false'),
+    nom: 'le moteur lit avec l\'identité de l\'app au lieu de celle de l\'appelant',
+    moteur: true,
+    mutationMoteur: (s) => remplacerTout(s, 'return api.asUser();', 'return api.asApp();'),
     attendu: 'MCP-09 le site est lu avec l\'IDENTITÉ de l\'appelant (asUser)',
     verifier: async (mutant) => {
       SCENARIO = scenarioJsm();
@@ -364,8 +401,8 @@ const SABOTAGES = [
     nom: 'l\'URL fournie est envoyée à un service extérieur',
     mutation: (s) =>
       s.replace(
-        'const rapport = await moteur.lancerScan({ pvRecus: {}, asUser: true });',
-        'await api.fetch(route`/fwd/${encodeURIComponent(url)}`);\n  const rapport = await moteur.lancerScan({ pvRecus: {}, asUser: true });'
+        'const rapport = await moteur.lancerScan({ pvRecus: {} });',
+        'await api.fetch(route`/fwd/${encodeURIComponent(url)}`);\n  const rapport = await moteur.lancerScan({ pvRecus: {} });'
       ),
     attendu: 'MCP-17 aucun appel à un service extérieur',
     verifier: async (mutant) => {
@@ -379,8 +416,8 @@ const SABOTAGES = [
     nom: 'les outils stockent l\'historique des scans',
     mutation: (s) =>
       s.replace(
-        'const rapport = await moteur.lancerScan({ pvRecus: {}, asUser: true });',
-        'await api.storage.set("scan-history", "x");\n  const rapport = await moteur.lancerScan({ pvRecus: {}, asUser: true });'
+        'const rapport = await moteur.lancerScan({ pvRecus: {} });',
+        'await api.storage.set("scan-history", "x");\n  const rapport = await moteur.lancerScan({ pvRecus: {} });'
       ),
     attendu: 'MCP-18 aucun accès au stockage',
     verifier: async (mutant) => {
@@ -404,7 +441,10 @@ const SABOTAGES = [
   console.log('');
   console.log('== 2. CONTRE-ÉPREUVE (le harnais doit devenir rouge) ==');
   for (const s of SABOTAGES) {
-    const sab = moduleSabotage(s.nom.replace(/[^a-z0-9]+/gi, '-'), s.mutation);
+    const nomFichier = s.nom.replace(/[^a-z0-9]+/gi, '-');
+    const sab = s.moteur
+      ? moduleSabotageMoteur(nomFichier, s.mutationMoteur)
+      : moduleSabotage(nomFichier, s.mutation);
     let rouge = false;
     let crash = null;
     try {
@@ -417,6 +457,7 @@ const SABOTAGES = [
       crash = e && e.message ? e.message : String(e);
     } finally {
       if (sab.chemin && fs.existsSync(sab.chemin)) fs.unlinkSync(sab.chemin);
+      if (sab.cheminMoteur && fs.existsSync(sab.cheminMoteur)) fs.unlinkSync(sab.cheminMoteur);
     }
     check(
       'CONTRE-ÉPREUVE « ' + s.nom + ' » est détectée (échec explicite, sans crash)',

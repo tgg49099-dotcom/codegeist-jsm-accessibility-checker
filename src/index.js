@@ -92,32 +92,112 @@ const constatApp = (critere, niveau, source, ressource, emplacement, valeur, mes
   a_verifier: aVerifier,
 });
 
-// ---------- appels REST : asApp par défaut, asUser sur demande ----------
+// ---------- appels REST : l'identité de la personne qui appelle, TOUJOURS ----------
 
 /**
- * L'identité qui lit le site.
+ * L'identité qui lit le site : celle de la personne qui appelle, et rien d'autre.
  *
- * `asApp` (le défaut, inchangé) = l'identité de l'app et ses deux scopes de
- * lecture : c'est le comportement de la page d'administration, qui n'est
- * atteignable que par un administrateur Jira connecté.
+ * RÈGLE OFFICIELLE de la revue Marketplace (« Security requirements for cloud
+ * apps », section « Forge apps ») :
  *
- * `asUser` = les permissions Jira de la personne qui appelle. C'est ce que
- * le module `rovo:mcp` utilise : un outil d'agent ne doit pas pouvoir lire
- * ce que la personne qui l'appelle ne peut pas lire elle-même (la doc
- * officielle le dit : « Using asUser() keeps the tool safe »).
+ *   1. « An application must default to using asUser() when performing an
+ *      operation on behalf of the user. »
+ *   2. « Before making calls using asApp(), you must verify the expected
+ *      permissions (for example, from product context) with the permissions
+ *      REST APIs. »
  *
- * @param {object} opts  { asUser: boolean } — absent = asApp.
- * @returns {object} le client REST (@forge/api)
+ * L'application agit TOUJOURS au nom de quelqu'un : la personne qui appuie
+ * sur le bouton de la page d'administration, ou l'appelant d'un outil MCP. Elle
+ * lit donc avec `asUser()` — les permissions de CETTE personne, sur CETTE
+ * instance, jamais plus.
+ *
+ * LA RAISON ÉCRITE DE L'ABSENCE DE `asApp()` : la règle 2 demande de vérifier
+ * les permissions attendues AVANT d'élargir l'identité. Cette application ne
+ * peut pas appeler l'API « permissions » (elle ne déclare que deux scopes de
+ * lecture, et un contrôle de permissions supposerait d'en déclarer un
+ * troisième) ; elle supprime donc l'appel `asApp()` plutôt que de le
+ * justifier à moitié. Zéro appel `asApp()`, c'est un contrôle qu'on peut
+ * vérifier en une ligne : `grep -c "asApp(" src/index.js` → 0.
+ *
+ * Conséquence : il n'existe aucun chemin dans le code qui puisse lire le site
+ * avec une identité plus large que celle de l'appelant. Le contrôle
+ * correspondant est `test-identite-cycle136.js` (et sa contre-épreuve).
+ *
+ * @returns {object} le client REST (@forge/api), avec l'identité de l'appelant
  */
-function client(opts) {
-  return opts && opts.asUser ? api.asUser() : api.asApp();
+function client() {
+  return api.asUser();
 }
 
-async function jget(path, headers, opts) {
+/**
+ * The ONE identity this application reads with, named once.
+ *
+ * The string is written here, next to the only identity call, and the reports
+ * use it: the application therefore cannot claim one identity and read with
+ * another without the two drifting apart — and `test-identite-cycle136.js`
+ * checks BOTH (the call expression is `asUser`, and this constant is
+ * `asUser`).
+ */
+const IDENTITE_LECTURE = 'asUser';
+
+/**
+ * Un statut HTTP qui dit « la plateforme n'a pas laissé l'appelant lire ».
+ * 401 = le jeton de l'appelant est refusé (consentement de l'utilisateur
+ * absent ou expiré) ; 403 = l'appelant est connu mais n'a pas la permission.
+ */
+function estRefusAutorisation(status) {
+  return status === 401 || status === 403;
+}
+
+/**
+ * TRUE when EVERY real read of the scan was refused with 401/403.
+ *
+ * Only the REAL reads count: the report also carries a synthetic line — the
+ * union of the fields shown on the create screens — which has a `note` and a
+ * hard-coded 200 because no HTTP call was made for it; counting it would
+ * hide a refusal.
+ *
+ * @param {object} sources  the `read` section of the report
+ * @returns {number|null} the HTTP status, or null when the reads succeeded
+ */
+function lecturesRefusees(sources) {
+  const cles = Object.keys(sources || {}).filter((cle) => !(sources[cle] || {}).note);
+  if (!cles.length) return null;
+  for (const cle of cles) {
+    const statut = (sources[cle] || {}).httpStatus;
+    if (!estRefusAutorisation(statut)) return null;
+  }
+  return (sources[cles[0]] || {}).httpStatus;
+}
+
+/**
+ * Le refus affiché quand la plateforme refuse la lecture avec l'identité de
+ * l'appelant.
+ *
+ * Le texte dit CE QU'IL FAUT FAIRE. Il ne dit JAMAIS « 0 constat » : une
+ * lecture refusée n'est pas un site sans problème d'accessibilité, c'est une
+ * lecture qui n'a pas eu lieu.
+ *
+ * @param {number} status  le statut HTTP refusé par la plateforme
+ * @returns {string} le message affiché
+ */
+function refusAutorisation(status) {
+  return (
+    'The scan could not be run with your own permissions (the platform answered HTTP ' +
+    status +
+    '). Your account has not authorised this app to read the site on your behalf. ' +
+    'Ask a Jira administrator to grant the app access (Apps > Manage apps > ' +
+    'Portal Accessibility Checker for JSM > Allow access), and accept the app in your own ' +
+    'Connected apps (id.atlassian.com/manage-profile/apps) if you call the tool from an ' +
+    'external client. Then run the scan again. Nothing was read.'
+  );
+}
+
+async function jget(path, headers) {
   // @forge/api 3.9.2 : requestJira exige un objet route (tagged template) —
   // un simple string est refusé ("You must create your route using the 'route'
   // export"). requestJira couvre aussi les chemins /rest/servicedeskapi/*.
-  const res = await client(opts).requestJira(path, { headers: headers || {} });
+  const res = await client().requestJira(path, { headers: headers || {} });
   let body = null;
   try {
     body = await res.json();
@@ -135,8 +215,8 @@ async function jget(path, headers, opts) {
  * needs no write scope. There is no other POST in the app: the app declares
  * only the two read scopes, and it cannot write even if it wanted to.
  */
-async function jsearch(path, payload, opts) {
-  const res = await client(opts).requestJira(path, {
+async function jsearch(path, payload) {
+  const res = await client().requestJira(path, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify(payload),
@@ -390,10 +470,10 @@ function sectionPrivacy(pvRecus) {
 
 // ---------- scan JSM (exécuté seulement si JSM est actif sur le site) ----------
 
-async function scanJsm(opts) {
+async function scanJsm() {
   const sources = {};
   const findings = [];
-  const desks = await jget(route`/rest/servicedeskapi/servicedesk`, JSM_HDRS, opts);
+  const desks = await jget(route`/rest/servicedeskapi/servicedesk`, JSM_HDRS);
   sources['GET /rest/servicedeskapi/servicedesk'] = {
     httpStatus: desks.status,
     excerpt: (desks.body.values || []).slice(0, 3).map((d) => ({ id: d.id, projectName: d.projectName })),
@@ -402,7 +482,7 @@ async function scanJsm(opts) {
     return { sources, findings, error: 'service desk list unavailable (HTTP ' + desks.status + ')' };
   }
   for (const desk of (desks.body.values || []).slice(0, 3)) {
-    const rts = await jget(route`/rest/servicedeskapi/servicedesk/${desk.id}/requesttype`, JSM_HDRS, opts);
+    const rts = await jget(route`/rest/servicedeskapi/servicedesk/${desk.id}/requesttype`, JSM_HDRS);
     const values = (rts.body.values || []).slice(0, 5);
     sources[`GET /rest/servicedeskapi/servicedesk/${desk.id}/requesttype`] = {
       httpStatus: rts.status,
@@ -436,8 +516,7 @@ async function scanJsm(opts) {
     for (const rt of values) {
       const flds = await jget(
         route`/rest/servicedeskapi/servicedesk/${desk.id}/requesttype/${rt.id}/field`,
-        JSM_HDRS,
-        opts
+        JSM_HDRS
       );
       const requestTypeFields = (flds.body.requestTypeFields || []).slice(0, 20);
       sources[`GET /rest/servicedeskapi/servicedesk/${desk.id}/requesttype/${rt.id}/field`] = {
@@ -491,12 +570,12 @@ async function scanJsm(opts) {
 
 // ---------- scan Jira (repli : JSM non activé) ----------
 
-async function scanJira(opts) {
+async function scanJira() {
   const sources = {};
   const findings = [];
   const onScreen = {}; // fieldId -> nom vu sur l'écran de création
 
-  const flds = await jget(route`/rest/api/3/field`, undefined, opts);
+  const flds = await jget(route`/rest/api/3/field`, undefined);
   const allFields = Array.isArray(flds.body) ? flds.body : [];
   const customFields = allFields.filter((f) => f.custom === true).slice(0, 40);
   sources['GET /rest/api/3/field'] = {
@@ -510,7 +589,7 @@ async function scanJira(opts) {
     })),
   };
 
-  const projs = await jget(route`/rest/api/3/project`, undefined, opts);
+  const projs = await jget(route`/rest/api/3/project`, undefined);
   const projectKeys = (Array.isArray(projs.body) ? projs.body : []).slice(0, 3).map((p) => p.key);
   sources['GET /rest/api/3/project'] = {
     httpStatus: projs.status,
@@ -518,10 +597,10 @@ async function scanJira(opts) {
   };
 
   for (const key of projectKeys) {
-    const its = await jget(route`/rest/api/3/issue/createmeta/${key}/issuetypes`, undefined, opts);
+    const its = await jget(route`/rest/api/3/issue/createmeta/${key}/issuetypes`, undefined);
     const types = (its.body.issueTypes || []).slice(0, 4);
     for (const it of types) {
-      const meta = await jget(route`/rest/api/3/issue/createmeta/${key}/issuetypes/${it.id}`, undefined, opts);
+      const meta = await jget(route`/rest/api/3/issue/createmeta/${key}/issuetypes/${it.id}`, undefined);
       for (const f of meta.body.fields || []) {
         onScreen[f.fieldId] = f.name;
       }
@@ -541,7 +620,7 @@ async function scanJira(opts) {
     jql,
     maxResults: 20,
     fields: ['summary', 'description'],
-  }, opts);
+  });
   const issues = (search.body.issues || []).map((i) => ({
     key: i.key,
     summary: i.fields.summary,
@@ -656,14 +735,44 @@ async function scanJira(opts) {
 /**
  * Runs the scan ON THE SITE and returns the raw scan result.
  *
- * The site is read with the app's own identity (`asApp`) and the two read-only
- * scopes the manifest declares (`read:jira-work`, `read:servicedesk-request`).
- * Nothing is written, and no external service is called.
+ * The site is read with the CALLER's own identity (`asUser`) and the two
+ * read-only scopes the manifest declares (`read:jira-work`,
+ * `read:servicedesk-request`). Nothing is written, and no external service is
+ * called.
  *
- * @returns {Promise<{mode: string, jsmProbe: object, scan: object}>}
+ * FIRST READ — THE IDENTITY PROBE. Before reading anything that belongs to the
+ * customer, the engine checks that the platform accepts to read with the
+ * caller's identity: `GET /rest/api/3/serverInfo` returns the identity of the
+ * site and nothing about the customer's content. If the platform refuses it
+ * (401 / 403), the scan STOPS and says so. It never returns an empty report:
+ * "nothing was read" and "nothing was found" are two different answers, and
+ * the app must not confuse them.
+ *
+ * @returns {Promise<{mode: string, jsmProbe: object, scan: object, autorisation: object}>}
  */
-async function executerScan(opts) {
-  const info = await jget(route`/rest/servicedeskapi/info`, JSM_HDRS, opts);
+async function executerScan() {
+  const sonde = await jget(route`/rest/api/3/serverInfo`, undefined);
+  if (estRefusAutorisation(sonde.status)) {
+    return {
+      mode: 'refus-acces',
+      jsmProbe: {
+        endpoint: 'GET /rest/servicedeskapi/info',
+        httpStatus: null,
+        isLicensedForUse: null,
+        note: 'nothing was read: the platform refused to read with the caller\'s identity',
+      },
+      scan: { sources: {}, findings: [] },
+      autorisation: {
+        ok: false,
+        identity: IDENTITE_LECTURE,
+        httpStatus: sonde.status,
+        endpoint: 'GET /rest/api/3/serverInfo',
+        message: refusAutorisation(sonde.status),
+      },
+    };
+  }
+
+  const info = await jget(route`/rest/servicedeskapi/info`, JSM_HDRS);
   const jsmProbe = {
     endpoint: 'GET /rest/servicedeskapi/info',
     httpStatus: info.status,
@@ -678,11 +787,43 @@ async function executerScan(opts) {
   let scan = null;
   if (info.status === 200 && info.body.isLicensedForUse === true) {
     mode = 'jsm';
-    scan = await scanJsm(opts);
+    scan = await scanJsm();
   } else {
-    scan = await scanJira(opts);
+    scan = await scanJira();
   }
-  return { mode, jsmProbe, scan };
+
+  // Every read refused (401/403): the caller may not read this site. The
+  // answer is a REFUSAL, never a report with zero findings — "nothing was
+  // read" and "nothing was found" are two different answers.
+  const refuse = lecturesRefusees(scan.sources);
+  if (refuse !== null) {
+    return {
+      mode: 'refus-acces',
+      jsmProbe,
+      scan: { sources: scan.sources, findings: [] },
+      autorisation: {
+        ok: false,
+        identity: IDENTITE_LECTURE,
+        httpStatus: refuse,
+        endpoint: 'GET /rest/servicedeskapi/info',
+        message: refusAutorisation(refuse),
+      },
+    };
+  }
+
+  return {
+    mode,
+    jsmProbe,
+    scan,
+    autorisation: {
+      ok: true,
+      identity: IDENTITE_LECTURE,
+      httpStatus: sonde.status,
+      endpoint: 'GET /rest/api/3/serverInfo',
+      message:
+        'the site was read with YOUR OWN Jira permissions (asUser); the app never reads with a wider identity',
+    },
+  };
 }
 
 /**
@@ -695,7 +836,7 @@ async function executerScan(opts) {
  * @param {object} args
  * @returns {object} the report (not yet masked)
  */
-function construireRapport({ mode, jsmProbe, scan, horodatage, pvRecus }) {
+function construireRapport({ mode, jsmProbe, scan, autorisation, horodatage, pvRecus }) {
   return {
     // No version number here: the deployed version is the one in
     // package.json (read in the README and in the Atlassian console). A
@@ -705,6 +846,7 @@ function construireRapport({ mode, jsmProbe, scan, horodatage, pvRecus }) {
     generatedAt: horodatage,
     mode,
     privacy: sectionPrivacy(pvRecus),
+    autorisation: autorisation || null,
     jsmProbe,
     read: scan.sources,
     findings: scan.findings,
@@ -727,17 +869,20 @@ function construireRapport({ mode, jsmProbe, scan, horodatage, pvRecus }) {
  * @param {object} args
  * @param {object} args.pvRecus  the personal values received, as collected by
  *                                `champsPvRecus`
- * @param {boolean} args.asUser  when true the site is read with the CALLER's
- *                                own Jira permissions (`asUser`) instead of the
- *                                app's own read-only scopes (`asApp`, the
- *                                default). Used by the `rovo:mcp` tools.
  * @returns {Promise<object>} the report, masked
  */
-async function lancerScan({ pvRecus, asUser } = {}) {
+async function lancerScan({ pvRecus } = {}) {
   const recues = pvRecus || {};
   const horodatage = new Date().toISOString();
-  const { mode, jsmProbe, scan } = await executerScan({ asUser: !!asUser });
-  const rapport = construireRapport({ mode, jsmProbe, scan, horodatage, pvRecus: recues });
+  const { mode, jsmProbe, scan, autorisation } = await executerScan();
+  const rapport = construireRapport({
+    mode,
+    jsmProbe,
+    scan,
+    autorisation,
+    horodatage,
+    pvRecus: recues,
+  });
   return balayerNoeud(rapport, remplacementsPv(recues));
 }
 
@@ -765,6 +910,10 @@ function rapportDemo({ pvRecus } = {}) {
 exports.lancerScan = lancerScan;
 // The demo report (same engine, bundled fixtures).
 exports.rapportDemo = rapportDemo;
+// The refusal shown when the platform refuses to read with the caller's own
+// identity. Shared with the MCP tools (src/mcp.js) so that both entry points
+// say exactly the same thing.
+exports.refusAutorisation = refusAutorisation;
 // The personal values received in a request, as the engine collects them.
 exports.champsPvRecus = champsPvRecus;
 // The CSV export of a report's findings (same escaping rules as the demo CSV).

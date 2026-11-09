@@ -27,9 +27,22 @@ Jira renders that page only for a signed-in administrator.
 
 ## 2. What the app reads
 
-Every call is a relative `/rest/...` path on the site where the app is installed, made with the app's
-own Atlassian identity. The manifest declares only the read scopes **`read:jira-work`** and
+Every call is a relative `/rest/...` path on the site where the app is installed, made with **your own
+Atlassian identity** — the identity of the signed-in person who started the scan (`asUser`), never a
+wider one. The manifest declares only the read scopes **`read:jira-work`** and
 **`read:servicedesk-request`**: no write scope, no admin scope.
+
+**The app has no `asApp()` call at all.** The Marketplace security review requires an app to
+default to `asUser()` when it acts on behalf of a user, and to check the expected permissions
+before it widens the identity with `asApp()`. This app cannot make that permissions check (it
+declares two read scopes, and such a check would need a third), so it removes the wider identity
+instead of justifying it: **zero** `asApp()` calls in the code. The app can therefore never read
+anything that the person who started the scan could not read themselves.
+
+If the platform refuses your identity — HTTP 401 or 403, when your account has not authorised the
+app to read the site on your behalf — the app **refuses** and tells you what to do. It does not
+return an empty report: "nothing was read" and "nothing was found" are two different answers, and
+the app never confuses them.
 
 | Read | Why |
 |---|---|
@@ -182,6 +195,13 @@ read with their HTTP status, and no content and no account identifier.
 **Who can call them.** A signed-in Atlassian user who has granted the app access, through
 Atlassian's MCP server. Whether MCP clients outside Atlassian may use them is a setting of your
 site, controlled by your administrators.
+
+**What they need your site to have.** The MCP server is part of **Rovo**, which Atlassian
+reserves to paid Cloud plans: « Rovo, including Search, Chat, and Studio apps as well as agents, is
+available to customers with a **Standard, Premium, or Enterprise** Cloud plan »
+(https://www.atlassian.com/licensing/rovo). A site on the **Free** plan has no Rovo, hence no MCP
+server, hence neither of these two tools. The administration page — the scan button — works on
+every plan, including Free. The app itself is free; the Rovo subscription is yours.
 
 ## 8. The exact sentence displayed in the app
 

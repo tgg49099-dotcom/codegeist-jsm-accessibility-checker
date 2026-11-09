@@ -162,6 +162,12 @@ function AdminPage() {
   const sources = sourcesOf(report);
   const masked = report && report.privacy ? report.privacy.maskedValues : null;
   const recus = report && report.privacy ? report.privacy.receivedFields : [];
+  // The identity section says WITH WHICH identity the site was read. When the
+  // platform refused to read with the caller's own permissions, the scan read
+  // NOTHING: that is not "a site without any accessibility problem", and it
+  // must not be displayed as a successful scan with zero findings.
+  const autorisation = report ? report.autorisation : null;
+  const lectureRefusee = !!(autorisation && autorisation.ok === false);
 
   return (
     <>
@@ -224,20 +230,41 @@ function AdminPage() {
 
       {result && report ? (
         <>
-          <SectionMessage
-            appearance={findings.length === 0 ? "success" : "warning"}
-            title={
-              findings.length +
-              " finding(s) — " +
-              aVerifier +
-              " to be checked by a human"
-            }
-          >
-            <Text>
-              Mode: {report.mode || "demo"}. Read{" "}
-              {sources.length} source(s). Generated at {report.generatedAt}.
-            </Text>
-          </SectionMessage>
+          {lectureRefusee ? (
+            <SectionMessage
+              appearance="error"
+              title="The site was not read — nothing was scanned"
+            >
+              <Text>{autorisation.message}</Text>
+            </SectionMessage>
+          ) : null}
+
+          {lectureRefusee ? null : (
+            <SectionMessage
+              appearance={findings.length === 0 ? "success" : "warning"}
+              title={
+                findings.length +
+                " finding(s) — " +
+                aVerifier +
+                " to be checked by a human"
+              }
+            >
+              <Text>
+                Mode: {report.mode || "demo"}. Read{" "}
+                {sources.length} source(s). Generated at {report.generatedAt}.
+              </Text>
+            </SectionMessage>
+          )}
+
+          {autorisation && autorisation.ok === true ? (
+            <SectionMessage appearance="information" title="Identity">
+              <Text>
+                The site was read with your own Jira permissions (asUser). The
+                app never reads with a wider identity, and it never falls back
+                to one.
+              </Text>
+            </SectionMessage>
+          ) : null}
 
           {recus && recus.length > 0 ? (
             <SectionMessage appearance="information" title="Privacy">

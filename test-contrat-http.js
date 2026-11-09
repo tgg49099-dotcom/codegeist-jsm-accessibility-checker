@@ -154,12 +154,19 @@ check('RECU-16 le payload de la page (objet) est lu comme un corps',
 
   // --- 4. le point d'entrée de l'app, en mode DÉMO : cas rouge ------------------
 
+  // Le mode démo ne doit appeler AUCUNE API : les DEUX identités sont
+  // neutralisées. Depuis le cycle 136, c'est `asUser` que le moteur emploie ;
+  // `asApp` est neutralisée elle aussi, pour que le contrôle voie une
+  // éventuelle régression vers une identité plus large.
   const asAppOriginal = api.asApp;
+  const asUserOriginal = api.asUser;
   let appelsApi = 0;
-  api.asApp = () => {
+  const apiInterdite = () => {
     appelsApi += 1;
     throw new Error('APPEL API INTERDIT DANS LE MODE DÉMO');
   };
+  api.asApp = apiInterdite;
+  api.asUser = apiInterdite;
 
   const rouge = await appeler('scanDemo', { nom: NOM, 'e-mail': EMAIL });
   const corpsRouge = JSON.stringify(rouge);
@@ -175,6 +182,7 @@ check('RECU-16 le payload de la page (objet) est lu comme un corps',
   check('ROUGE-04 la réponse contient un rapport', !!rapportRouge);
   if (!rapportRouge) {
     api.asApp = asAppOriginal;
+    api.asUser = asUserOriginal;
     process.exit(1);
   }
 
@@ -234,7 +242,7 @@ check('RECU-16 le payload de la page (objet) est lu comme un corps',
   // L'API Atlassian est neutralisée par un faux site dont les DONNÉES
   // contiennent le nom et l'e-mail : on vérifie que la réponse les masque
   // (et pas qu'ils ont simplement disparu du faux site).
-  api.asApp = () => ({
+  api.asUser = () => ({
     requestJira: async (p) => {
       const chemin = String(p && p.value_ ? p.value_ : p);
       let body = {};
@@ -292,6 +300,7 @@ check('RECU-16 le payload de la page (objet) est lu comme un corps',
     'nom #' + corpsSansRecu.split(NOM).length + ' / e-mail #' + corpsSansRecu.split(EMAIL).length);
 
   api.asApp = asAppOriginal;
+  api.asUser = asUserOriginal;
 
   // --- 8. la requête n'est jamais journalisée --------------------------------
   // Le contrôle porte sur le CODE (arbre syntaxique), pas sur le texte : un

@@ -96,6 +96,46 @@ python3 tools/contre-epreuve-verificateur.py     # the checker must turn RED on 
 * an anonymous request to the administration URL returns the Atlassian sign-in
   shell: 0 occurrence of the app name, 0 occurrence of the button, no finding.
 
+## The identity of the reads: `asUser`, always
+
+The app acts **on behalf of a person**: the administrator who presses the button
+in the administration page, or the caller of an MCP tool. It therefore reads the
+site **with that person's own Jira permissions** (`asUser`) — never with a wider
+identity.
+
+This is not a choice, it is the rule the Marketplace security review applies:
+
+> 1. « An application must default to using asUser() when performing an
+>    operation on behalf of the user. »
+> 2. « Before making calls using asApp(), you must verify the expected
+>    permissions (for example, from product context) with the permissions
+>    REST APIs. »
+>
+> — *Security requirements for cloud apps*, section « Forge apps »
+
+The second rule asks for a permissions check **before** the app widens the
+identity. This app cannot call the permissions API (it declares two read
+scopes, and such a check would need a third), so it **removes the `asApp()`
+call altogether** rather than justify it halfway. The application contains
+**zero** `asApp()` calls, so it cannot read anything the person who started the
+scan could not read themselves.
+
+Two consequences, both visible in the product:
+
+* the report carries an `autorisation` section that says which identity was
+  used (`asUser`) — the declaration is checked against the code by
+  `test-identite-cycle136.js`, so the two cannot drift apart;
+* if the platform refuses that identity (HTTP 401/403 — the caller's account
+  has not authorised the app to read the site on their behalf), the app
+  **refuses** and says what to do. It never returns an empty report, which
+  would read as "this site has no accessibility problem" when in fact
+  **nothing was read**.
+
+```
+node test-identite-cycle136.js            # 12 checks — 0 asApp() in the active code, and the
+                                          #            behaviour when the platform refuses
+```
+
 ## The two tools on Atlassian's MCP server (in the source; not deployed yet)
 
 The source of this app declares **one** `rovo:mcp` module — Atlassian allows at
@@ -131,6 +171,14 @@ harness turns red when each of these properties is broken.
 > This module is **in the source**, not in the deployed app: production 2.5.0
 > still exposes the administration page only. It becomes usable when the owner
 > deploys the next version and Rovo is activated on the site.
+
+> **Rovo is a paid Atlassian product, and the tools need it.** Atlassian states
+> that « Rovo, including Search, Chat, and Studio apps as well as agents, is
+> available to customers with a **Standard, Premium, or Enterprise** Cloud plan »
+> (https://www.atlassian.com/licensing/rovo). A site on the **Free** plan has
+> no Rovo, therefore no MCP server, therefore **neither of these two tools** —
+> the administration page (the scan button) works on every plan, including
+> Free. The cost of Rovo is yours, the app itself is free.
 
 ## The privacy contract of the scan request
 
@@ -212,6 +260,8 @@ node test-demo.js                         # 55 checks — detects all 23 seeded 
 node test-contre-epreuve.js               # 13 checks — the harness turns RED when a rule is sabotaged
 node test-contrat-http-contre-epreuve.js  # 28 checks — that harness turns RED when the contract is broken
 node test-mcp-cycle134.js                  # 32 checks — the two MCP tools read the caller's site, and nothing else
+node test-identite-cycle136.js             # 12 checks — 0 asApp() in the active code, and a refusal when the
+                                          #            platform refuses the caller's identity
 python3 tools/verifier-manifest-cycle134.py       # 18 checks — no public module, no egress, two read scopes,
                                                    #           one rovo:mcp module with two tools
 python3 tools/contre-epreuve-verificateur.py      # 28 checks — that checker turns RED on 9 sabotages

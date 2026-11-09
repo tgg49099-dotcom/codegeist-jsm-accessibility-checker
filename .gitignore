@@ -1,3 +1,5 @@
 node_modules/
 .env
 .env.*
+.forge/
+.forge_app_inspect_stats.json

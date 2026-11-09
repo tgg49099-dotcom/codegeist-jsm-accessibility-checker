@@ -59,17 +59,13 @@ const REFUS_HOTE_DIFFERENT =
  * tool": "Without this consent entry, asUser() calls can fail when invoked
  * remotely"). The message says what to do instead of hiding the failure —
  * and the tool stays on the safe identity: it never falls back to a wider one.
+ *
+ * The wording lives in the engine (src/index.js) so that the administration
+ * page and the MCP tools say exactly the same thing to the person who has to
+ * act on it.
  */
 function refusAutorisation(status) {
-  return (
-    'The scan could not be run with your own permissions (the platform answered HTTP ' +
-    status +
-    '). Your account has not authorised this app to read the site on your behalf. ' +
-    'Ask a Jira administrator to grant the app access (Apps > Manage apps > ' +
-    'Portal Accessibility Checker for JSM > Allow access), and accept the app in your own ' +
-    'Connected apps (id.atlassian.com/manage-profile/apps) if you call the tool from an ' +
-    'external client. Then call the tool again. Nothing was read.'
-  );
+  return moteur.refusAutorisation(status);
 }
 
 // ---------------------------------------------------------------------------
@@ -296,7 +292,15 @@ async function scanAccessibility(payload, context) {
   }
 
   // 3. The scan, with the caller's own permissions.
-  const rapport = await moteur.lancerScan({ pvRecus: {}, asUser: true });
+  const rapport = await moteur.lancerScan({ pvRecus: {} });
+
+  // 3 bis. The engine refuses when the platform refuses to read with the
+  //       caller's own identity (its identity probe answers 401/403). The
+  //       tool refuses too: it never falls back to a wider identity, and it
+  //       never returns an empty report that would look like a clean site.
+  if (rapport.autorisation && rapport.autorisation.ok === false) {
+    return refusAutorisation(rapport.autorisation.httpStatus);
+  }
 
   // 4. If the platform refused every read, the caller cannot read the site:
   //    say so instead of returning an empty report.
@@ -345,8 +349,11 @@ async function listLastFindings(payload, context) {
   const sonde = await sonderAppareil();
   if (!sonde.ok) return sonde.raison;
 
-  const rapport = await moteur.lancerScan({ pvRecus: {}, asUser: true });
+  const rapport = await moteur.lancerScan({ pvRecus: {} });
 
+  if (rapport.autorisation && rapport.autorisation.ok === false) {
+    return refusAutorisation(rapport.autorisation.httpStatus);
+  }
   const refus = autorisationRefusee(rapport.read);
   if (refus !== null) return refusAutorisation(refus);
 

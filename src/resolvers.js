@@ -17,9 +17,16 @@
  *     module and a function module);
  *   - the resolver answers ONLY to a call made from the administration page of
  *     the signed-in user, and it returns the findings to that user only;
- *   - the scan reads the site with the app's own read-only scopes
- *     (`read:jira-work`, `read:servicedesk-request`), writes nothing, and
- *     calls no external service.
+ *   - the scan reads the site with the CALLER's own identity (`asUser`) and
+ *     the two read-only scopes (`read:jira-work`, `read:servicedesk-request`),
+ *     writes nothing, and calls no external service.
+ *
+ * IDENTITY (cycle 136, 09/11/2026). The administration page acts on behalf of
+ * the person who clicks the button, so it reads with that person's own Jira
+ * permissions (`asUser`). The Marketplace security requirements say so
+ * (« An application must default to using asUser() when performing an
+ * operation on behalf of the user »), and the application has NO `asApp()`
+ * call at all — see src/index.js and test-identite-cycle136.js.
  *
  * NO DUPLICATION: `scan()` and `scanDemo()` call the engine in src/index.js
  * (`lancerScan` / `rapportDemo`) — the very same code, the very same rules

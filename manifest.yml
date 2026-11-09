@@ -26,8 +26,8 @@
 # The absence is checkable by reading this file, and by
 # `python3 tools/verifier-manifest-cycle134.py`.
 #
-# CYCLE 134 (09/11/2026) — THE ROVO MCP MODULE WAS ADDED (source only; the
-# deployed version is still 2.5.0 and is NOT changed by this commit).
+# CYCLE 134 (09/11/2026) — THE ROVO MCP MODULE WAS ADDED (at that date it was
+# in the source only; the version deployed then was still 2.5.0).
 #
 # The Codegeist 2026 bonus "Best app with Atlassian MCP" asks for "a Forge
 # app that exposes tools via the Atlassian MCP server using the rovo:mcp
@@ -50,6 +50,38 @@
 # permissions). There is STILL no unauthenticated public module: the
 # absence is checkable by reading this file, and by
 # `python3 tools/verifier-manifest-cycle134.py`.
+#
+# CYCLE 136 (09/11/2026) — THE IDENTITY OF THE READS WAS CORRECTED.
+#
+# Until this cycle, the administration page read the site with the APP's own
+# identity (`asApp`). The page was only ever rendered for a signed-in
+# administrator, but the READS were made with an identity wider than the one
+# of the person who asked for the scan.
+#
+# The Marketplace security review ("Security requirements for cloud apps",
+# section "Forge apps") says:
+#
+#   1. "An application must default to using asUser() when performing an
+#      operation on behalf of the user."
+#   2. "Before making calls using asApp(), you must verify the expected
+#      permissions (for example, from product context) with the permissions
+#      REST APIs."
+#
+# This app acts on behalf of a person — the administrator who presses the
+# button, the caller of an MCP tool — so it reads with `asUser()`. Rule 2
+# cannot be honoured here (the app declares two read scopes and cannot call
+# the permissions API), so the wider identity is REMOVED rather than
+# justified: this application contains ZERO `asApp()` call.
+#
+# WHAT THIS DOES NOT CHANGE: the scopes, and nothing else. Still
+# read:jira-work and read:servicedesk-request, nothing added, nothing
+# removed. The app still writes nothing, stores nothing and calls no external
+# service.
+#
+# The control: `node test-identite-cycle136.js` counts the identity calls in
+# the ACTIVE code (comments and strings removed) and requires 0 asApp() and
+# at least one asUser(); it also checks that the app REFUSES — never an empty
+# report — when the platform refuses the caller's identity.
 #
 # The scopes are UNCHANGED and still read-only:
 #   read:jira-work             (Jira issues: descriptions, summaries, fields)
