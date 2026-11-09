@@ -41,6 +41,8 @@ function copierApp(suffixe) {
   fs.mkdirSync(path.join(cible, 'src', 'demo'), { recursive: true });
   fs.cpSync(path.join(APP, 'src', 'index.js'), path.join(cible, 'src', 'index.js'));
   fs.cpSync(path.join(APP, 'src', 'resolvers.js'), path.join(cible, 'src', 'resolvers.js'));
+  // Le contrôle d'administrateur, partagé avec les outils MCP.
+  fs.cpSync(path.join(APP, 'src', 'droits-admin.js'), path.join(cible, 'src', 'droits-admin.js'));
   fs.cpSync(path.join(APP, 'src', 'demo.js'), path.join(cible, 'src', 'demo.js'));
   fs.cpSync(path.join(APP, 'src', 'regles.js'), path.join(cible, 'src', 'regles.js'));
   fs.cpSync(path.join(APP, 'src', 'demo'), path.join(cible, 'src', 'demo'), { recursive: true });

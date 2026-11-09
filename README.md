@@ -15,7 +15,7 @@ public URL: until version 2.4.0 the app answered a web trigger declared with
 | **Data leaves your site** | No. The app declares **no egress at all** |
 | **Personal data in the answer** | A name or an e-mail **typed in the page** is masked, never returned in clear text. The content read from your site is returned **as it is** — it is what the app checks (see below) |
 | **Permissions** | Read-only: `read:jira-work`, `read:servicedesk-request` |
-| **App version in this repository** | the code of **production 2.7.0**, deployed on 9 November 2026 (20:54 UTC, version id `09201e49-daac-48f6-bf92-c1c73e01ffcc`); the same code is in the development environment as **2.10.0**. Forge assigns those numbers itself (the manifest declares no `app.version`), so the two environments number the same code differently |
+| **App version in this repository** | the code of **production 2.7.0**, deployed on 9 November 2026 (20:54 UTC, version id `09201e49-daac-48f6-bf92-c1c73e01ffcc`), and the same code in the development environment as **2.10.0**; **plus one change committed on 9 November 2026 and not yet deployed** — the administrator check on the two MCP tools (see the note in "Who can open the page"). Forge assigns the numbers itself (the manifest declares no `app.version`), so the two environments number the same code differently |
 
 ## What it does
 
@@ -73,6 +73,12 @@ of the customer's site. So `scan()` asks Jira, with the caller's own identity
 GET /rest/api/3/mypermissions?permissions=ADMINISTER,SYSTEM_ADMIN
 ```
 
+**The same check guards the two MCP tools.** An agent could call them, so the
+check is not left to the page: `src/droits-admin.js` holds it — **one**
+implementation, called by the resolver (`src/resolvers.js`) and by the two
+tools (`src/mcp.js`) — and it runs **before any read of the site** on both
+paths. There is one control, not two copies of it.
+
 "Get my permissions", Jira Cloud REST API v3 — see
 <https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-permissions/>
 (consulted on 9 November 2026). `ADMINISTER` ("Administer Jira") and
@@ -97,10 +103,17 @@ run and the caller gets a refusal. The site is not read once for a caller who is
 not an administrator. The demo scan reads no site at all, so it stays available
 to any signed-in user.
 
-The check is covered by `test-admin-cycle139.js` (17 checks, with three
+The check is covered by `test-admin-cycle139.js` (18 checks, with three
 counter-proofs: without the check a non-administrator would get the report; a
 wrong permission key refuses the administrator; a check that fails open would let
-anybody through — the three sabotages must each turn the suite RED).
+anybody through — the three sabotages must each turn the suite RED) and by
+`test-mcp-admin-cycle140.js` (17 checks, four counter-proofs), which proves that
+the two MCP tools apply **the same** check, before any read.
+
+> **This change is committed, not deployed.** The version running in production is
+> still **2.7.0**, in which the MCP path has no administrator check; the check on
+> the two MCP tools goes live with the next deployment, after the re-review.
+> Nothing in this file claims a behaviour the running app does not have.
 
 `manifest.yml` declares **four module types** and nothing else:
 
@@ -226,6 +239,14 @@ most one per app — which exposes **two** actions as tools:
 
 What the two tools do **not** do is the interesting part:
 
+* **they are reserved to Jira administrators, exactly like the scan started
+  from the administration page**: the same server-side check
+  (`src/droits-admin.js`, `GET /rest/api/3/mypermissions?permissions=ADMINISTER,SYSTEM_ADMIN`,
+  asked with the caller's own identity, failing closed) runs **before any read
+  of the site**. A caller who is not an administrator gets a refusal, never a
+  report. *(This bullet describes the code of this repository; the production
+  version running today, 2.7.0, still runs the previous MCP path — the
+  administrator check on the tools goes live with the next deployment.)*
 * **they read the site with the caller's own permissions** (`asUser`), not with
   the app's wider ones: an agent can never read what the person who called it
   cannot read. The identity comes from the platform, never from a value the
@@ -338,6 +359,9 @@ node test-demo.js                         # 55 checks — detects all 23 seeded 
 node test-contre-epreuve.js               # 13 checks — the harness turns RED when a rule is sabotaged
 node test-contrat-http-contre-epreuve.js  # 28 checks — that harness turns RED when the contract is broken
 node test-mcp-cycle134.js                  # 32 checks — the two MCP tools read the caller's site, and nothing else
+node test-admin-cycle139.js                # 18 checks — the administrator check on the page's path
+node test-csv-cycle139.js                  # 15 checks — the CSV is written in a copyable field
+node test-mcp-admin-cycle140.js            # 17 checks — the SAME administrator check on the two MCP tools
 node test-identite-cycle136.js             # 12 checks — 0 asApp() in the active code, and a refusal when the
                                           #            platform refuses the caller's identity
 python3 tools/verifier-manifest-cycle134.py       # 18 checks — no public module, no egress, two read scopes,
@@ -391,7 +415,11 @@ manifest.yml      1 jira:adminPage (the interface, render: native, resource: adm
 src/resolvers.js  the entry point of the interface: it checks the caller's account id
                   (backendRuntimePayload.principal.accountId or context.accountId),
                   refuses a call without one, and calls the engine
-src/mcp.js        the two tools: the identity gate, the host check, and the two
+src/droits-admin.js  THE administrator check, written once: the endpoint, the two
+                  global permission keys, the fail-closed decision. The resolver
+                  and the two MCP tools call this same function
+src/mcp.js        the two tools: the administrator check (the same function as
+                  the page's), the identity gate, the host check, and the two
                   answers (the report, the compact list)
 src/index.js      the engine: JSM probe, mode selection, REST reads, findings,
                   and the privacy contract (masking of the personal data received)
@@ -404,7 +432,7 @@ docs/             the criterion-by-criterion basis, incl. what REST can prove
 tools/            the manifest checker (and its counter-proof) and the check that
                   the privacy notice quotes the code verbatim
 PRIVACY.md        the privacy notice (what is read, where it goes, how long it is kept)
-test-*.js         the offline harness (252 checks in seven suites, plus 51 checks
+test-*.js         the offline harness (314 checks in eleven suites, plus 51 checks
                   in the three tools of tools/)
 ```
 

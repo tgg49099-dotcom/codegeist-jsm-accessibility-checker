@@ -15,6 +15,15 @@
  *
  * WHAT THE TOOLS DO, AND WHAT THEY DO NOT DO
  *
+ *  * THEY ARE RESERVED TO JIRA ADMINISTRATORS, exactly like the scan started
+ *    from the administration page. The check is made on the server, with the
+ *    caller's own identity, BEFORE any read of the site: the same function
+ *    (src/droits-admin.js, `droitAdministration`) that the resolver calls
+ *    (src/resolvers.js). It asks Jira which global permissions the caller
+ *    holds — `GET /rest/api/3/mypermissions?permissions=ADMINISTER,SYSTEM_ADMIN`
+ *    — and it FAILS CLOSED: a refusal, a non-200 answer or a silent answer
+ *    means no report at all. The two entry points therefore share ONE
+ *    implementation of the control: they cannot drift apart.
  *  * They read the Atlassian site where the app is installed, with the
  *    CALLER's own permissions (`asUser`), through the app's two READ-ONLY
  *    scopes (`read:jira-work`, `read:servicedesk-request`). A tool that an
@@ -36,6 +45,10 @@ const api = require('@forge/api');
 const { route } = require('@forge/api');
 
 const moteur = require('./index.js');
+
+// THE ADMINISTRATOR CHECK — the same implementation as the resolver's
+// (src/resolvers.js calls this very function). One control, two doors.
+const droitsAdmin = require('./droits-admin.js');
 
 // ---------------------------------------------------------------------------
 // Constants — the texts the agent reads are part of the contract.
@@ -273,6 +286,13 @@ function nommerMode(mode) {
 async function scanAccessibility(payload, context) {
   const p = payload && typeof payload === 'object' ? payload : {};
 
+  // 0. THE ADMINISTRATOR CHECK — the same control as the administration page,
+  //    made BEFORE any read of the site, with the caller's own identity.
+  //    It fails closed: a refusal, a non-200 answer or a silent answer means
+  //    no report at all.
+  const droit = await droitsAdmin.droitAdministration();
+  if (!droit.ok) return droitsAdmin.refusAdministrateur(droit.raison);
+
   // 1. The caller. The gate is the platform's own answer (the asUser probe),
   //    never a value the model produced.
   const sonde = await sonderAppareil();
@@ -346,6 +366,10 @@ async function scanAccessibility(payload, context) {
  * @returns {Promise<string>} the findings, as text the agent can relay
  */
 async function listLastFindings(payload, context) {
+  // THE ADMINISTRATOR CHECK — same control, same place, before any read.
+  const droit = await droitsAdmin.droitAdministration();
+  if (!droit.ok) return droitsAdmin.refusAdministrateur(droit.raison);
+
   const sonde = await sonderAppareil();
   if (!sonde.ok) return sonde.raison;
 

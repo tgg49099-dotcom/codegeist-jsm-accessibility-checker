@@ -31,6 +31,16 @@ decides is the app itself: the server asks Jira which permissions your account h
 scan runs only for an account that holds the global **"Administer Jira"** (or **"Jira System
 Administrators"**) permission. Any other signed-in user gets a refusal, never a report.
 
+**The same check guards the second door.** The two Rovo MCP tools (`scan_accessibility`,
+`list_last_findings`) ask the same question, on the same endpoint, with the same rule — and
+**before any read**: one single implementation of the check serves the administration page and
+the two tools, so the two doors cannot drift apart. An agent that calls a tool without an
+administrator's rights gets the same refusal, and nothing is read.
+
+*(This paragraph describes the code of this repository, committed on 9 November 2026. The
+version running in production is still 2.7.0, where the MCP path has no administrator check;
+the check on the two tools goes live with the next deployment, after the re-review.)*
+
 ## 2. What the app reads
 
 Every call is a relative `/rest/...` path on the site where the app is installed, made with **your own
@@ -193,6 +203,12 @@ read what the person calling it cannot read. If the platform refuses that identi
 not granted the app access, or the call is not authenticated), the tool returns a refusal and
 reads nothing.
 
+**Whether the tools are reserved to administrators.** Yes — the two tools run the administrator
+check of § 1 (the same one, the same endpoint, before any read), so they are reserved to Jira
+administrators on the MCP path exactly as the button is on the page. *The production version
+running today, 2.7.0, still runs the previous MCP path; this check goes live with the next
+deployment, after the re-review.*
+
 **Whose site they read.** Only the site where the app is installed. The URL given to
 `scan_accessibility` is compared with the host of that site and is **never fetched**; a URL
 pointing at another site is refused, and nothing is scanned.
@@ -204,7 +220,10 @@ at the time of the call, and says so in its answer. The tool output lists the en
 read with their HTTP status, and no content and no account identifier.
 
 **Who can call them.** A signed-in Atlassian user who has granted the app access, through
-Atlassian's MCP server. Whether MCP clients outside Atlassian may use them is a setting of your
+Atlassian's MCP server, **and who holds the same global "Administer Jira" permission as the
+person who may press the button**: the tools run the administrator check of § 1 before they
+read anything, so they are reserved to administrators on the MCP path exactly as they are on
+the page. Whether MCP clients outside Atlassian may use them is a setting of your
 site, controlled by your administrators.
 
 **What they need your site to have.** The MCP server is part of **Rovo**, which Atlassian

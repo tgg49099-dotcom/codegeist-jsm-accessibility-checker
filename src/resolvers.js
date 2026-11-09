@@ -16,7 +16,9 @@
  *      the server, with the caller's own identity — never in the page. A page
  *      is a display: whoever can call the function directly would otherwise
  *      receive the findings of the customer's site, so the decision belongs
- *      to the resolver.
+ *      to the resolver. The check itself lives in ONE file,
+ *      src/droits-admin.js, which the two MCP tools (src/mcp.js) call too:
+ *      both entry points apply the very same control.
  *   3. THE SITE IS READ WITH THE CALLER'S OWN PERMISSIONS (`asUser`) and the
  *      two read-only scopes (`read:jira-work`, `read:servicedesk-request`).
  *      The app writes nothing and calls no external service.
@@ -26,6 +28,11 @@
  * call without an account.
  *
  * THE ADMINISTRATOR CHECK — the endpoint, and why this one
+ *
+ * The check is implemented ONCE, in src/droits-admin.js (single source of
+ * truth), and this file calls it. The endpoint, the keys and the fail-closed
+ * behaviour are documented there; they are reproduced here for the reader of
+ * this file:
  *
  *   - ENDPOINT: `GET /rest/api/3/mypermissions?permissions=ADMINISTER,SYSTEM_ADMIN`
  *     "Get my permissions", Jira Cloud REST API v3, group "Permissions":
@@ -60,28 +67,15 @@
  */
 
 const { makeResolver } = require('@forge/resolver');
-// The whole module, not a destructured `api`: `@forge/api` exports `asUser`,
-// `asApp` and `route` at the top level (there is no `api` export — `api` is
-// the name of the runtime global, not of the package).
-const forgeApi = require('@forge/api');
-const { route } = forgeApi;
 
 const moteur = require('./index.js');
 
-/**
- * The global Jira permissions that mean "administrator of this site".
- * Both are GLOBAL permissions of Jira (measured on the app's own site with
- * GET /rest/api/3/permissions on 09/11/2026); they are the two roles that
- * give access to the administration area of Jira.
- */
-const PERMISSIONS_ADMINISTRATION = ['ADMINISTER', 'SYSTEM_ADMIN'];
-
-/**
- * The official endpoint that answers which permissions the caller holds.
- * It is asked with `asUser()`: the answer is about the person who clicked
- * the button, not about the app.
- */
-const URL_PERMISSIONS = route`/rest/api/3/mypermissions?permissions=ADMINISTER,SYSTEM_ADMIN`;
+// THE ADMINISTRATOR CHECK — one implementation, two entry points.
+// The resolver (this file) and the two MCP tools (src/mcp.js) call the very
+// same function, so the control cannot drift between them.
+const droitsAdmin = require('./droits-admin.js');
+const PERMISSIONS_ADMINISTRATION = droitsAdmin.PERMISSIONS_ADMINISTRATION;
+const droitAdministration = droitsAdmin.droitAdministration;
 
 /**
  * The personal values the page may send (fields `nom` and `e-mail`).
@@ -142,53 +136,12 @@ function runtimeAvecIdentite(req, backendRuntimePayload) {
  * request is made for. The caller's account id is NOT sent and cannot be
  * forged: it is the account the platform authenticates.
  *
+ * The implementation is in src/droits-admin.js — the same one the MCP tools
+ * call (src/mcp.js). It is re-exported at the bottom of this file for the
+ * offline test harness.
+ *
  * @returns {Promise<{ok: boolean, permission: string, raison: string}>}
  */
-async function droitAdministration() {
-  let reponse;
-  try {
-    reponse = await forgeApi.asUser().requestJira(URL_PERMISSIONS);
-  } catch (e) {
-    return {
-      ok: false,
-      permission: '',
-      raison: 'the platform refused the administrator check: ' + ((e && e.message) || String(e)),
-    };
-  }
-
-  const status = reponse && reponse.status;
-  if (status !== 200) {
-    return {
-      ok: false,
-      permission: '',
-      raison: 'the administrator check answered HTTP ' + status,
-    };
-  }
-
-  let corps = null;
-  try {
-    corps = await reponse.json();
-  } catch (e) {
-    corps = null;
-  }
-  const permissions = (corps && corps.permissions) || {};
-
-  for (const cle of PERMISSIONS_ADMINISTRATION) {
-    const reponsePermission = permissions[cle];
-    if (reponsePermission && reponsePermission.havePermission === true) {
-      return { ok: true, permission: cle, raison: '' };
-    }
-  }
-
-  return {
-    ok: false,
-    permission: '',
-    raison:
-      'the signed-in account holds none of the global administration permissions (' +
-      PERMISSIONS_ADMINISTRATION.join(', ') +
-      ')',
-  };
-}
 
 const REPONSE_NON_AUTHENTIFIE = {
   ok: false,
@@ -197,12 +150,7 @@ const REPONSE_NON_AUTHENTIFIE = {
     'The scan can only be started by a logged-in Jira user, from the administration page of this app.',
 };
 
-const REPONSE_NON_ADMINISTRATEUR = {
-  ok: false,
-  error: 'NOT_ADMINISTRATOR',
-  message:
-    'This scan is reserved to Jira administrators: the account signed in on this site does not hold the global permission "Administer Jira" (ADMINISTER). Nothing was read.',
-};
+const REPONSE_NON_ADMINISTRATEUR = droitsAdmin.REFUS_ADMINISTRATEUR;
 
 const REPONSE_FONCTION_INCONNUE = {
   ok: false,

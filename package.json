@@ -16,7 +16,7 @@
   },
   "scripts": {
     "lint": "forge lint",
-    "test": "node test-ihm-cycle129.js && node test-mcp-cycle134.js && node test-identite-cycle136.js && node test-contrat-http.js && node test-app-demo.js && node test-demo.js && node test-contre-epreuve.js && node test-contrat-http-contre-epreuve.js && node test-admin-cycle139.js && node test-csv-cycle139.js",
+    "test": "node test-ihm-cycle129.js && node test-mcp-cycle134.js && node test-identite-cycle136.js && node test-contrat-http.js && node test-app-demo.js && node test-demo.js && node test-contre-epreuve.js && node test-contrat-http-contre-epreuve.js && node test-admin-cycle139.js && node test-csv-cycle139.js && node test-mcp-admin-cycle140.js",
     "test:ihm": "node test-ihm-cycle129.js",
     "test:mcp": "node test-mcp-cycle134.js",
     "test:contrat": "node test-contrat-http.js",
@@ -27,6 +27,7 @@
     "verify:manifest": "python3 tools/verifier-manifest-cycle134.py",
     "test:identite": "node test-identite-cycle136.js",
     "test:admin": "node test-admin-cycle139.js",
-    "test:csv": "node test-csv-cycle139.js"
+    "test:csv": "node test-csv-cycle139.js",
+    "test:mcp-admin": "node test-mcp-admin-cycle140.js"
   }
 }

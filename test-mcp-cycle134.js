@@ -125,6 +125,20 @@ const HOTE_SITE = 'demo-sites.atlassian.net';
 const URL_PORTAL = 'https://' + HOTE_SITE + '/servicedesk/customer/portals';
 const URL_ETRANGERE = 'https://autre-tenant.atlassian.net/servicedesk/customer/portals';
 
+/**
+ * L'endpoint du contrôle d'administration (le MÊME pour la page et pour les
+ * outils MCP : src/droits-admin.js).
+ */
+const CHEMIN_PERMISSIONS = '/rest/api/3/mypermissions?permissions=ADMINISTER,SYSTEM_ADMIN';
+
+/**
+ * Les appels qui ne lisent PAS le contenu du site : le contrôle
+ * d'administration et la sonde d'identité. Tout le reste est une lecture.
+ */
+function estLectureDeContenu(appel) {
+  return appel.chemin !== CHEMIN_PERMISSIONS && appel.chemin !== '/rest/api/3/serverInfo';
+}
+
 /** Un site JSM minimal : les mêmes données que la démonstration du dépôt. */
 function scenarioJsm() {
   const s = {};
@@ -163,7 +177,11 @@ function scenarioLectureRefusee() {
   const s = scenarioJsm();
   s['/rest/api/3/serverInfo'] = { status: 200, body: { baseUrl: 'https://' + HOTE_SITE } };
   for (const chemin of Object.keys(s)) {
-    if (chemin === '/rest/api/3/serverInfo') continue;
+    // Le contrôle d'administration et la sonde d'identité répondent : le cas
+    // testé ici est « le CONTENU est en lecture refusée », pas « l'appelant
+    // n'est pas administrateur » (celui-ci est couvert par la suite
+    // test-mcp-admin-cycle140.js).
+    if (chemin === '/rest/api/3/serverInfo' || chemin === CHEMIN_PERMISSIONS) continue;
     s[chemin] = { status: 403, body: { errorMessages: ['forbidden'] } };
   }
   return s;
@@ -211,7 +229,8 @@ async function controles() {
   const refus401 = await mcp.scanAccessibility({ url: URL_PORTAL }, { accountId: 'acc-1' });
   res['MCP-01 un appelant refusé par la plateforme reçoit un REFUS'] =
     /could not be run with your own permissions/.test(refus401);
-  res['MCP-02 un appelant refusé ne déclenche AUCUNE lecture du site'] = APPELS.length === 1;
+  res['MCP-02 un appelant refusé ne déclenche AUCUNE lecture du site'] =
+    APPELS.length === 2 && APPELS.filter(estLectureDeContenu).length === 0;
   res['MCP-03 le refus explique comment autoriser l\'application'] =
     /Allow access/.test(refus401);
 
@@ -221,7 +240,8 @@ async function controles() {
   const refusHote = await mcp.scanAccessibility({ url: URL_ETRANGERE }, { accountId: 'acc-1' });
   res['MCP-04 une URL d\'un AUTRE site est refusée'] =
     /only scans the customer portal of the Atlassian site/.test(refusHote);
-  res['MCP-05 une URL d\'un autre site ne déclenche AUCUNE lecture du site'] = APPELS.length === 1;
+  res['MCP-05 une URL d\'un autre site ne déclenche AUCUNE lecture du site'] =
+    APPELS.length === 2 && APPELS.filter(estLectureDeContenu).length === 0;
   res['MCP-06 l\'URL n\'est JAMAIS demandée à la plateforme'] =
     APPELS_EXTERNES.length === 0 && !APPELS.some((a) => a.chemin.indexOf('autre-tenant') !== -1);
 
@@ -230,7 +250,8 @@ async function controles() {
   remettreAZero();
   const refusUrl = await mcp.scanAccessibility({ url: 'pas une url' }, { accountId: 'acc-1' });
   res['MCP-07 une URL illisible est refusée'] = /No usable portal URL/.test(refusUrl);
-  res['MCP-08 une URL illisible ne déclenche AUCUNE lecture du site'] = APPELS.length === 1;
+  res['MCP-08 une URL illisible ne déclenche AUCUNE lecture du site'] =
+    APPELS.length === 2 && APPELS.filter(estLectureDeContenu).length === 0;
 
   // --- D. le scan normal ----------------------------------------------------
   SCENARIO = scenarioJsm();

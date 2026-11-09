@@ -30,17 +30,25 @@
  *   ADM-10  the code names the permission key that the official endpoint
  *            actually uses (ADMINISTER) — no invented name;
  *   ADM-11  the public source no longer talks about "cycles" or about the
- *            module that has been removed (jury improvement 2).
+ *            module that has been removed (jury improvement 2);
+ *   ADM-12  the resolver and the two MCP tools share ONE implementation of
+ *            the check (src/droits-admin.js): two copies would be two doors
+ *            that could drift apart.
  *
  * COUNTER-PROOFS (the suite must be able to say NO)
  *
  *   CP-1  a copy of the resolver with the administrator check disabled gives
  *         the report back to a non-administrator: the check is load-bearing;
- *   CP-2  a copy of the resolver that asks for another permission (a typo in
- *         the key) refuses the administrator: the key matters;
- *   CP-3  a copy of the resolver that fails OPEN when the platform refuses
- *         the permission check lets a non-administrator through when the
- *         endpoint answers 401: the check must fail closed.
+ *   CP-2  a copy of the shared check that asks for another permission (a typo
+ *         in the key) refuses the administrator: the key matters;
+ *   CP-3  a copy of the shared check that treats a REFUSED check (HTTP 401)
+ *         as "administrator" lets the caller through: the check must fail
+ *         closed.
+ *
+ * Each counter-proof mutates the file that really carries the behaviour (the
+ * resolver, or the shared check) and MUST change the outcome of the check it
+ * is the counter-proof of. A counter-proof that leaves the outcome unchanged
+ * proves nothing and is reported as a failure.
  *
  * Each counter-proof runs on a SABOTAGED COPY of the real file, written next
  * to it (so that its `require('./index.js')` still resolves), and is deleted
@@ -68,6 +76,10 @@ const SRC = path.join(APP, 'src');
 const FICHIER_SOUS_TEST = process.argv[2]
   ? path.resolve(process.argv[2])
   : path.join(SRC, 'resolvers.js');
+
+// The administrator check itself lives in ONE file, shared with the two MCP
+// tools (src/droits-admin.js). The resolver calls it; it does not hold it.
+const FICHIER_DROITS = path.join(SRC, 'droits-admin.js');
 
 let failures = 0;
 let checks = 0;
@@ -264,13 +276,38 @@ function controlesStatiques() {
     .map((l) => l.replace(/\/\/.*$/, '').replace(/\/\*.*?\*\//g, ''))
     .join('\n');
 
+  // The check itself lives in ONE file, shared with the MCP tools
+  // (src/droits-admin.js). ADM-10 therefore looks at the LIVE CODE of the
+  // file the resolver actually uses — a comment can no longer make it pass.
+  const FICHIER_DROITS = path.join(SRC, 'droits-admin.js');
+  const utiliseLeControlePartage = /require\(['"]\.\/droits-admin\.js['"]\)/.test(sansCommentaires);
+  const fichierDuControle = utiliseLeControlePartage ? FICHIER_DROITS : FICHIER_SOUS_TEST;
+  const codeDuControle = existe(fichierDuControle)
+    ? fs
+        .readFileSync(fichierDuControle, 'utf8')
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/\/\/[^\n]*/g, '')
+    : '';
+
   res['ADM-10 the code asks for the global permission ADMINISTER (the key the official endpoint uses)'] =
-    /ADMINISTER/.test(source) && /mypermissions/.test(source);
+    /ADMINISTER/.test(codeDuControle) && /mypermissions/.test(codeDuControle);
   res['ADM-11 the public source no longer talks about a cycle'] =
     !/\bcycle\b|\bCYCLE\b/.test(source);
   res['ADM-11b the public source no longer talks about the removed trigger module'] =
     !/webtrigger|productTrigger|scheduleTrigger|authentication: none/i.test(sansCommentaires);
+  res['ADM-12 the resolver and the MCP tools share ONE implementation of the check'] =
+    utiliseLeControlePartage && existe(FICHIER_DROITS);
   return res;
+}
+
+/** TRUE when the file exists. */
+function existe(f) {
+  try {
+    fs.accessSync(f);
+    return true;
+  } catch (e) {
+    return false;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -278,34 +315,83 @@ function controlesStatiques() {
 // ---------------------------------------------------------------------------
 
 /**
- * Write a sabotaged copy of the resolver next to it (so that its
- * `require('./index.js')` still resolves), require it, and delete it.
- *
- * @param {string} nom the name of the temporary file
- * @param {function} mutation receives the source, returns the sabotaged one
- * @returns {Promise<object>} the answer of the sabotaged resolver
+ * Replace a string that must appear EXACTLY `nb` times. A counter-proof whose
+ * anchor is not unique would silently mutate the wrong thing — so the count
+ * is checked, and a mismatch is an error, not a pass.
  */
-async function avecSabotage(nom, mutation) {
-  const source = fs.readFileSync(FICHIER_SOUS_TEST, 'utf8');
-  const sabotage = mutation(source);
-  if (sabotage === source) throw new Error("the mutation changed nothing");
-  const temporaire = path.join(SRC, nom);
-  fs.writeFileSync(temporaire, sabotage, 'utf8');
+function remplacementUnique(source, motif, remplacement, nb) {
+  const parties = source.split(motif);
+  if (parties.length - 1 !== nb) {
+    throw new Error(
+      'the anchor appears ' + (parties.length - 1) + ' time(s), expected ' + nb + ': ' + motif
+    );
+  }
+  return parties.join(remplacement);
+}
+
+/**
+ * Write sabotaged copies of the resolver AND of the shared administrator check
+ * next to the real files (so that their `require('./index.js')` still
+ * resolves), require the sabotaged resolver, and delete the copies afterwards.
+ *
+ * The check now lives in ONE file (src/droits-admin.js), shared with the MCP
+ * tools: a counter-proof that wants to change the check must change THAT
+ * file, and a counter-proof that wants to change the resolver must change
+ * the resolver.
+ *
+ * @param {string} nom the suffix of the temporary files
+ * @param {object} mutations {resolver: fn, droits: fn} — each receives the source
+ * @returns {object} the sabotaged resolver
+ */
+function avecSabotage(nom, mutations) {
+  const srcResolver = fs.readFileSync(FICHIER_SOUS_TEST, 'utf8');
+  const srcDroits = fs.readFileSync(FICHIER_DROITS, 'utf8');
+
+  const nomDroits = 'droits-admin.sabotage-' + nom + '.js';
+  const nomResolver = 'resolvers.sabotage-' + nom + '.js';
+
+  let resolver = srcResolver;
+  let droits = srcDroits;
+
+  if (mutations.resolver) {
+    const avant = resolver;
+    resolver = mutations.resolver(resolver);
+    if (resolver === avant) throw new Error('the mutation of the resolver changed nothing');
+  }
+  if (mutations.droits) {
+    const avant = droits;
+    droits = mutations.droits(droits);
+    if (droits === avant) throw new Error('the mutation of the shared check changed nothing');
+  }
+
+  // The sabotaged resolver must call the sabotaged shared check.
+  resolver = resolver.replace(
+    /require\(['"]\.\/droits-admin\.js['"]\)/,
+    "require('./" + nomDroits + "')"
+  );
+
+  const fichierDroits = path.join(SRC, nomDroits);
+  const fichierResolver = path.join(SRC, nomResolver);
+  fs.writeFileSync(fichierDroits, droits, 'utf8');
+  fs.writeFileSync(fichierResolver, resolver, 'utf8');
   try {
-    delete require.cache[require.resolve(temporaire)];
-    return require(temporaire);
+    delete require.cache[require.resolve(fichierResolver)];
+    delete require.cache[require.resolve(fichierDroits)];
+    return require(fichierResolver);
   } finally {
-    try {
-      fs.unlinkSync(temporaire);
-    } catch (e) {
-      /* the file stays; the suite reports it */
+    for (const f of [fichierDroits, fichierResolver]) {
+      try {
+        fs.unlinkSync(f);
+      } catch (e) {
+        /* the file stays; the suite reports it */
+      }
     }
   }
 }
 
 /** The answer of the sabotaged resolver for a NON-administrator. */
-async function scanAvecSabotage(nom, mutation) {
-  const resolver = await avecSabotage(nom, mutation);
+async function scanAvecSabotage(nom, mutations) {
+  const resolver = avecSabotage(nom, mutations);
   SCENARIO = Object.assign({}, LECTURES_SITE, { [CHEMIN_PERMISSIONS]: REPONSE_NON_ADMIN });
   DEMANDES = [];
   const rep = await appeler(resolver, 'acc-simple');
@@ -338,9 +424,9 @@ async function scanAvecSabotage(nom, mutation) {
   // CP-1 : the check disabled -> the non-administrator gets the report back.
   let cp1 = null;
   try {
-    cp1 = await scanAvecSabotage('resolvers.sabotage-cp1', (src) =>
-      src.replace(/if \(!droit\.ok\)/, 'if (false)')
-    );
+    cp1 = await scanAvecSabotage('cp1', {
+      resolver: (src) => src.replace(/if \(!droit\.ok\)/, 'if (false)'),
+    });
     check(
       'CONTRE-PROOF CP-1 the administrator check is load-bearing (without it, a non-administrator would get the report)',
       !!(cp1.reponse && cp1.reponse.ok === true),
@@ -355,9 +441,15 @@ async function scanAvecSabotage(nom, mutation) {
   // CP-2 : a wrong permission key -> the administrator is refused.
   let cp2 = null;
   try {
-    cp2 = await avecSabotage('resolvers.sabotage-cp2', (src) =>
-      src.replace(/ADMINISTER,SYSTEM_ADMIN/g, 'BROWSE_PROJECTS')
-    );
+    cp2 = avecSabotage('cp2', {
+      droits: (src) =>
+        remplacementUnique(
+          src,
+          'const URL_PERMISSIONS = route`/rest/api/3/mypermissions?permissions=ADMINISTER,SYSTEM_ADMIN`;',
+          'const URL_PERMISSIONS = route`/rest/api/3/mypermissions?permissions=BROWSE_PROJECTS`;',
+          1
+        ),
+    });
     SCENARIO = Object.assign({}, LECTURES_SITE, { [CHEMIN_PERMISSIONS]: REPONSE_ADMIN });
     DEMANDES = [];
     const rep = await appeler(cp2, 'acc-admin');
@@ -370,20 +462,28 @@ async function scanAvecSabotage(nom, mutation) {
     check('CONTRE-PROOF CP-2 the permission key matters', false, e.message);
   }
 
-  // CP-3 : a check that fails open -> a non-administrator passes when the
-  // endpoint answers 401.
+  // CP-3 : a refused check treated as "administrator" -> the caller passes.
+  // The scenario is ADM-06: the sabotage MUST let the caller through.
   let cp3 = null;
   try {
-    cp3 = await avecSabotage('resolvers.sabotage-cp3', (src) =>
-      src.replace(/if \(status !== 200\)/, 'if (false)')
-    );
+    cp3 = avecSabotage('cp3', {
+      droits: (src) =>
+        remplacementUnique(
+          src,
+          'if (status !== 200) {',
+          "if (status !== 200) { return { ok: true, permission: 'ADMINISTER', raison: '' }; } if (false) {",
+          1
+        ),
+    });
     SCENARIO = Object.assign({}, LECTURES_SITE, { [CHEMIN_PERMISSIONS]: REPONSE_401 });
     DEMANDES = [];
     const rep = await appeler(cp3, 'acc-admin');
     check(
       'CONTRE-PROOF CP-3 the check fails closed (a failing check must not let anybody through)',
-      !!(rep && rep.ok === false),
-      rep && rep.ok === false ? 'the sabotaged check still refuses' : 'the sabotaged check let the caller through'
+      !!(rep && rep.ok === true),
+      rep && rep.ok === true
+        ? 'the sabotaged check let the caller through: the check changes the outcome'
+        : 'the sabotage did NOT change the outcome: the check may be dead code'
     );
   } catch (e) {
     check('CONTRE-PROOF CP-3 the check fails closed', false, e.message);
