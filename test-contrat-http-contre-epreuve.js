@@ -64,6 +64,24 @@ function lancerHarnais(dossier) {
   return { code: res.status, sortie: (res.stdout || '') + (res.stderr || '') };
 }
 
+/**
+ * Supprime le dossier temporaire du harnais.
+ *
+ * SANS CETTE SUPPRESSION, chaque passage de la suite laisse un dossier dans
+ * /tmp. Or /tmp est un tmpfs de 256 Mo : apres quelques dizaines de passages
+ * (mesuré le 10/11/2026 : 720 dossiers, /tmp a 100 %), la suite CRASHE sur
+ * « ENOSPC: no space left on device » — le harnais ne peut plus tourner du
+ * tout, et le vert devient un mensonge. Le dossier est donc supprime dans
+ * tous les cas, même quand le sabotage n'est pas applicable.
+ */
+function nettoyer(dossier) {
+  try {
+    fs.rmSync(dossier, { recursive: true, force: true });
+  } catch (e) {
+    console.log('AVERTISSEMENT : le dossier temporaire n a pas pu etre supprime : ' + e.message);
+  }
+}
+
 /** Remplace une chaîne unique et vérifie qu'elle n'était présente qu'une fois. */
 const sabotage = (texte, avant, apres) => {
   const occurrences = texte.split(avant).length - 1;
@@ -76,6 +94,7 @@ const sabotage = (texte, avant, apres) => {
 // --- 0. contrôle : le harnais est vert sur une copie intacte -----------------
 const copieIntacte = copierApp('intact');
 const vert = lancerHarnais(copieIntacte);
+nettoyer(copieIntacte);
 check(
   'contrôle : le harnais est VERT sur une copie intacte (RC 0)',
   vert.code === 0 && /TOUT PASS/.test(vert.sortie),
@@ -166,10 +185,12 @@ for (const test of SABOTAGES) {
   }
   if (erreur) {
     check(test.nom + ' : sabotage applicable', false, erreur);
+    nettoyer(dossier);
     continue;
   }
   fs.writeFileSync(cheminFichier, patched);
   const res = lancerHarnais(dossier);
+  nettoyer(dossier);
   const sortie = res.sortie;
   // Le contrôle cassé doit être nommé SUR UNE LIGNE « FAIL » : le simple fait
   // que son étiquette aparaisse quelque part (y compris sur une ligne PASS)
