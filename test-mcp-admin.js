@@ -1,5 +1,5 @@
 /**
- * test-mcp-admin-cycle140.js — THE ADMINISTRATOR CHECK ON THE MCP PATH.
+ * test-mcp-admin.js — THE ADMINISTRATOR CHECK ON THE MCP PATH.
  *
  * THE PROBLEM THIS TEST ANSWERS (Direction, 09/11/2026 21:34): the
  * administration page is reserved to Jira administrators — the resolver
@@ -60,7 +60,7 @@
  * of passing silently.
  *
  * Usage:
- *   node test-mcp-admin-cycle140.js [path/to/mcp.js]
+ *   node test-mcp-admin.js [path/to/mcp.js]
  *
  * RC 0 = every check passes, RC 1 = at least one check fails.
  */

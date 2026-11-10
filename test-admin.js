@@ -1,5 +1,5 @@
 /**
- * test-admin-cycle139.js — THE ADMINISTRATOR CHECK, MADE ON THE SERVER.
+ * test-admin.js — THE ADMINISTRATOR CHECK, MADE ON THE SERVER.
  *
  * The problem this test answers (jury review `e486`, 09/11/2026, "à corriger"
  * point 1): the administration page is only DISPLAYED to a Jira administrator,
@@ -56,7 +56,7 @@
  * passing silently.
  *
  * Usage:
- *   node test-admin-cycle139.js [path/to/resolvers.js]
+ *   node test-admin.js [path/to/resolvers.js]
  *
  * RC 0 = every check passes, RC 1 = at least one check fails.
  */

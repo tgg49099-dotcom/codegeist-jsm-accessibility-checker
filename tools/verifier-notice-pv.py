@@ -36,11 +36,11 @@ URL_PUBLIEE = "https://labs.chiffreo.ch/privacy.html"
 AUTORISEES_AUTRES = {
     # La source officielle d'Atlassian pour la restriction de Rovo (plans
     # Standard / Premium / Enterprise). Ce n'est pas une copie de la notice :
-    # c'est la regle citee. (Ajoute le 09/11/2026, cycle 136.)
+    # c'est la regle citee. (Ajoute le 09/11/2026.)
     "https://www.atlassian.com/licensing/rovo",
     # Les pages officielles citees pour le controle d'administrateur et pour
     # l'export CSV. Ce sont des regles citees, pas des copies de la notice.
-    # (Ajoute le 09/11/2026, cycle 139.)
+    # (Ajoute le 09/11/2026.)
     # "Get my permissions", Jira Cloud REST API v3 : l'endpoint du controle.
     "https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-permissions/",
     # Les conditions d'affichage de Jira : `hasGlobalPermission` (ADMINISTER,

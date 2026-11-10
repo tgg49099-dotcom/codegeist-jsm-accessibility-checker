@@ -6,14 +6,14 @@ verifier-manifest-cycle134.py — the manifest checker of the Codegeist app
 
 WHY THIS FILE EXISTS
 --------------------
-This file REPLACES `tools/verifier-manifest-cycle128.py` (cycle 134,
-09/11/2026), which is removed so that there is only ONE checker and no
-stale one. The cycle-128 checker proved one thing: the manifest exposed NO
-public module — the app could not be called by anyone who found a URL.
+This file REPLACES an earlier checker (removed on 09/11/2026) so that there
+is only ONE checker and no stale one. The earlier checker proved one thing:
+the manifest exposed NO public module — the app could not be called by anyone
+who found a URL.
 
-Cycle 134 added the `rovo:mcp` module (the Codegeist 2026 bonus "Best app
-with Atlassian MCP"), so the property to prove changed with the code. It is
-now:
+The `rovo:mcp` module was added on 09/11/2026 (the Codegeist 2026 bonus "Best
+app with Atlassian MCP"), so the property to prove changed with the code. It
+is now:
 
   * there is still NO unauthenticated public module (no `webtrigger`, no
     `productTrigger`, no `scheduleTrigger`, no `trigger`): the only entry
@@ -71,11 +71,11 @@ CLES_DE_SORTIE = ("external", "remotes", "egress")
 SCOPES_ATTENDUS = ["read:jira-work", "read:servicedesk-request"]
 
 # Les types de modules attendus, et les modules de la version precedente
-# (cycle 128) qui doivent toujours etre la.
+# qui doivent toujours etre la.
 TYPES_ATTENDUS = ["jira:adminPage", "function", "action", "rovo:mcp"]
-MODULES_CYCLE_128 = ["jira:adminPage", "function"]
+MODULES_ORIGINAUX = ["jira:adminPage", "function"]
 
-# Le nombre d'outils MCP : deux, pas plus (la consigne du cycle 134).
+# Le nombre d'outils MCP : deux, pas plus (depuis le 09/11/2026).
 OUTILS_ATTENDUS = 2
 
 # La longueur maximale d'une description d'action (regle Atlassian).
@@ -263,7 +263,7 @@ def main(argv):
     racine = os.path.dirname(os.path.abspath(chemin))
     types = list(modules.keys())
 
-    print("== Vérification du manifeste (cycle 134) : %s ==" % chemin)
+    print("== Vérification du manifeste : %s ==" % chemin)
     print("")
 
     # 1. aucun module public declencheable par le visiteur
@@ -302,10 +302,10 @@ def main(argv):
         "modules : " + ", ".join(types),
     )
 
-    # 6. les modules du cycle 128 sont toujours là
+    # 6. les modules de la premiere version sont toujours là
     controle(
-        "VERIF-06 les modules du cycle 128 (jira:adminPage, function) sont toujours déclarés",
-        all(t in modules for t in MODULES_CYCLE_128),
+        "VERIF-06 les modules de la premiere version (jira:adminPage, function) sont toujours déclarés",
+        all(t in modules for t in MODULES_ORIGINAUX),
         "modules : " + ", ".join(types),
     )
 

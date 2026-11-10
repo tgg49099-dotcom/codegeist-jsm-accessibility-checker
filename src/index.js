@@ -15,7 +15,7 @@
  * finding is returned in the format of the submission (§0.4): critere, niveau,
  * source, ressource, emplacement, valeur, message, a_verifier.
  *
- * ENTRY POINT. Since cycle 128 (05/11/2026) this file is NOT an HTTP handler
+ * ENTRY POINT. Since 05/11/2026 this file is NOT an HTTP handler
  * any more: the public trigger module has been REMOVED from the manifest and
  * replaced by a `jira:adminPage` module. This file is the ENGINE; it is called
  * by the resolver (src/resolvers.js), which the platform only lets a logged-in
@@ -134,7 +134,7 @@ const constatApp = (critere, niveau, source, ressource, emplacement, valeur, mes
  *
  * Conséquence : il n'existe aucun chemin dans le code qui puisse lire le site
  * avec une identité plus large que celle de l'appelant. Le contrôle
- * correspondant est `test-identite-cycle136.js` (et sa contre-épreuve).
+ * correspondant est `test-identite.js` (et sa contre-épreuve).
  *
  * @returns {object} le client REST (@forge/api), avec l'identité de l'appelant
  */
@@ -147,7 +147,7 @@ function client() {
  *
  * The string is written here, next to the only identity call, and the reports
  * use it: the application therefore cannot claim one identity and read with
- * another without the two drifting apart — and `test-identite-cycle136.js`
+ * another without the two drifting apart — and `test-identite.js`
  * checks BOTH (the call expression is `asUser`, and this constant is
  * `asUser`).
  */
@@ -729,7 +729,7 @@ async function scanJira() {
 // ---------------------------------------------------------------------------
 // Entry point — THE SCAN ENGINE.
 //
-// CYCLE 128 (05/11/2026): THE PUBLIC TRIGGER IS GONE.
+// Depuis le 05/11/2026 : THE PUBLIC TRIGGER IS GONE.
 //
 // This app used to expose a public trigger module whose request was
 // UNAUTHENTICATED (`authentication: none`): anyone who knew the URL could run

@@ -8,7 +8,7 @@
  * déployé — renvoie ce verdict, et qu'elle ne fait AUCUN appel à un site en
  * mode démo.
  *
- * CYCLE 128 (05/11/2026) : l'entrée est `invoke('scanDemo', …)`, pas une URL
+ * Depuis le 05/11/2026 : l'entrée est `invoke('scanDemo', …)`, pas une URL
  * publique. Un appel sans compte connecté doit être refusé (GATE) : le mode
  * démo n'est pas une porte dérobée.
  *

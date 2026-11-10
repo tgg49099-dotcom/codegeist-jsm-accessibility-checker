@@ -103,12 +103,20 @@ run and the caller gets a refusal. The site is not read once for a caller who is
 not an administrator. The demo scan reads no site at all, so it stays available
 to any signed-in user.
 
-The check is covered by `test-admin-cycle139.js` (18 checks, with three
+The check is covered by `test-admin.js` (18 checks, with three
 counter-proofs: without the check a non-administrator would get the report; a
 wrong permission key refuses the administrator; a check that fails open would let
 anybody through — the three sabotages must each turn the suite RED) and by
-`test-mcp-admin-cycle140.js` (17 checks, four counter-proofs), which proves that
+`test-mcp-admin.js` (17 checks, four counter-proofs), which proves that
 the two MCP tools apply **the same** check, before any read.
+
+`test-refus-non-admin.js` (14 checks, three counter-proofs) proves the refusal
+**in both directions**: a caller who holds neither `ADMINISTER` nor
+`SYSTEM_ADMIN` is refused — on the page *and* by the two MCP tools — with the
+same wording, and **nothing of the site is read**; an administrator is still
+allowed (so the suite is not green because everything refuses). Its
+counter-proofs remove the control itself, remove the gate from the page, and
+remove the gate from the MCP path: each of the three must turn the suite RED.
 
 > **This change is deployed.** The version running in production is **2.8.0**
 > (deployed 10 November 2026 at 01:15:28 UTC): the two MCP tools apply the same
@@ -222,7 +230,7 @@ Two consequences, both visible in the product:
 
 * the report carries an `autorisation` section that says which identity was
   used (`asUser`) — the declaration is checked against the code by
-  `test-identite-cycle136.js`, so the two cannot drift apart;
+  `test-identite.js`, so the two cannot drift apart;
 * if the platform refuses that identity (HTTP 401/403 — the caller's account
   has not authorised the app to read the site on their behalf), the app
   **refuses** and says what to do. It never returns an empty report, which
@@ -230,7 +238,7 @@ Two consequences, both visible in the product:
   **nothing was read**.
 
 ```
-node test-identite-cycle136.js            # 12 checks — 0 asApp() in the active code, and the
+node test-identite.js            # 12 checks — 0 asApp() in the active code, and the
                                           #            behaviour when the platform refuses
 ```
 
@@ -271,7 +279,7 @@ What the two tools do **not** do is the interesting part:
   who is calling, and a refusal (401) stops the tool before anything is read.
 
 The tools run the very same engine and the very same rules as the button
-(`src/regles.js` is not re-implemented here). `node test-mcp-cycle134.js`
+(`src/regles.js` is not re-implemented here). `node test-mcp.js`
 checks all of this offline, against a simulated platform, and checks that the
 harness turns red when each of these properties is broken.
 
@@ -360,18 +368,21 @@ verify.
 
 ```
 npm install
-node test-ihm-cycle129.js                 # 43 checks — the interface replaces the public trigger
+node test-ihm.js                 # 43 checks — the interface replaces the public trigger
 node test-contrat-http.js                 # 59 checks — the privacy contract (masking, absent fields, logs)
 node test-app-demo.js                     # 22 checks — the resolver returns the 23/23 verdict
 node test-demo.js                         # 55 checks — detects all 23 seeded issues in the bundled demo data
 node test-contre-epreuve.js               # 13 checks — the harness turns RED when a rule is sabotaged
 node test-contrat-http-contre-epreuve.js  # 28 checks — that harness turns RED when the contract is broken
-node test-mcp-cycle134.js                  # 32 checks — the two MCP tools read the caller's site, and nothing else
-node test-admin-cycle139.js                # 18 checks — the administrator check on the page's path
-node test-csv-cycle139.js                  # 15 checks — the CSV is written in a copyable field
-node test-mcp-admin-cycle140.js            # 17 checks — the SAME administrator check on the two MCP tools
-node test-identite-cycle136.js             # 12 checks — 0 asApp() in the active code, and a refusal when the
+node test-mcp.js                  # 32 checks — the two MCP tools read the caller's site, and nothing else
+node test-admin.js                # 18 checks — the administrator check on the page's path
+node test-csv.js                  # 15 checks — the CSV is written in a copyable field
+node test-mcp-admin.js            # 17 checks — the SAME administrator check on the two MCP tools
+node test-identite.js             # 12 checks — 0 asApp() in the active code, and a refusal when the
                                           #            platform refuses the caller's identity
+node test-mcp-porte.js            # 16 checks — the administrator door, with five counter-proofs
+node test-refus-non-admin.js       # 14 checks — a NON-administrator is refused, on the page AND on the
+                                          #            two MCP tools, and nothing of the site is read
 python3 tools/verifier-manifest-cycle134.py       # 18 checks — no public module, no egress, two read scopes,
                                                    #           one rovo:mcp module with two tools
 python3 tools/contre-epreuve-verificateur.py      # 28 checks — that checker turns RED on 9 sabotages
@@ -386,12 +397,12 @@ administer: `GET /rest/api/3/field` and `POST /rest/api/3/search/jql` (16 checks
 `test-contrat-http-contre-epreuve.js` and `test-contre-epreuve.js` are
 counter-proof suites: they break the product on purpose and require the test
 harness to fail — **by naming the broken check**, because a suite that fails by
-crashing would prove nothing. `test-ihm-cycle129.js` does the same for the
+crashing would prove nothing. `test-ihm.js` does the same for the
 interface (8 sabotages: a trigger reintroduced, a write scope, an egress, a raw
 HTML tag, a French message, an MCP tool pointing at a missing action, a second
 MCP server, an over-long action description) and
 `tools/contre-epreuve-verificateur.py` does it for the manifest checker
-(9 sabotages). `test-mcp-cycle134.js` does it for the two tools (6 sabotages:
+(9 sabotages). `test-mcp.js` does it for the two tools (6 sabotages:
 the tools read with the app's identity, the site check is disabled, the identity
 gate is disabled, the probe uses the app's identity, the URL is sent to an
 external service, the tools store the history).

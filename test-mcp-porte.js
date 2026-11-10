@@ -1,13 +1,13 @@
 /**
- * test-mcp-porte-cycle141.js — HOSTILE REVIEW OF THE ADMINISTRATOR DOOR.
+ * test-mcp-porte.js — HOSTILE REVIEW OF THE ADMINISTRATOR DOOR.
  *
- * WHAT THIS SUITE ADDS TO test-mcp-admin-cycle140.js
+ * WHAT THIS SUITE ADDS TO test-mcp-admin.js
  *
- * The cycle 140 suite proves that the administrator check is there, that it
+ * The MCP administrator suite proves that the administrator check is there, that it
  * fails closed on a 401 and on a silent answer, and that it happens before
  * the first read. Those are the right questions, and they are answered.
  *
- * This suite asks the questions the cycle 140 suite does NOT ask — the ones
+ * This suite asks the questions that suite does NOT ask — the ones
  * a hostile reviewer would ask, and the ones that decide whether the door is
  * really closed in every way the platform can behave:
  *
@@ -44,16 +44,16 @@
  *
  * THE COUNTER-PROOFS (the suite must be able to say NO)
  *
- *   CP-141-A  a shared check that ALLOWS on error ("fail open") turns P-01
+ *   CP-PORTE-A  a shared check that ALLOWS on error ("fail open") turns P-01
  *             and P-06 red.
- *   CP-141-B  a shared check that accepts a non-boolean answer turns P-08
+ *   CP-PORTE-B  a shared check that accepts a non-boolean answer turns P-08
  *             red.
- *   CP-141-C  a shared check that forgets the second permission key turns
+ *   CP-PORTE-C  a shared check that forgets the second permission key turns
  *             P-02 and P-11 red.
- *   CP-141-D  a FORK of the control inside the MCP path (a second copy of
+ *   CP-PORTE-D  a FORK of the control inside the MCP path (a second copy of
  *             the check, written in place) turns P-03, P-09, P-10 and P-11
  *             red: forking the control is caught.
- *   CP-141-E  a gate moved AFTER the first read of the site turns P-10 red.
+ *   CP-PORTE-E  a gate moved AFTER the first read of the site turns P-10 red.
  *
  * Each counter-proof mutates the file that really carries the behaviour and
  * MUST change the verdict of the check it is the counter-proof of. A
@@ -61,7 +61,7 @@
  * reported as a failure.
  *
  * Usage:
- *   node test-mcp-porte-cycle141.js [mcp.js] [resolvers.js] [droits-admin.js]
+ *   node test-mcp-porte.js [mcp.js] [resolvers.js] [droits-admin.js]
  *
  * With arguments, the suite runs against THAT state (this is how the red
  * output is produced, on the files published before the fix). The
@@ -433,7 +433,7 @@ async function verdicts(set, scenario, leve) {
   DEMANDES = [];
   let repResolver = null;
   try {
-    repResolver = await set.resolver._scan({ payload: {}, context: { accountId: 'acc-cycle141' } });
+    repResolver = await set.resolver._scan({ payload: {}, context: { accountId: 'acc-non-admin' } });
   } catch (e) {
     erreur = erreur || e;
   }
@@ -478,7 +478,7 @@ async function controles(set) {
   DEMANDES = [];
   const repMcpNonAdmin = await set.mcp.scanAccessibility({ url: URL_PORTAL }, {});
   DEMANDES = [];
-  const repResolverNonAdmin = await set.resolver._scan({ payload: {}, context: { accountId: 'acc-cycle141' } });
+  const repResolverNonAdmin = await set.resolver._scan({ payload: {}, context: { accountId: 'acc-non-admin' } });
   res['P-03 the resolver and the MCP tool give the SAME refusal'] =
     !!repResolverNonAdmin &&
     repResolverNonAdmin.error === 'NOT_ADMINISTRATOR' &&
@@ -500,7 +500,7 @@ async function controles(set) {
         remplacementUnique(
           src,
           'async function droitAdministration() {',
-          "async function droitAdministration() { throw new Error('sabotage cycle141 : the check throws');",
+          "async function droitAdministration() { throw new Error('sabotage : the check throws');",
           1
         ),
     });
@@ -533,7 +533,7 @@ async function controles(set) {
   DEMANDES = [];
   let repDemo = null;
   try {
-    repDemo = await set.resolver._scanDemo({ payload: {}, context: { accountId: 'acc-cycle141' } });
+    repDemo = await set.resolver._scanDemo({ payload: {}, context: { accountId: 'acc-non-admin' } });
   } catch (e) {
     repDemo = null;
   }
@@ -645,7 +645,7 @@ async function verdictsSabotes(nom, mutations) {
   if (ETAT_AVANT) {
     console.log('NOT REPLAYED on a before-state: the anchors of the counter-proofs ARE the live ones.');
   } else {
-    // --- CP-141-A : the shared check FAILS OPEN on an error --------------
+    // --- CP-PORTE-A : the shared check FAILS OPEN on an error --------------
     const cpA = await verdictsSabotes('cp-a', {
       droits: (src) =>
         remplacementUnique(
@@ -656,13 +656,13 @@ async function verdictsSabotes(nom, mutations) {
         ),
     });
     check(
-      'CONTRE-PROOF CP-141-A a shared check that ALLOWS on error turns P-01 and P-06 red',
+      'CONTRE-PROOF CP-PORTE-A a shared check that ALLOWS on error turns P-01 and P-06 red',
       cpA.rouges.indexOf('P-01 the platform refusing with an EXCEPTION gives a REFUSAL and no read') !== -1 &&
         cpA.rouges.indexOf('P-06 list_last_findings refuses the same way when the platform throws') !== -1,
       'red: ' + cpA.rouges.join(', ')
     );
 
-    // --- CP-141-B : the shared check accepts a non-boolean answer --------
+    // --- CP-PORTE-B : the shared check accepts a non-boolean answer --------
     const cpB = await verdictsSabotes('cp-b', {
       droits: (src) =>
         remplacementUnique(
@@ -673,12 +673,12 @@ async function verdictsSabotes(nom, mutations) {
         ),
     });
     check(
-      'CONTRE-PROOF CP-141-B a shared check that accepts a non-boolean answer turns P-08 red',
+      'CONTRE-PROOF CP-PORTE-B a shared check that accepts a non-boolean answer turns P-08 red',
       cpB.rouges.indexOf('P-08 a malformed answer (havePermission: "false") is REFUSED') !== -1,
       'red: ' + cpB.rouges.join(', ')
     );
 
-    // --- CP-141-C : the shared check forgets the second key --------------
+    // --- CP-PORTE-C : the shared check forgets the second key --------------
     const cpC = await verdictsSabotes('cp-c', {
       droits: (src) =>
         remplacementUnique(
@@ -689,12 +689,12 @@ async function verdictsSabotes(nom, mutations) {
         ),
     });
     check(
-      'CONTRE-PROOF CP-141-C a shared check that forgets SYSTEM_ADMIN turns P-02 red',
+      'CONTRE-PROOF CP-PORTE-C a shared check that forgets SYSTEM_ADMIN turns P-02 red',
       cpC.rouges.indexOf('P-02 an administrator holding only SYSTEM_ADMIN receives the report') !== -1,
       'red: ' + cpC.rouges.join(', ')
     );
 
-    // --- CP-141-D : the control is FORKED inside the MCP path ------------
+    // --- CP-PORTE-D : the control is FORKED inside the MCP path ------------
     const cpD = await verdictsSabotes('cp-d', {
       mcp: (src) =>
         remplacementUnique(
@@ -705,14 +705,14 @@ async function verdictsSabotes(nom, mutations) {
         ),
     });
     check(
-      'CONTRE-PROOF CP-141-D a FORK of the control in the MCP path turns P-03, P-09 and P-10 red',
+      'CONTRE-PROOF CP-PORTE-D a FORK of the control in the MCP path turns P-03, P-09 and P-10 red',
       cpD.rouges.indexOf('P-03 the resolver and the MCP tool give the SAME refusal') !== -1 &&
         cpD.rouges.indexOf('P-09 the two doors agree on the three scenarios (admin, non-admin, exception)') !== -1 &&
         cpD.rouges.indexOf('P-10 a non-administrator causes ZERO read of the site (only the permission check)') !== -1,
       'red: ' + cpD.rouges.join(', ')
     );
 
-    // --- CP-141-E : the gate is moved AFTER the first read ---------------
+    // --- CP-PORTE-E : the gate is moved AFTER the first read ---------------
     const cpE = await verdictsSabotes('cp-e', {
       mcp: (src) => {
         const gate =
@@ -728,7 +728,7 @@ async function verdictsSabotes(nom, mutations) {
       },
     });
     check(
-      'CONTRE-PROOF CP-141-E a gate moved AFTER the first read turns P-10 red',
+      'CONTRE-PROOF CP-PORTE-E a gate moved AFTER the first read turns P-10 red',
       cpE.rouges.indexOf('P-10 a non-administrator causes ZERO read of the site (only the permission check)') !== -1,
       'red: ' + cpE.rouges.join(', ')
     );

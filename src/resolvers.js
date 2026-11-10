@@ -27,37 +27,11 @@
  * reachable only from an authenticated session, so there is no URL anybody can
  * call without an account.
  *
- * THE ADMINISTRATOR CHECK — the endpoint, and why this one
- *
- * The check is implemented ONCE, in src/droits-admin.js (single source of
- * truth), and this file calls it. The endpoint, the keys and the fail-closed
- * behaviour are documented there; they are reproduced here for the reader of
- * this file:
- *
- *   - ENDPOINT: `GET /rest/api/3/mypermissions?permissions=ADMINISTER,SYSTEM_ADMIN`
- *     "Get my permissions", Jira Cloud REST API v3, group "Permissions":
- *     https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-permissions/
- *     (consulted 09/11/2026). The endpoint answers with the permissions of
- *     the USER the request is made for; called through `asUser()`, that user
- *     is the person who clicked the button.
- *   - THE PERMISSION KEYS are the global ones this same official endpoint
- *     lists for a Jira site (GET /rest/api/3/permissions, HTTP 200 measured
- *     on the app's own site on 09/11/2026):
- *       ADMINISTER  = "Administer Jira"                (type GLOBAL)
- *       SYSTEM_ADMIN = "Jira System Administrators"     (type GLOBAL)
- *     No other name is used: a key that does not exist would simply answer
- *     "no permission" for everybody.
- *   - NO NEW SCOPE IS NEEDED: the official page lists the classic scope
- *     `read:jira-work` as the (recommended) OAuth scope of that endpoint,
- *     and the app already declares it — so manifest.yml is unchanged and
- *     nothing has to be reinstalled.
- *   - THE CHECK FAILS CLOSED. If the platform refuses the call (401/403), if
- *     the answer says nothing about the administration permissions, or if it
- *     cannot be read, the scan does not run: the caller gets a refusal, and
- *     never a report.
- *   - THE DEMO SCAN reads no site: it replays the bundled fixtures, so it
- *     stays available to any signed-in user. `test-admin-cycle139.js` pins
- *     that difference.
+ * THE ADMINISTRATOR CHECK — implemented ONCE, in src/droits-admin.js (single
+ * source of truth), which this file calls: the endpoint, the permission
+ * keys, the fail-closed behaviour and the demo exception are documented
+ * THERE. One description, one place — a second copy here could drift away
+ * from the code that actually decides.
  *
  * NO DUPLICATION: `scan()` and `scanDemo()` call the engine in src/index.js
  * (`lancerScan` / `rapportDemo`) — the very same code, the very same rules
@@ -129,16 +103,12 @@ function runtimeAvecIdentite(req, backendRuntimePayload) {
 }
 
 /**
- * Whether the caller is a Jira administrator.
- *
- * The answer comes from Jira itself, asked with the caller's own identity:
- * `GET /rest/api/3/mypermissions` returns the permissions of the user the
- * request is made for. The caller's account id is NOT sent and cannot be
- * forged: it is the account the platform authenticates.
+ * The administrator check, called by `scan()` below.
  *
  * The implementation is in src/droits-admin.js — the same one the MCP tools
- * call (src/mcp.js). It is re-exported at the bottom of this file for the
- * offline test harness.
+ * call (src/mcp.js): see THAT file for the endpoint, the permission keys and
+ * the fail-closed behaviour. It is re-exported at the bottom of this file for
+ * the offline test harness.
  *
  * @returns {Promise<{ok: boolean, permission: string, raison: string}>}
  */

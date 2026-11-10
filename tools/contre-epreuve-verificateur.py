@@ -65,7 +65,7 @@ SABOTAGES = [
         lambda s: re.sub(r"\n  jira:adminPage:\n(?:    .*\n)+", "\n", s, count=1),
         "VERIF-03",
     ),
-    # --- sabotages du cycle 134 : le module rovo:mcp et ses deux outils ------
+    # --- sabotages du module rovo:mcp : le module rovo:mcp et ses deux outils ------
     (
         "un outil MCP ne pointe plus vers une action déclarée",
         lambda s: s.replace("\n        - scan_accessibility\n", "\n        - scan_qui_nexiste_pas\n", 1),

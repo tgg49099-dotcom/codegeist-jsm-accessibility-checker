@@ -6,7 +6,7 @@
  * ne s'applique qu'aux champs RÉELLEMENT présents (un champ absent n'est
  * jamais inventé).
  *
- * CYCLE 128 (05/11/2026) : le point d'entrée testé n'est plus un handler
+ * Depuis le 05/11/2026 : le point d'entrée testé n'est plus un handler
  * HTTP public, c'est le resolver que la page d'administration appelle
  * (`invoke('scan', …)` / `invoke('scanDemo', …)`). On teste donc :
  *   1. les fonctions pures (masque, collecte des champs, balayage) ;
@@ -155,7 +155,7 @@ check('RECU-16 le payload de la page (objet) est lu comme un corps',
   // --- 4. le point d'entrée de l'app, en mode DÉMO : cas rouge ------------------
 
   // Le mode démo ne doit appeler AUCUNE API : les DEUX identités sont
-  // neutralisées. Depuis le cycle 136, c'est `asUser` que le moteur emploie ;
+  // neutralisées. Depuis le correctif d'identité, c'est `asUser` que le moteur emploie ;
   // `asApp` est neutralisée elle aussi, pour que le contrôle voie une
   // éventuelle régression vers une identité plus large.
   const asAppOriginal = api.asApp;

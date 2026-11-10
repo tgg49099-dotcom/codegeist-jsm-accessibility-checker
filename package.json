@@ -12,23 +12,24 @@
   },
   "description": "Portal Accessibility Checker for JSM — read-only WCAG 2.2 AA scan of a Jira Service Management customer portal, started from the Jira administration page (Forge app).",
   "engines": {
-    "node": "22.x"
+    "node": "24.x"
   },
   "scripts": {
     "lint": "forge lint",
-    "test": "node test-ihm-cycle129.js && node test-mcp-cycle134.js && node test-identite-cycle136.js && node test-contrat-http.js && node test-app-demo.js && node test-demo.js && node test-contre-epreuve.js && node test-contrat-http-contre-epreuve.js && node test-admin-cycle139.js && node test-csv-cycle139.js && node test-mcp-admin-cycle140.js && node test-mcp-porte-cycle141.js",
-    "test:ihm": "node test-ihm-cycle129.js",
-    "test:mcp": "node test-mcp-cycle134.js",
+    "test": "node test-ihm.js && node test-mcp.js && node test-identite.js && node test-contrat-http.js && node test-app-demo.js && node test-demo.js && node test-contre-epreuve.js && node test-contrat-http-contre-epreuve.js && node test-admin.js && node test-csv.js && node test-mcp-admin.js && node test-mcp-porte.js && node test-refus-non-admin.js",
+    "test:ihm": "node test-ihm.js",
+    "test:mcp": "node test-mcp.js",
     "test:contrat": "node test-contrat-http.js",
     "test:contrat-contre-epreuve": "node test-contrat-http-contre-epreuve.js",
     "test:demo": "node test-demo.js",
     "test:app-demo": "node test-app-demo.js",
     "test:contre-epreuve": "node test-contre-epreuve.js",
     "verify:manifest": "python3 tools/verifier-manifest-cycle134.py",
-    "test:identite": "node test-identite-cycle136.js",
-    "test:admin": "node test-admin-cycle139.js",
-    "test:csv": "node test-csv-cycle139.js",
-    "test:mcp-admin": "node test-mcp-admin-cycle140.js",
-    "test:mcp-porte": "node test-mcp-porte-cycle141.js"
+    "test:identite": "node test-identite.js",
+    "test:admin": "node test-admin.js",
+    "test:csv": "node test-csv.js",
+    "test:mcp-admin": "node test-mcp-admin.js",
+    "test:mcp-porte": "node test-mcp-porte.js",
+    "test:refus-non-admin": "node test-refus-non-admin.js"
   }
 }

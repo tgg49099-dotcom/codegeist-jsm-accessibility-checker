@@ -41,12 +41,12 @@
  *     cannot be read, the scan does not run: the caller gets a refusal, and
  *     never a report.
  *   - THE DEMO SCAN reads no site: it replays the bundled fixtures, so it
- *     stays available to any signed-in user. `test-admin-cycle139.js` pins
+ *     stays available to any signed-in user. `test-admin.js` pins
  *     that difference.
  *
  * The identity used here is ALWAYS the caller's own (`asUser()`). The wider
  * identity of the app (`asApp()`) is never used anywhere in this application:
- * zero call, which `test-identite-cycle136.js` counts on the live code.
+ * zero call, which `test-identite.js` counts on the live code.
  */
 
 const forgeApi = require('@forge/api');

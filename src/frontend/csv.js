@@ -18,7 +18,7 @@
  *   The download needs `document`, `URL` and `setTimeout`. They are passed in
  *   as an argument instead of being taken from the global scope, so that the
  *   whole path can be exercised OFFLINE, against a stub document that records
- *   what the code does (test-csv-cycle139.js). That test is what tells us the
+ *   what the code does (test-csv.js). That test is what tells us the
  *   button does its job; what it cannot tell us is whether the browser of the
  *   person clicking it saves the file — that needs a real page, and the
  *   interface says so in a visible message when the download is not possible.

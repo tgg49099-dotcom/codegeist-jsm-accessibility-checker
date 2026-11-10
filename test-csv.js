@@ -1,5 +1,5 @@
 /**
- * test-csv-cycle139.js — THE CSV EXPORT OF THE ADMINISTRATION PAGE, TESTED.
+ * test-csv.js — THE CSV EXPORT OF THE ADMINISTRATION PAGE, TESTED.
  *
  * The problem this test answers (jury review `e486`, 09/11/2026, "à corriger"
  * point 2): the CSV button was never exercised. `admin.jsx` used `document`,
@@ -46,7 +46,7 @@
  *   CP-3  a copy of the page whose field is not read-only → CSV-10 goes red.
  *
  * Usage:
- *   node test-csv-cycle139.js
+ *   node test-csv.js
  *
  * RC 0 = every check passes, RC 1 = at least one check fails.
  */

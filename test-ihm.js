@@ -1,17 +1,17 @@
 /**
- * test-ihm-cycle129.js — preuve HORS LIGNE de l'IHM (cycle 129).
+ * test-ihm.js — preuve HORS LIGNE de l'IHM.
  *
- * Ce que le cycle 128 a laissé en suspens : le code de l'interface existe,
+ * Ce qui restait en suspens : le code de l'interface existe,
  * mais rien ne prouve, hors ligne, que
  *   (1) le manifeste n'expose PLUS AUCUN module public appelable SANS
- *       authentification (le module `rovo:mcp` du cycle 134 n'en est pas un :
+ *       authentification (le module `rovo:mcp` n'en est pas un :
  *       c'est un serveur d'outils porté par l'identité de l'appelant) ;
  *   (2) le resolver refuse un appel sans compte connecté ;
  *   (3) l'interface n'utilise que des composants UI Kit 2 (@forge/react) ;
  *   (4) l'interface est en ANGLAIS ;
  *   (5) l'interface appelle le MÊME moteur de scan que le déclencheur d'hier.
  *
- * CYCLE 134 (09/11/2026) : le manifeste déclare désormais QUATRE types de
+ * Depuis le 09/11/2026 : le manifeste déclare désormais QUATRE types de
  * modules (`jira:adminPage`, `function`, `action`, `rovo:mcp`). Les contrôles
  * MANIFEST-02 et MANIFEST-05 ont donc été réécrits, et les contrôles
  * MANIFEST-12 à MANIFEST-16 ont été ajoutés pour le module MCP : un seul
@@ -19,7 +19,7 @@
  * pointe une fonction dont le handler existe, chaque description tient dans
  * les 255 caractères imposés par Atlassian.
  *
- * POINT MÉTHODOLOGIQUE (leçon des cycles précédents) : chaque contrôle est
+ * POINT MÉTHODOLOGIQUE (leçon des relectures précédentes) : chaque contrôle est
  * une FONCTION, appelée sur le fichier RÉEL, puis sur une COPIE SABOTÉE. Le
  * contrôle doit rester VERT sur le fichier réel et devenir ROUGE sur la copie
  * sabotée : sans cette contre-épreuve, « 0 violation » ne prouve rien (un
@@ -31,7 +31,7 @@
  * contenir » lit le fichier BRUT (un commentaire qui documente un
  * historique a le droit d'y être).
  *
- * Usage : node test-ihm-cycle129.js
+ * Usage : node test-ihm.js
  * RC 0 = tout passe, RC 1 = au moins un contrôle échoue.
  */
 const fs = require('fs');
@@ -510,7 +510,7 @@ function controlesInterface(texteJsx, composants) {
       famille: 'UI',
       attendu: 'UI-10 tous les textes affichés sont en anglais',
     },
-    // --- sabotages du cycle 134 : le module rovo:mcp et ses deux outils -----
+    // --- sabotages du module rovo:mcp : le module rovo:mcp et ses deux outils -----
     {
       nom: 'un outil MCP ne pointe plus vers une action déclarée',
       mutant: (t) => t.replace('        - scan_accessibility\n', '        - outil_qui_nexiste_pas\n'),

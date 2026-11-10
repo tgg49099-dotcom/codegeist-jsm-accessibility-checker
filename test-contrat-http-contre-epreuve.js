@@ -10,7 +10,7 @@
  *      pas simplement CRASHÉ (un crash ne distingue pas « détecté » de
  *      « cassé »).
  *
- * CYCLE 128 (05/11/2026) : deux sabotages supplémentaires portent sur le
+ * Depuis le 05/11/2026 : deux sabotages supplémentaires portent sur le
  * resolver lui-même — la gâche d'identité et l'appel AU MOTEUR. C'est la
  * preuve que le harnais ne se fabrique pas son propre verdict : un resolver
  * qui répondrait un panneau figé, ou qui accepterait un appel sans compte

@@ -1,5 +1,5 @@
 /**
- * Portal Accessibility Checker for JSM — Rovo MCP TOOLS (cycle 134, 09/11/2026).
+ * Portal Accessibility Checker for JSM — Rovo MCP TOOLS (09/11/2026).
  *
  * WHY THIS FILE EXISTS
  *

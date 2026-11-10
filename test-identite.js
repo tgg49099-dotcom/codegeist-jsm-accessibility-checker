@@ -1,5 +1,5 @@
 /**
- * test-identite-cycle136.js — LE CONTRÔLE D'IDENTITÉ (cycle 136, 09/11/2026).
+ * test-identite.js — LE CONTRÔLE D'IDENTITÉ (09/11/2026).
  *
  * CE QUE CE TEST PROUVE
  *
@@ -30,7 +30,7 @@
  * « le compteur passé à 0 à la main » le vérifie : un compteur figé ne peut
  * pas rendre le contrôle vert.
  *
- * Usage : node test-identite-cycle136.js
+ * Usage : node test-identite.js
  * RC 0 = tout passe, RC 1 = au moins un contrôle échoue.
  */
 const fs = require('fs');

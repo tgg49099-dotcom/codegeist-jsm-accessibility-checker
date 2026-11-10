@@ -1,6 +1,6 @@
 /**
- * test-mcp-cycle134.js — preuve HORS LIGNE des deux outils Rovo MCP
- * (cycle 134, 09/11/2026).
+ * test-mcp.js — preuve HORS LIGNE des deux outils Rovo MCP
+ * (09/11/2026).
  *
  * CE QUE CE TEST PROUVE, ET CE QU'IL NE PROUVE PAS
  *
@@ -18,14 +18,14 @@
  *   - si le stockage ou un appel externe sont touchés (jamais) ;
  *   - si l'outil refuse quand la plateforme refuse, quand l'URL pointe vers
  *     un autre site, ou quand le contenu est en lecture refusée ;
- *   - si la page d'administration (qui existait AVANT le cycle 134) lit
+ *   - si la page d'administration (qui existait AVANT l'ajout des outils Rovo MCP) lit
  *     toujours avec l'identité de l'app — le module MCP ne l'a pas changée.
  *
  * CE QUE CE TEST NE PROUVE PAS : l'appel MCP réel. Il ne peut pas être
  * exécuté depuis ce conteneur (il faut une session d'administrateur Atlassian
  * et le consentement de l'utilisateur). Ce qui est vérifié ici, c'est le
  * CODE ; l'observation du déploiement est une autre étape (le déploiement
- * n'a pas eu lieu : ce cycle ne déploie rien).
+ * n'a pas eu lieu : ce correctif ne déploie rien).
  *
  * POINT MÉTHODOLOGIQUE : comme les autres harnais du dépôt, chaque contrôle
  * est rejoué sur une COPIE SABOTÉE du fichier `src/mcp.js`. Un contrôle qui
@@ -33,7 +33,7 @@
  * harnais ne prouve rien non plus : la détection doit être un ÉCHEC
  * explicite, pas une exception.
  *
- * Usage : node test-mcp-cycle134.js
+ * Usage : node test-mcp.js
  * RC 0 = tout passe, RC 1 = au moins un contrôle échoue.
  */
 const fs = require('fs');
@@ -180,7 +180,7 @@ function scenarioLectureRefusee() {
     // Le contrôle d'administration et la sonde d'identité répondent : le cas
     // testé ici est « le CONTENU est en lecture refusée », pas « l'appelant
     // n'est pas administrateur » (celui-ci est couvert par la suite
-    // test-mcp-admin-cycle140.js).
+    // test-mcp-admin.js).
     if (chemin === '/rest/api/3/serverInfo' || chemin === CHEMIN_PERMISSIONS) continue;
     s[chemin] = { status: 403, body: { errorMessages: ['forbidden'] } };
   }
@@ -340,7 +340,7 @@ function moduleSabotage(nom, mutation) {
  * Sabotage du MOTEUR (src/index.js) : le module des outils est recompilé
  * pour pointer sur le moteur saboté, sinon le sabotage ne servirait à rien.
  *
- * C'est le contrôle qui change de nature après le cycle 136 : l'identité
+ * C'est le contrôle qui change de nature depuis le correctif du contrôle d'identité : l'identité
  * n'est plus choisie par un drapeau, elle estUnique dans le code. Le
  * sabotage vérifie donc que le contrôle voit l'identité RÉELLEMENT utilisée.
  */
