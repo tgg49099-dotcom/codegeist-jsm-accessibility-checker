@@ -5,11 +5,11 @@
 **Source code:** the repository this file lives in (MIT licence) — every line of the app is public, so the behaviour described below can be read in the code that implements it
 **Published notice:** **https://labs.chiffreo.ch/privacy.html** — this is the **only** published privacy URL of this app; this file is the same notice, kept in the repository so that the code and the notice can be read side by side.
 
-*Last updated: 9 November 2026.* This notice describes the app as it is deployed today
-(production version **2.7.0**, deployed 9 November 2026 at 20:00:06 UTC — 21:00:06 in
+*Last updated: 10 November 2026.* This notice describes the app as it is deployed today
+(production version **2.8.0**, deployed 10 November 2026 at 01:15:28 UTC — 02:15:28 in
 Zurich, measured from the deployment record; the development
-environment runs **2.10.0**). It replaces the version of 7 November 2026, which described
-the app as it was then (production 2.5.0). Three things changed since: the **identity of
+environment runs **2.10.0**). It replaces the version of 9 November 2026, which described
+the app as it was then (production 2.7.0). Three things changed since: the **identity of
 the reads** — the app now reads with `asUser` only, and refuses when the platform
 refuses (§ 2) — the **two Rovo MCP tools**, which are now deployed (§ "The two Rovo
 MCP tools"), and the **administrator check**, which is now made on the server (§ 1). The masking contract, the sentence of § 8 and the whole of § 8's reasoning
@@ -38,9 +38,10 @@ Administrators"**) permission. Any other signed-in user gets a refusal, never a 
 the two tools, so the two doors cannot drift apart. An agent that calls a tool without an
 administrator's rights gets the same refusal, and nothing is read.
 
-*(This paragraph describes the code of this repository, committed on 9 November 2026. The
-version running in production is still 2.7.0, where the MCP path has no administrator check;
-the check on the two tools goes live with the next deployment, after the re-review.)*
+*(This paragraph describes the code of this repository **and** the version running in
+production, **2.8.0**, deployed 10 November 2026: the two tools apply the administrator
+check, before any read. The package uploaded for that deployment contains the check, called
+before the scan.)*
 
 ## 2. What the app reads
 
@@ -134,7 +135,7 @@ URL. The name of the field is read with **the spaces around it ignored** (` nom 
 **every** value of a repeated parameter is collected, not only the first one (`?nom=V1&nom=V2` masks
 both `V1` and `V2`). This multi-channel coverage was measured on the **production trigger of version
 2.4.0** — the version that still had the public URL — and the engine has not changed since. The
-version deployed today (2.7.0) has a **single** channel, the payload the page sends with the scan;
+version deployed today (2.8.0) has a **single** channel, the payload the page sends with the scan;
 the same masking rules apply to it, and they are proved offline by two suites of the public
 repository (`node test-contrat-http.js`, 59 checks, and its counter-proof, 28 checks).
 
@@ -185,7 +186,7 @@ outbound call to any host, no storage call, and no analytics or telemetry code.
 
 ## The two Rovo MCP tools (deployed since production 2.6.0)
 
-*The deployed version of this app — **production 2.7.0**, deployed 9 November 2026 — contains
+*The deployed version of this app — **production 2.8.0**, deployed 10 November 2026 — contains
 three more module entries than the previous version: two `action` modules and one `rovo:mcp`
 module, the last of which exposes two tools through Atlassian's MCP server. The section below describes what those tools do, so that the notice can
 be read next to the code; the published page (https://labs.chiffreo.ch/privacy.html) must be
@@ -207,8 +208,8 @@ reads nothing.
 **Whether the tools are reserved to administrators.** Yes — the two tools run the administrator
 check of § 1 (the same one, the same endpoint, before any read), so they are reserved to Jira
 administrators on the MCP path exactly as the button is on the page. *The production version
-running today, 2.7.0, still runs the previous MCP path; this check goes live with the next
-deployment, after the re-review.*
+running today, **2.8.0**, applies this check: it was deployed on 10 November 2026, and the
+package uploaded for that deployment contains it, called before any read.*
 
 **Whose site they read.** Only the site where the app is installed. The URL given to
 `scan_accessibility` is compared with the host of that site and is **never fetched**; a URL

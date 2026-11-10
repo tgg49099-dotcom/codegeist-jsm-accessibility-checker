@@ -36,8 +36,8 @@ made by a person, on the deployed version.
   (`forge install list -e production --json` returns two installations — `development` and
   `production` — on that site, `majorVersion: 2 (Latest)`, status `Up-to-date`).
 - **Version to film**: **the version live in production on the day of the capture**, and it must be
-  **announced on screen or in the voice-over**. On 9 November 2026 that is **2.7.0** (the
-  server-side administrator check), version id
+  **announced on screen or in the voice-over**. On 10 November 2026 that is **2.8.0** (the
+  server-side administrator check on the two MCP tools), version id
   `09201e49-daac-48f6-bf92-c1c73e01ffcc`. If production has moved since,
   the Platform API (`api.atlassian.com/graphql`, `app(id:)` → `environmentsPage`) is the
   authority — it answers `isLatest: true` for the version that is really served.

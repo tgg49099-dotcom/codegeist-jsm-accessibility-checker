@@ -15,7 +15,7 @@ public URL: until version 2.4.0 the app answered a web trigger declared with
 | **Data leaves your site** | No. The app declares **no egress at all** |
 | **Personal data in the answer** | A name or an e-mail **typed in the page** is masked, never returned in clear text. The content read from your site is returned **as it is** — it is what the app checks (see below) |
 | **Permissions** | Read-only: `read:jira-work`, `read:servicedesk-request` |
-| **App version in this repository** | the code of **production 2.7.0**, deployed on 9 November 2026 at 20:00:06 UTC (21:00:06 Zurich, version id `09201e49-daac-48f6-bf92-c1c73e01ffcc`), and the same code in the development environment as **2.10.0**; **plus one change committed on 9 November 2026 and not yet deployed** — the administrator check on the two MCP tools (see the note in "Who can open the page"). Forge assigns the numbers itself (the manifest declares no `app.version`), so the two environments number the same code differently |
+| **App version in this repository** | the code of **production 2.8.0**, deployed on 10 November 2026 at 01:15:28 UTC (02:15:28 Zurich, version id `09201e49-daac-48f6-bf92-c1c73e01ffcc`; the version record was updated 18 seconds later, at 01:15:46 UTC), and the same code in the development environment as **2.10.0**. Production 2.8.0 is production 2.7.0 **plus the administrator check on the two MCP tools** (see the note in "Who can open the page"). Forge assigns the numbers itself (the manifest declares no `app.version`), so the two environments number the same code differently |
 
 ## What it does
 
@@ -110,9 +110,10 @@ anybody through — the three sabotages must each turn the suite RED) and by
 `test-mcp-admin-cycle140.js` (17 checks, four counter-proofs), which proves that
 the two MCP tools apply **the same** check, before any read.
 
-> **This change is committed, not deployed.** The version running in production is
-> still **2.7.0**, in which the MCP path has no administrator check; the check on
-> the two MCP tools goes live with the next deployment, after the re-review.
+> **This change is deployed.** The version running in production is **2.8.0**
+> (deployed 10 November 2026 at 01:15:28 UTC): the two MCP tools apply the same
+> administrator check as the page, **before any read** of the site. The package
+> uploaded for that deployment contains the check, called before the scan.
 > Nothing in this file claims a behaviour the running app does not have.
 
 `manifest.yml` declares **four module types** and nothing else:
@@ -157,24 +158,24 @@ python3 tools/contre-epreuve-verificateur.py     # the checker must turn RED on 
 > modules and the three `function` handlers — and still no `webtrigger`, no
 > `productTrigger`, no `scheduleTrigger`.
 >
-> **Production now runs 2.7.0** (deployed 9 November 2026 at **20:00:06 UTC**
-> = 21:00:06 in Zurich, measured from the deployment record of
-> `forge deploy list --json`; the version record was updated 22 seconds later,
-> at 20:00:28 UTC), which is that same
-> code plus the **server-side administrator check** and the **CSV written in a
-> read-only field**. `forge deploy` numbers the versions itself: the manifest
-> declares no `app.version`, so the CLI increments the minor number of the
-> installed major version — production went 2.6.0 → **2.7.0**, development
-> 2.9.0 → **2.10.0**. The version id of the production version is
-> `09201e49-daac-48f6-bf92-c1c73e01ffcc`. *(An earlier version of this file
-> gave "20:54 UTC" for that deployment: the measured value is 20:00:06 UTC —
-> the deployment record, the version record and the commit date are the
-> sources.)*
+> **Production now runs 2.8.0** (deployed 10 November 2026 at **01:15:28 UTC**
+> = 02:15:28 in Zurich, measured from the deployment record of
+> `forge deploy list --json`; the version record was updated 18 seconds later,
+> at 01:15:46 UTC), which is production 2.7.0 plus the **administrator check on
+> the two MCP tools**, applied before any read of the site. `forge deploy`
+> numbers the versions itself: the manifest declares no `app.version`, so the
+> CLI increments the minor number of the installed major version — production
+> went 2.6.0 → **2.7.0** → **2.8.0**, development 2.9.0 → **2.10.0**. The
+> version id of the production version is `09201e49-daac-48f6-bf92-c1c73e01ffcc`
+> — inside the same major version, the id is the same one and only `updatedAt`
+> moves. *(An earlier version of this file gave "20:54 UTC" for the deployment
+> of 9 November: the measured value was 20:00:06 UTC — the deployment record,
+> the version record and the commit date are the sources.)*
 
-**Measured on 7 November 2026** (and re-measured on 9 November 2026, after the
-deployment of 2.7.0), on both environments:
+**Measured on 7 November 2026** (and re-measured on 10 November 2026, after the
+deployment of 2.8.0), on both environments:
 
-* the manifests **uploaded** for production 2.7.0 and for development 2.10.0 (both
+* the manifests **uploaded** for production 2.8.0 and for development 2.10.0 (both
   packages are kept as evidence) declare `egresses: []`, `remotes: []`,
   `services: []`, the **two read scopes** and **four** kinds of module —
   `jira:adminPage`, three `function` handlers, two `action` modules and one
@@ -186,8 +187,8 @@ deployment of 2.7.0), on both environments:
   with 157 bytes and no scan data (they are no longer routable);
 * an anonymous request to the administration URL returns the Atlassian sign-in
   shell: 0 occurrence of the app name, 0 occurrence of the button, no finding;
-* on 9 November 2026, the **Platform API** (GraphQL, `api.atlassian.com/graphql`)
-  answers `isLatest: true` for **production 2.7.0** (version id
+* on 10 November 2026, the **Platform API** (GraphQL, `api.atlassian.com/graphql`)
+  answers `isLatest: true` for **production 2.8.0** (version id
   `09201e49-daac-48f6-bf92-c1c73e01ffcc`) and for **development 2.10.0**,
   and the package uploaded for that deployment (kept as evidence) declares the
   `rovo:mcp` module, the two `action` modules, the three `function` handlers, the
@@ -250,9 +251,10 @@ What the two tools do **not** do is the interesting part:
   (`src/droits-admin.js`, `GET /rest/api/3/mypermissions?permissions=ADMINISTER,SYSTEM_ADMIN`,
   asked with the caller's own identity, failing closed) runs **before any read
   of the site**. A caller who is not an administrator gets a refusal, never a
-  report. *(This bullet describes the code of this repository; the production
-  version running today, 2.7.0, still runs the previous MCP path — the
-  administrator check on the tools goes live with the next deployment.)*
+  report. *(This bullet describes the code of this repository **and** the version
+  running in production today, **2.8.0**: the check on the tools is deployed,
+  and the package uploaded for that deployment contains it, called before any
+  read.)*
 * **they read the site with the caller's own permissions** (`asUser`), not with
   the app's wider ones: an agent can never read what the person who called it
   cannot read. The identity comes from the platform, never from a value the
@@ -273,7 +275,7 @@ The tools run the very same engine and the very same rules as the button
 checks all of this offline, against a simulated platform, and checks that the
 harness turns red when each of these properties is broken.
 
-> This module is **deployed**: production 2.7.0 (9 November 2026) declares the
+> This module is **deployed**: production 2.8.0 (10 November 2026) declares the
 > `rovo:mcp` module and the two actions. The tools become usable on a site where
 > **Rovo is activated** (a paid plan — see below).
 
@@ -463,23 +465,21 @@ is modified: the app reads and reports.
   [PRIVACY.md](PRIVACY.md) § 3 spells it out.
 - The scan reflects the site **at the moment it is run**; the app keeps no history.
 
-## Contest entry and Marketplace listing — state on 9 November 2026
+## Contest entry and Marketplace listing — state on 10 November 2026
 
 * **Codegeist 2026**: this app is entered in the category *Apps for Business
-  Teams*, and **two bonus prizes of the rules are open**: **Best app with
-  Atlassian MCP** — the manifest declares one `rovo:mcp` module, deployed in
-  production since 2.6.0, exposing the two read-only tools described above —
-  and **Best Marketplace published app**, which the rules open to an app
-  "published to the Marketplace or submitted for listing" and for which they
-  ask for the link to the listing or to the Marketplace review ticket. The app
-  is neither published nor in review yet, so that link does not exist today; it
-  will be added the day there is one. **Which of the two this entry claims is
-  written after the re-review**, in the same places: the `BONUS` block of the
-  submission text and the owner's checklist.
+  Teams*, and the bonus it claims is **Best app with Atlassian MCP** — the
+  manifest declares one `rovo:mcp` module, deployed in production since 2.6.0
+  and carrying the administrator check since production 2.8.0, exposing the two
+  read-only tools described above. The rules of that bonus ask for "a Forge app
+  exposing an MCP server" and ask for **no** Marketplace publication, so
+  nothing has to be listed to claim it. The choice is written in the same
+  places: the `BONUS` block of the submission text and the owner's checklist.
 * **Marketplace**: the app is **not published** and has **no listing**. Sharing
-  is enabled so the judges can install it, but a listing is a separate, human
-  step (partner profile, then listing, then review submission). Until that
-  exists the app is **free** and its revenue is **0 $**.
+  is enabled so the judges can install it — the installation link was measured
+  **active** on 10 November 2026 — but a listing is a separate, human step
+  (partner profile, then listing, then review submission). Until that exists
+  the app is **free** and its revenue is **0 $**.
 * **Demonstration video**: **none is published yet**. The rules ask for a public
   YouTube video of the version the judges will install; the capture plan — site,
   version, the five shots, and what is needed to film — is written in
