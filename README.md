@@ -15,7 +15,7 @@ public URL: until version 2.4.0 the app answered a web trigger declared with
 | **Data leaves your site** | No. The app declares **no egress at all** |
 | **Personal data in the answer** | A name or an e-mail **typed in the page** is masked, never returned in clear text. The content read from your site is returned **as it is** — it is what the app checks (see below) |
 | **Permissions** | Read-only: `read:jira-work`, `read:servicedesk-request` |
-| **App version in this repository** | the code of **production 2.8.0**, deployed on 10 November 2026 at 01:15:28 UTC (02:15:28 Zurich, version id `09201e49-daac-48f6-bf92-c1c73e01ffcc`; the version record was updated 18 seconds later, at 01:15:46 UTC), and the same code in the development environment as **2.10.0**. Production 2.8.0 is production 2.7.0 **plus the administrator check on the two MCP tools** (see the note in "Who can open the page"). Forge assigns the numbers itself (the manifest declares no `app.version`), so the two environments number the same code differently |
+| **App version in this repository** | the code of **production 2.9.0**, deployed on 14 November 2026 at 23:33:09 UTC (00:33:09 Zurich on 15 November, version id `09201e49-daac-48f6-bf92-c1c73e01ffcc`; the version record was updated 21 seconds later, at 23:33:30 UTC), and an older code in the development environment, **2.10.0** (deployed on 9 November 2026 at 20:04:24 UTC). Production 2.9.0 is production 2.8.0 **plus the English word lists and the default-portal fixes** (see the note in "Who can open the page"). Forge assigns the numbers itself (the manifest declares no `app.version`), so the two environments number the same code differently |
 
 ## What it does
 
@@ -118,11 +118,29 @@ allowed (so the suite is not green because everything refuses). Its
 counter-proofs remove the control itself, remove the gate from the page, and
 remove the gate from the MCP path: each of the three must turn the suite RED.
 
-> **This change is deployed.** The version running in production is **2.8.0**
-> (deployed 10 November 2026 at 01:15:28 UTC): the two MCP tools apply the same
+> **This change is deployed.** The version running in production is **2.9.0**
+> (deployed 14 November 2026 at 23:33:09 UTC): the two MCP tools apply the same
 > administrator check as the page, **before any read** of the site. The package
 > uploaded for that deployment contains the check, called before the scan.
 > Nothing in this file claims a behaviour the running app does not have.
+
+> **What 2.9.0 changed** (commit `1e90a0c`, deployed to production on
+> 14 November 2026 at 23:33:09 UTC): the rules engine now knows **English** — a
+> non-descriptive link ("click here", "read more", "details"), a vague title
+> ("Information", "Other", "Links"), a purpose keyword ("name", "address",
+> "date of birth", "company") and a sensory instruction ("red button", "top
+> right", "grey box") are detected in an English portal, with whole-word
+> matching. The **purpose-of-input check (WCAG 1.3.5)** now applies to
+> **free-text custom fields only**: Jira system fields (summary, description,
+> attachments) and pickers, dates and people fields no longer produce a
+> 1.3.5 finding. The **default request-type names** of a JSM portal ("Get IT
+> help", "Fix an account problem", "Request admin access") are no longer
+> compared with the request-type description, so a correct default name is not
+> reported as a non-descriptive title. A title that shares no significant word
+> with the beginning of the content is now reported as a **hint to check**
+> ("a verifier"), not as an automatic finding. The interface is unchanged.
+> The offline suite that proves all of this is `test-portail-par-defaut.js`
+> (14 checks, including the four English faults).
 
 `manifest.yml` declares **four module types** and nothing else:
 
@@ -166,24 +184,27 @@ python3 tools/contre-epreuve-verificateur.py     # the checker must turn RED on 
 > modules and the three `function` handlers — and still no `webtrigger`, no
 > `productTrigger`, no `scheduleTrigger`.
 >
-> **Production now runs 2.8.0** (deployed 10 November 2026 at **01:15:28 UTC**
-> = 02:15:28 in Zurich, measured from the deployment record of
-> `forge deploy list --json`; the version record was updated 18 seconds later,
-> at 01:15:46 UTC), which is production 2.7.0 plus the **administrator check on
-> the two MCP tools**, applied before any read of the site. `forge deploy`
+> **Production now runs 2.9.0** (deployed 14 November 2026 at **23:33:09 UTC**
+> = 00:33:09 in Zurich on 15 November, measured from the deployment record of
+> `forge deploy list --json`; the version record was updated 21 seconds later,
+> at 23:33:30 UTC), which is production 2.8.0 plus the **English word lists and
+> the default-portal fixes** of 2.9.0 (the administrator check on the two MCP
+> tools, applied before any read of the site, is already in 2.8.0). `forge deploy`
 > numbers the versions itself: the manifest declares no `app.version`, so the
 > CLI increments the minor number of the installed major version — production
-> went 2.6.0 → **2.7.0** → **2.8.0**, development 2.9.0 → **2.10.0**. The
+> went 2.6.0 → **2.7.0** → **2.8.0** → **2.9.0**, development 2.9.0 → **2.10.0**
+> (deployed on 9 November 2026 at 20:04:24 UTC, i.e. an older code than
+> production). The
 > version id of the production version is `09201e49-daac-48f6-bf92-c1c73e01ffcc`
 > — inside the same major version, the id is the same one and only `updatedAt`
 > moves. *(An earlier version of this file gave "20:54 UTC" for the deployment
 > of 9 November: the measured value was 20:00:06 UTC — the deployment record,
 > the version record and the commit date are the sources.)*
 
-**Measured on 7 November 2026** (and re-measured on 10 November 2026, after the
-deployment of 2.8.0), on both environments:
+**Measured on 7 November 2026** (and re-measured on 14 November 2026, after the
+deployment of 2.9.0), on both environments:
 
-* the manifests **uploaded** for production 2.8.0 and for development 2.10.0 (both
+* the manifests **uploaded** for production 2.9.0 and for development 2.10.0 (both
   packages are kept as evidence) declare `egresses: []`, `remotes: []`,
   `services: []`, the **two read scopes** and **four** kinds of module —
   `jira:adminPage`, three `function` handlers, two `action` modules and one
@@ -195,8 +216,8 @@ deployment of 2.8.0), on both environments:
   with 157 bytes and no scan data (they are no longer routable);
 * an anonymous request to the administration URL returns the Atlassian sign-in
   shell: 0 occurrence of the app name, 0 occurrence of the button, no finding;
-* on 10 November 2026, the **Platform API** (GraphQL, `api.atlassian.com/graphql`)
-  answers `isLatest: true` for **production 2.8.0** (version id
+* on 14 November 2026, the **Platform API** (GraphQL, `api.atlassian.com/graphql`)
+  answers `isLatest: true` for **production 2.9.0** (version id
   `09201e49-daac-48f6-bf92-c1c73e01ffcc`) and for **development 2.10.0**,
   and the package uploaded for that deployment (kept as evidence) declares the
   `rovo:mcp` module, the two `action` modules, the three `function` handlers, the
@@ -260,7 +281,7 @@ What the two tools do **not** do is the interesting part:
   asked with the caller's own identity, failing closed) runs **before any read
   of the site**. A caller who is not an administrator gets a refusal, never a
   report. *(This bullet describes the code of this repository **and** the version
-  running in production today, **2.8.0**: the check on the tools is deployed,
+  running in production today, **2.9.0**: the check on the tools is deployed,
   and the package uploaded for that deployment contains it, called before any
   read.)*
 * **they read the site with the caller's own permissions** (`asUser`), not with
@@ -283,7 +304,7 @@ The tools run the very same engine and the very same rules as the button
 checks all of this offline, against a simulated platform, and checks that the
 harness turns red when each of these properties is broken.
 
-> This module is **deployed**: production 2.8.0 (10 November 2026) declares the
+> This module is **deployed**: production 2.9.0 (14 November 2026) declares the
 > `rovo:mcp` module and the two actions. The tools become usable on a site where
 > **Rovo is activated** (a paid plan — see below).
 
@@ -476,7 +497,7 @@ is modified: the app reads and reports.
   [PRIVACY.md](PRIVACY.md) § 3 spells it out.
 - The scan reflects the site **at the moment it is run**; the app keeps no history.
 
-## Contest entry and Marketplace listing — state on 10 November 2026
+## Contest entry and Marketplace listing — state on 15 November 2026
 
 * **Codegeist 2026**: this app is entered in the category *Apps for Business
   Teams*, and the bonus it claims is **Best app with Atlassian MCP** — the
@@ -488,7 +509,8 @@ is modified: the app reads and reports.
   places: the `BONUS` block of the submission text and the owner's checklist.
 * **Marketplace**: the app is **not published** and has **no listing**. Sharing
   is enabled so the judges can install it — the installation link was measured
-  **active** on 10 November 2026 — but a listing is a separate, human step
+  **active** again on 14 November 2026 (status `active`, products `["jira"]`,
+  same signature sha256 `1c64e881…`) — but a listing is a separate, human step
   (partner profile, then listing, then review submission). Until that exists
   the app is **free** and its revenue is **0 $**.
 * **Demonstration video**: **none is published yet**. The rules ask for a public
