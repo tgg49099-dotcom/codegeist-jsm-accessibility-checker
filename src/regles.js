@@ -66,6 +66,21 @@ const LIENS_NON_DESCRIPTIFS = [
   'télécharger',
   'lien',
   'plus d infos',
+  // English (most portals and every Codegeist judge site are in English)
+  'click here',
+  'click',
+  'here',
+  'read more',
+  'learn more',
+  'more',
+  'more info',
+  'more information',
+  'see more',
+  'this link',
+  'link',
+  'details',
+  'download',
+  'this page',
 ];
 
 // 2.4.2 : titres de page non descriptifs.
@@ -80,6 +95,10 @@ const TITRES_NON_DESCRIPTIFS = [
   'index',
   'article',
   'notes',
+  'untitled',
+  'new page',
+  'test',
+  'title',
 ];
 
 // 2.4.6 : titres de section trop vagues (« Détails », « Info »…).
@@ -97,6 +116,12 @@ const TITRES_VAGUES = [
   'ici',
   'liens',
   'annexe',
+  'information',
+  'other',
+  'others',
+  'more',
+  'links',
+  'appendix',
 ];
 
 // 1.3.5 : mots-clés de finalité de saisie (le champ annonce-t-il à quoi il sert ?).
@@ -115,6 +140,29 @@ const MOTS_CLES_FINALITE = [
   'code postal',
   'date de naissance',
   'numero de carte',
+  // English
+  'name',
+  'first name',
+  'last name',
+  'surname',
+  'full name',
+  'username',
+  'address',
+  'postcode',
+  'postal code',
+  'zip',
+  'mobile',
+  'telephone',
+  'date of birth',
+  'birthday',
+  'website',
+  'organization',
+  'organisation',
+  'company',
+  'job title',
+  'card number',
+  'country',
+  'city',
 ];
 
 // 1.3.3 : instructions qui reposent sur une position ou une couleur.
@@ -127,6 +175,20 @@ const MOTIFS_SENSORIELS = [
   'le bouton vert',
   'l icone bleue',
   'la case grise',
+  // English
+  'top right',
+  'top left',
+  'bottom right',
+  'bottom left',
+  'on the right',
+  'on the left',
+  'red button',
+  'green button',
+  'blue button',
+  'blue icon',
+  'grey box',
+  'gray box',
+  'round button',
 ];
 
 // 1.4.3 : seuil WCAG pour du texte de taille normale (le thème du portail,
@@ -149,6 +211,9 @@ const normaliser = (s) =>
     .trim();
 
 const normaliserListe = (liste) => liste.map(normaliser);
+
+/** Le motif (déjà normalisé) apparaît-il comme mot(s) entier(s) dans le texte normalisé ? */
+const contientMots = (texteNorm, motif) => (' ' + texteNorm + ' ').includes(' ' + motif + ' ');
 
 const LIENS_ND = normaliserListe(LIENS_NON_DESCRIPTIFS);
 const TITRES_ND = normaliserListe(TITRES_NON_DESCRIPTIFS);
@@ -526,7 +591,7 @@ function regleCaracteristiqueSensorielle(noeud, chemin, ctx) {
   const texte = String(noeud.text == null ? '' : noeud.text);
   if (texte.trim() === '') return;
   const norm = normaliser(texte);
-  const motif = MOTIFS_SENSORIELS_ND.find((m) => norm.includes(m));
+  const motif = MOTIFS_SENSORIELS_ND.find((m) => contientMots(norm, m));
   if (!motif) return;
   ctx.constats.push(
     constat(
@@ -633,9 +698,19 @@ function analyserChampsJsm(champs, racine, source, ressource) {
     // 1.3.5 : finalité annoncée. Un champ sans étiquette n'est pas repris ici
     // (3.3.2 le signale déjà : on ne peut pas demander la finalité d'un champ
     // qui n'a pas de nom).
-    if (nom.trim() !== '') {
+    // 1.3.5 ne concerne que les champs de SAISIE LIBRE que l'administrateur a
+    // ajoutés (champs personnalisés texte). Les champs système de Jira
+    // (summary, description, attachment…) et les listes, dates, personnes ne
+    // collectent pas une donnée personnelle saisie : aucun constat 1.3.5.
+    const fieldId = champ.fieldId == null ? '' : String(champ.fieldId);
+    const schema = champ.jiraSchema || {};
+    const saisieLibre =
+      (fieldId === '' || fieldId.startsWith('customfield_')) &&
+      (schema.type === undefined || schema.type === 'string') &&
+      !/(select|radio|checkbox|multi|cascading|picker|labels)/i.test(String(schema.custom || ''));
+    if (nom.trim() !== '' && saisieLibre) {
       const tout = normaliser(nom + ' ' + description);
-      const annonce = MOTS_CLES_FINALITE_ND.find((mot) => tout.includes(mot));
+      const annonce = MOTS_CLES_FINALITE_ND.find((mot) => contientMots(tout, mot));
       if (!annonce) {
         constats.push(
           constat(
@@ -799,15 +874,18 @@ function analyserTitre(titre, racine, source, ressource, corpsTexte) {
   const norm = normaliser(titre);
   const motsTitre = norm.split(' ').filter((m) => m.length >= 4);
   let raison = null;
+  let heuristique = false;
   if (norm === '') {
     raison = 'Empty title';
   } else if (TITRES_ND.includes(norm)) {
     raison = 'Non-descriptive title ("' + String(titre) + '" is a generic title)';
   } else if (typeof corpsTexte === 'string' && corpsTexte.trim() !== '' && motsTitre.length > 0) {
     const motsCorps = normaliser(corpsTexte).split(' ').filter(Boolean).slice(0, 10);
-    const partage = motsTitre.some((m) => motsCorps.includes(m));
+    const racine = (m) => m.slice(0, 5);
+    const partage = motsTitre.some((m) => motsCorps.some((c) => c === m || racine(c) === racine(m)));
     if (!partage) {
-      raison = 'Non-descriptive title: no significant word in common with the beginning of the content';
+      raison = 'Title shares no significant word with the beginning of the content (heuristic: check that the title describes the topic)';
+      heuristique = true;
     }
   }
   if (!raison) return [];
@@ -819,7 +897,7 @@ function analyserTitre(titre, racine, source, ressource, corpsTexte) {
       racine,
       titre == null ? null : titre,
       raison,
-      { aVerifier: false }
+      { aVerifier: heuristique }
     ),
   ];
 }

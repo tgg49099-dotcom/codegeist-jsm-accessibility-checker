@@ -343,14 +343,14 @@ API can and cannot prove:
 |---|---|---|---|
 | 1.1.1 | Non-text Content | A | Provable from REST — image/media node without an `alt`, or with an empty one |
 | 1.3.1 | Info and Relationships | A | Provable from REST — skipped heading levels; table whose first row has no header cell |
-| 2.4.2 | Page Titled | A | Provable from REST — empty or generic title, or title sharing no word with the start of the content |
+| 2.4.2 | Page Titled | A | Provable from REST — empty or generic title (English and French lists); a title sharing no word with the start of the content is only flagged "to verify" |
 | 2.4.4 | Link Purpose (In Context) | A | Provable from REST — link text that is a bare URL or a non-descriptive label ("click here" and friends) |
 | 3.2.6 | Consistent Help | A | Provable from REST — help present on one request type/field and absent on its sibling |
 | 3.3.2 | Labels or Instructions | A | Provable from REST — form field without a label; **required** field without instruction/description |
 | 4.1.2 | Name, Role, Value | A | Provable from REST — inline node (mention, status) carrying no `text` label |
 | 1.2.2 | Captions (Prerecorded) | A | Content-only (partial) — media attachment without a `text/vtt` or `.vtt`/`.srt` transcription |
 | 1.3.3 | Sensory Characteristics | A | Content-only (partial) — instructions relying on shape/color/position words alone |
-| 1.3.5 | Identify Input Purpose | AA | Content-only (partial) — field purpose not announced (no purpose keyword in name or description) |
+| 1.3.5 | Identify Input Purpose | AA | Content-only (partial) — free-text custom field whose purpose is not announced (no purpose keyword, English or French, in name or description); Jira system fields such as Summary or Attachment are not flagged |
 | 1.4.1 | Use of Color | A | Content-only (partial) — information carried by a color mark alone, with no other mark |
 | 1.4.3 | Contrast (Minimum) | AA | Content-only (partial) — ratio computed under a **white background assumption**, reported as "uncertain contrast", never as "non-conformant" |
 | 2.4.6 | Headings and Labels | AA | Content-only (partial) — internal-looking labels (lowercase technical names, ≥ 4-digit numeric IDs) |

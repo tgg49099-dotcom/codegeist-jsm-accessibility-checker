@@ -520,7 +520,10 @@ async function scanJsm() {
         `values[${i}].name`,
         'E5',
         desk.projectName || String(desk.id),
-        rt.description || null
+        // The request type description is a one-line subtitle, not the start
+        // of a page: comparing words with it flags correct default names such
+        // as "Get IT help". Only the empty / generic title checks apply here.
+        null
       )) {
         findings.push({ ...constat, ou: `service desk ${desk.projectName || desk.id}` });
       }
