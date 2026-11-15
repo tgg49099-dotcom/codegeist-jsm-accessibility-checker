@@ -1,17 +1,17 @@
 /**
- * Test hors ligne du mode DÉMO — « Portal Accessibility Checker for JSM ».
+ * Offline test of the DEMO mode — "Portal Accessibility Checker for JSM".
  *
- * Ce test ne vérifie pas que le portail est en faute : il vérifie que le
- * MOTEUR DE RÈGLES détecte les 23 fautives documentées (contrat de test du
- * slot 1) et ne produit AUCUN faux positif sur les 6 contrôles négatifs.
+ * This test does not check that the portal is at fault: it checks that the
+ * RULES ENGINE detects the 23 documented issues (slot 1 test contract)
+ * and produces NO false positive on the 6 negative checks.
  *
- * Il utilise les fonctions RÉELLES (src/regles.js + src/demo.js), aucune
- * copie recopiée, et le contrat PARSÉ depuis docs/README-demo.md
- * (src/demo/contrat.json, produit par scripts/generer-contrat.js).
+ * It uses the REAL functions (src/regles.js + src/demo.js), no hand-copied
+ * copy, and the contract PARSED from docs/README-demo.md
+ * (src/demo/contrat.json, produced by scripts/generer-contrat.js).
  *
- * Usage : node test-demo.js
- * Sortie : une ligne PASS/FAIL par contrôle, puis un verdict. RC 0 = tout
- * passe, RC 1 = au moins un contrôle échoue.
+ * Usage: node test-demo.js
+ * Output: one PASS/FAIL line per check, then a verdict. RC 0 = everything
+ * passes, RC 1 = at least one check fails.
  */
 const path = require('path');
 const demo = require(path.join(__dirname, 'src', 'demo.js'));
@@ -30,7 +30,7 @@ const constats = demo.constats();
 const verdict = demo.verdict();
 const contrat = demo.CONTRAT;
 
-// --- 0. le contrat de test est bien celui du slot 1 -------------------------
+// --- 0. the test contract is indeed the one from slot 1 ---------------------
 check(
   'contract parsed from docs/README-demo.md: 23 seeded issues + 6 negative checks',
   contrat.demo.length === 23 && contrat.sante.length === 6,
@@ -42,9 +42,9 @@ check(
   contrat._source.md5_index
 );
 
-// --- 1. chaque faute DEMO-xx doit être détectée, au bon chemin et au bon
-//        critère (le moteur ne connaît pas les identifiants DEMO : il produit
-//        un chemin JSON, le test le rapproche du contrat) --------------------
+// --- 1. every DEMO-xx issue must be detected, at the right path and the
+//        right criterion (the engine does not know the DEMO identifiers: it
+//        produces a JSON path, the test matches it with the contract) --------
 for (const entree of contrat.demo) {
   const trouves = constats.filter(
     (c) =>
@@ -59,8 +59,8 @@ for (const entree of contrat.demo) {
   );
 }
 
-// --- 2. les 6 contrôles négatifs SANTÉ-xx ne doivent produire AUCUN constat
-//        (le contrôle est fait sur le NŒUD, pas seulement sur la feuille) ---
+// --- 2. the 6 negative checks SANTÉ-xx must produce NO finding
+//        (the check is made on the NODE, not only on the leaf) ---
 for (const controle of contrat.sante) {
   const surNoeud = constats.filter(
     (c) =>
@@ -76,7 +76,7 @@ for (const controle of contrat.sante) {
   );
 }
 
-// --- 3. aucun constat en dehors du contrat (le rapport ne doit rien inventer)
+// --- 3. no finding outside the contract (the report must invent nothing)
 check(
   'no finding outside the contract',
   verdict.constats_hors_contrat.length === 0,
@@ -88,7 +88,7 @@ check(
   constats.every((c) => typeof c.preuve === 'string' && c.preuve.startsWith('DEMO-'))
 );
 
-// --- 4. couverture des 13 critères de la fiche -------------------------------
+// --- 4. coverage of the 13 criteria of the sheet -----------------------------
 const rapport = regles.rapportParCritere(constats);
 check(
   'the 13 criteria of the sheet are implemented',
@@ -124,7 +124,7 @@ check(
   partiels.join(', ')
 );
 
-// --- 5. le rapport distingue «.constat prouvé » et « constat à vérifier » ----
+// --- 5. the report tells a "proven finding" from a "finding to verify" -------
 const prv = constats.filter((c) => c.a_verifier === false).length;
 const aver = constats.filter((c) => c.a_verifier === true).length;
 check('14 proven findings (a_verifier = false)', prv === 14, String(prv));
@@ -137,7 +137,7 @@ check(
   constats.filter((c) => c.a_verifier === true).map((c) => c.critere).join(',')
 );
 
-// --- 6. les ratios de contraste sont recalculés, pas recopiés --------------
+// --- 6. the contrast ratios are recomputed, not copied ---------------------
 const ratio = (hexa) => regles._utilitaires.ratioContraste(regles._utilitaires.hexRgb(hexa), [255, 255, 255]);
 check('#f2c200 on white = 1.68:1 (sheet §10)', Math.abs(ratio('#f2c200') - 1.68) <= 0.01, ratio('#f2c200').toFixed(2));
 check('#c62828 on white = 5.62:1 (sheet §10)', Math.abs(ratio('#c62828') - 5.62) <= 0.01, ratio('#c62828').toFixed(2));
@@ -149,7 +149,7 @@ check(
   constatsContraste.map((c) => c.valeur).join(',')
 );
 
-// --- 7. l'export CSV est exploitable ----------------------------------------
+// --- 7. the CSV export is usable --------------------------------------------
 const csv = demo.csv();
 const lignesCsv = csv.trim().split('\r\n');
 check('CSV: one header line + 23 finding lines', lignesCsv.length === 24, String(lignesCsv.length));
@@ -160,8 +160,8 @@ check(
 );
 check('CSV: terminated by a newline', csv.endsWith('\r\n'));
 
-// --- 8. garde-fou : le moteur ne doit PAS connaître le contrat de test -----
-// (sinon le test ne prouverait rien : il validerait une copie, pas une règle)
+// --- 8. safeguard: the engine must NOT know the test contract --------------
+// (otherwise the test would prove nothing: it would validate a copy, not a rule)
 const fs = require('fs');
 const sourceRegles = fs.readFileSync(path.join(__dirname, 'src', 'regles.js'), 'utf8');
 check(

@@ -50,12 +50,12 @@ import sys
 RACINE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CHEMIN_PAR_DEFAUT = os.path.join(RACINE, "manifest.yml")
 
-# Les modules qui donnent un point d'entree declencheable par le visiteur.
-# `rovo:mcp` n'est PAS dans cette liste : ce n'est pas un point d'entree
-# public, c'est un serveur d'outils dont l'appel est porte par l'identite de
-# l'appelant (verifie par le code, src/mcp.js). La liste reste interdite :
-# c'est elle qui prouve que l'app n'est pas appelable par quiconque trouve
-# une URL.
+# The modules that provide an entry point the visitor can trigger.
+# `rovo:mcp` is NOT in this list: it is not a public entry point,
+# it is a tool server whose calls carry the identity of the caller
+# (verified by the code, src/mcp.js). The list stays forbidden:
+# it is what proves that the app cannot be called by anyone who finds
+# a URL.
 MODULES_PUBLICS = (
     "webtrigger",
     "productTrigger",
@@ -63,22 +63,22 @@ MODULES_PUBLICS = (
     "trigger",
 )
 
-# Une cle de sortie (`external`, `remotes`, `egress`) autoriserait l'app a
-# appeler un service exterieur : la notice de confidentialite dit qu'il n'y
-# en a aucun.
+# An egress key (`external`, `remotes`, `egress`) would allow the app to
+# call an external service: the privacy notice says there is none
+# at all.
 CLES_DE_SORTIE = ("external", "remotes", "egress")
 
 SCOPES_ATTENDUS = ["read:jira-work", "read:servicedesk-request"]
 
-# Les types de modules attendus, et les modules de la version precedente
-# qui doivent toujours etre la.
+# The expected module types, and the modules of the previous version
+# that must still be there.
 TYPES_ATTENDUS = ["jira:adminPage", "function", "action", "rovo:mcp"]
 MODULES_ORIGINAUX = ["jira:adminPage", "function"]
 
-# Le nombre d'outils MCP : deux, pas plus (depuis le 09/11/2026).
+# The number of MCP tools: two, no more (since 09/11/2026).
 OUTILS_ATTENDUS = 2
 
-# La longueur maximale d'une description d'action (regle Atlassian).
+# The maximum length of an action description (Atlassian rule).
 LONGUEUR_DESCRIPTION_MAX = 255
 
 resultats = []
@@ -95,7 +95,7 @@ def controle(libelle, ok, detail=""):
 
 
 # ---------------------------------------------------------------------------
-# Lecture du manifeste (sans dépendance, sur la forme de ce manifeste)
+# Reading the manifest (dependency-free, on the shape of this manifest)
 # ---------------------------------------------------------------------------
 
 
@@ -152,9 +152,9 @@ def lire_manifeste(chemin):
         indent = len(ligne) - len(ligne.lstrip(" "))
         contenu = ligne.strip()
 
-        # Un bloc scalaire plié (description: >) continue sur les lignes
-        # suivantes, plus indentées que le champ. Rien d'autre n'est lu
-        # pendant ce temps.
+        # A folded scalar block (description: >) continues on the
+        # following lines, indented more than the field. Nothing else is
+        # read while this happens.
         if style_courant is not None:
             if indent > indent_champ:
                 tampon.append(contenu)
@@ -192,7 +192,7 @@ def lire_manifeste(chemin):
                 continue
             if indent == 6 and item_courant is not None:
                 if contenu.startswith("- "):
-                    # liste simple (tools: …)
+                    # simple list (tools: …)
                     item_courant.setdefault(champ_courant or "liste", []).append(contenu[2:].strip())
                     continue
                 if contenu.endswith(":"):
@@ -249,7 +249,7 @@ def cles(items):
 
 
 # ---------------------------------------------------------------------------
-# Exécution
+# Execution
 # ---------------------------------------------------------------------------
 
 
@@ -266,7 +266,7 @@ def main(argv):
     print("== Manifest check: %s ==" % chemin)
     print("")
 
-    # 1. aucun module public declencheable par le visiteur
+    # 1. no public module triggerable by the visitor
     publics = modules_publics(racines, modules)
     controle(
         "VERIF-01 no publicly triggerable module (webtrigger, productTrigger, scheduleTrigger, trigger)",
@@ -274,49 +274,49 @@ def main(argv):
         "found: " + ", ".join(publics) if publics else "none",
     )
 
-    # 2. aucun appel réseau sortant
+    # 2. no outgoing network call
     controle(
         "VERIF-02 no network egress declared (external / remotes / egress)",
         not [c for c in CLES_DE_SORTIE if c in [r.lower() for r in racines]],
         "root keys: " + ", ".join(racines),
     )
 
-    # 3. le module d'interface
+    # 3. the interface module
     controle(
         "VERIF-03 the interface module jira:adminPage is declared",
         "jira:adminPage" in modules,
         "modules: " + ", ".join(types),
     )
 
-    # 4. le module de fonction, avec la clé `resolver`
+    # 4. the function module, with the `resolver` key
     controle(
         "VERIF-04 the function module resolver is declared",
         "function" in modules and "resolver" in cles(modules["function"]),
         "keys: " + ", ".join(cles(modules.get("function"))),
     )
 
-    # 5. les types de modules sont exactement les quatre attendus
+    # 5. the module types are exactly the four expected ones
     controle(
         "VERIF-05 the module types are exactly jira:adminPage, function, action, rovo:mcp",
         sorted(types) == sorted(TYPES_ATTENDUS),
         "modules: " + ", ".join(types),
     )
 
-    # 6. les modules de la premiere version sont toujours là
+    # 6. the modules of the first version are still there
     controle(
         "VERIF-06 the modules of the first version (jira:adminPage, function) are still declared",
         all(t in modules for t in MODULES_ORIGINAUX),
         "modules: " + ", ".join(types),
     )
 
-    # 7. les scopes sont exactement les deux scopes de lecture
+    # 7. the scopes are exactly the two read scopes
     controle(
         "VERIF-07 the scopes are exactly read:jira-work and read:servicedesk-request",
         scopes == SCOPES_ATTENDUS,
         "scopes: " + ", ".join(scopes),
     )
 
-    # 8. aucun scope d'écriture
+    # 8. no write scope
     ecriture = [s for s in scopes if s.startswith("write:") or s.startswith("admin:")]
     controle(
         "VERIF-08 no write scope and no administration scope",
@@ -324,7 +324,7 @@ def main(argv):
         "found: " + ", ".join(ecriture) if ecriture else "none",
     )
 
-    # 9. la ressource d'interface existe
+    # 9. the interface resource exists
     ressource = None
     for ligne in brut.split("\n"):
         s = sans_commentaire(ligne).strip()
@@ -337,7 +337,7 @@ def main(argv):
         ressource or "no path: key declared",
     )
 
-    # 10. le handler du resolver existe et exporte la fonction annoncée
+    # 10. the resolver handler exists and exports the announced function
     handler = None
     for ligne in brut.split("\n"):
         s = sans_commentaire(ligne).strip()
@@ -361,14 +361,14 @@ def main(argv):
         (handler or "no handler declared") + " -> " + (fichier_handler or "?"),
     )
 
-    # 11. l'app a un id
+    # 11. the app has an id
     controle(
         "VERIF-11 the app has an identifier (app.id)",
         "ari:cloud:ecosystem::app/" in brut,
         "app.id declared",
     )
 
-    # 12. exactement un module rovo:mcp
+    # 12. exactly one rovo:mcp module
     mcps = modules.get("rovo:mcp") or []
     controle(
         "VERIF-12 exactly one rovo:mcp module",
@@ -376,7 +376,7 @@ def main(argv):
         "%d module(s) rovo:mcp" % len(mcps),
     )
 
-    # 13. les outils exposés sont exactement deux et sont tous des actions declarées
+    # 13. the exposed tools are exactly two and are all declared actions
     outils = []
     for mcp in mcps:
         for outil in mcp.get("tools") or []:
@@ -394,7 +394,7 @@ def main(argv):
         "actions: " + ", ".join(actions),
     )
 
-    # 15. chaque action pointe une fonction declaree, et son handler existe
+    # 15. every action points to a declared function, and its handler exists
     cles_fonction = cles(modules.get("function"))
     actions_sans_fonction = []
     handlers_manquants = []
@@ -427,7 +427,7 @@ def main(argv):
         "missing handlers: " + ", ".join(handlers_manquants) if handlers_manquants else "all present",
     )
 
-    # 17. les descriptions d'action respectent la longueur maximale
+    # 17. the action descriptions respect the maximum length
     trop_longues = []
     for action in modules.get("action") or []:
         description = action.get("description") or ""
@@ -439,7 +439,7 @@ def main(argv):
         "; ".join(trop_longues) if trop_longues else "all compliant",
     )
 
-    # 18. le nom du serveur MCP tient dans 30 caracteres (regle Atlassian)
+    # 18. the MCP server name fits in 30 characters (Atlassian rule)
     noms_mcp = []
     for mcp in mcps:
         nom = mcp.get("name") or ""

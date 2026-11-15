@@ -30,27 +30,27 @@ RACINE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 URL_PUBLIEE = "https://labs.chiffreo.ch/privacy.html"
 
-# Les URL autres que la page publiee, citees a dessein, une par une.
-# Ajouter une URL ici est un choix visible dans le diff ; l'absence dans cette
-# liste fait echouer le controle (contre-epreuve : tools/contre-epreuve-notice.py).
+# The URLs other than the published page, cited on purpose, one by one.
+# Adding a URL here is a choice visible in the diff; its absence from this
+# list makes the check fail (counter-proof: tools/contre-epreuve-notice.py).
 AUTORISEES_AUTRES = {
-    # La source officielle d'Atlassian pour la restriction de Rovo (plans
-    # Standard / Premium / Enterprise). Ce n'est pas une copie de la notice :
-    # c'est la regle citee. (Ajoute le 09/11/2026.)
+    # The official Atlassian source for the Rovo restriction (Standard /
+    # Premium / Enterprise) plans. It is not a copy of the notice:
+    # it is the quoted rule. (Added on 09/11/2026.)
     "https://www.atlassian.com/licensing/rovo",
-    # Les pages officielles citees pour le controle d'administrateur et pour
-    # l'export CSV. Ce sont des regles citees, pas des copies de la notice.
-    # (Ajoute le 09/11/2026.)
-    # "Get my permissions", Jira Cloud REST API v3 : l'endpoint du controle.
+    # The official pages cited for the administrator check and for the
+    # CSV export. They are quoted rules, not copies of the notice.
+    # (Added on 09/11/2026.)
+    # "Get my permissions", Jira Cloud REST API v3: the endpoint of the check.
     "https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-permissions/",
-    # Les conditions d'affichage de Jira : `hasGlobalPermission` (ADMINISTER,
-    # SYSTEM_ADMIN) et `canAdministerJira`.
+    # The Jira display conditions: `hasGlobalPermission` (ADMINISTER,
+    # SYSTEM_ADMIN) and `canAdministerJira`.
     "https://developer.atlassian.com/platform/forge/manifest-reference/display-conditions/jira.md",
-    # Le module `jira:adminPage` : la page et son URL, sans role nomme.
+    # The `jira:adminPage` module: the page and its URL, with no named role.
     "https://developer.atlassian.com/platform/forge/manifest-reference/modules/jira-admin-page.md",
-    # UI Kit 2 : pas d'acces au DOM de la page.
+    # UI Kit 2: no access to the DOM of the page.
     "https://developer.atlassian.com/platform/forge/ui-kit.md",
-    # UI Kit 2 : `FileCard`, la seule voie de telechargement documentee.
+    # UI Kit 2: `FileCard`, the only documented download path.
     "https://developer.atlassian.com/platform/forge/ui-kit/components/file-card.md",
 }
 
@@ -89,8 +89,8 @@ def citation_notice(racine):
 
 
 def urls(texte):
-    # On exclut les caractères de ponctuation Markdown (`**`, `` ` ``) qui
-    # entourent parfois l'URL dans le texte.
+    # We exclude the Markdown punctuation characters (`**`, `` ` ``) that
+    # sometimes surround the URL in the text.
     return sorted(set(re.findall(r"https?://[^\s)\"'>`*]+", texte)))
 
 
@@ -100,7 +100,7 @@ def main(argv):
     print("== Consistency between the privacy notice and the code ==")
     print("")
 
-    # --- 1. la citation § 8 est-elle la phrase du code ? -------------------
+    # --- 1. is the § 8 quote the sentence from the code? -------------------
     pv = phrase_pv(racine)
     cite = citation_notice(racine)
     controle("NOTICE-01 the PHRASE_PV constant is found in src/index.js", pv is not None)
@@ -113,22 +113,22 @@ def main(argv):
             "identical" if identique else "the code says: " + pv[:90] + "… / the notice says: " + cite[:90] + "…",
         )
 
-    # --- 2. une seule copie de la notice, et aucune URL non listée ---------
+    # --- 2. a single copy of the notice, and no unlisted URL ---------
     for nom in ("README.md", "PRIVACY.md"):
         chemin = os.path.join(racine, nom)
         if not os.path.exists(chemin):
             controle("NOTICE-04 %s exists" % nom, False)
             continue
         trouvees = urls(lire(chemin))
-        # (a) les copies de la notice : il doit y en avoir exactement une,
-        #     celle qui est publiée ;
+        # (a) the copies of the notice: there must be exactly one,
+        #     the published one;
         copies = [u for u in trouvees if "privacy" in u.lower() or "policy" in u.lower()]
         controle(
             "NOTICE-04 %s cites only one copy of the notice, the published page" % nom,
             copies == [URL_PUBLIEE],
             "URLs found: " + (", ".join(trouvees) if trouvees else "none"),
         )
-        # (b) les autres URL citées doivent être explicitement autorisées ;
+        # (b) the other URLs must be explicitly allowed;
         autres = [u for u in trouvees if u != URL_PUBLIEE and u not in AUTORISEES_AUTRES]
         controle(
             "NOTICE-04 %s cites no URL outside the allowlist" % nom,

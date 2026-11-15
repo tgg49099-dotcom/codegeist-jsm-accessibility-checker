@@ -1,7 +1,7 @@
 /**
  * test-admin.js — THE ADMINISTRATOR CHECK, MADE ON THE SERVER.
  *
- * The problem this test answers (jury review `e486`, 09/11/2026, "à corriger"
+ * The problem this test answers (jury review `e486`, 09/11/2026, "to fix"
  * point 1): the administration page is only DISPLAYED to a Jira administrator,
  * but the page is a display. The scan itself is a resolver function, and
  * anything that can call that function could receive the findings of the

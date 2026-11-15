@@ -1,7 +1,7 @@
 /**
  * test-csv.js — THE CSV EXPORT OF THE ADMINISTRATION PAGE, TESTED.
  *
- * The problem this test answers (jury review `e486`, 09/11/2026, "à corriger"
+ * The problem this test answers (jury review `e486`, 09/11/2026, "to fix"
  * point 2): the CSV button was never exercised. `admin.jsx` used `document`,
  * `Blob` and a simulated link, and nobody could say what happened when the
  * button was clicked.

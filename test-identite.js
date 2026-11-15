@@ -1,37 +1,37 @@
 /**
- * test-identite.js — LE CONTRÔLE D'IDENTITÉ (09/11/2026).
+ * test-identite.js — THE IDENTITY CHECK (09/11/2026).
  *
- * CE QUE CE TEST PROUVE
+ * WHAT THIS TEST PROVES
  *
- * La règle officielle de la revue Marketplace (« Security requirements for
- * cloud apps », section « Forge apps ») dit :
+ * The official Marketplace review rule ("Security requirements for cloud
+ * apps", section "Forge apps") says:
  *
- *   1. « An application must default to using asUser() when performing an
- *      operation on behalf of the user. »
- *   2. « Before making calls using asApp(), you must verify the expected
+ *   1. "An application must default to using asUser() when performing an
+ *      operation on behalf of the user."
+ *   2. "Before making calls using asApp(), you must verify the expected
  *      permissions (for example, from product context) with the permissions
- *      REST APIs. »
+ *      REST APIs."
  *
- * L'application agit au nom de quelqu'un (la personne qui appuie sur le
- * bouton de la page d'administration, l'appelant d'un outil MCP) : elle lit
- * donc avec `asUser()`. La règle 2 n'a pas à être invoquée, parce que
- * l'application ne contient AUCUN appel `asApp()` : elle ne peut pas élargir
- * l'identité, donc rien ne peut être élargi par accident.
+ * The app acts on behalf of somebody (the person who clicks the button on
+ * the admin page, the caller of an MCP tool): it therefore reads with
+ * `asUser()`. Rule 2 does not have to be invoked, because the app contains
+ * NO `asApp()` call at all: it cannot widen the identity, so nothing can be
+ * widened by accident.
  *
- * Ce contrôle mesure le CODE ACTIF — les commentaires et les chaînes sont
- * retirés avant de compter, sinon un `asApp` écrit dans une phrase
- * documenting le correctif compterait comme un appel. Il mesure aussi le
- * COMPORTEMENT : quand la plateforme refuse l'identité de l'appelant, le
- * moteur doit REFUSER (et jamais renvoyer un rapport vide, qui se lirait
- * « ce site n'a aucun problème d'accessibilité » alors que rien n'a été lu).
+ * This check measures the ACTIVE CODE — comments and strings are stripped
+ * before counting, otherwise an `asApp` written in a sentence documenting
+ * the fix would count as a call. It also measures the BEHAVIOUR: when the
+ * platform refuses the caller's identity, the engine must REFUSE (and never
+ * return an empty report, which would read as "this site has no
+ * accessibility problem" while nothing was read).
  *
- * POINT MÉTHODOLOGIQUE : le contrôle ne fait JAMAIS confiance à un compteur
- * écrit à la main. Il recompte TOUJOURS depuis la source. La contre-épreuve
- * « le compteur passé à 0 à la main » le vérifie : un compteur figé ne peut
- * pas rendre le contrôle vert.
+ * METHODOLOGICAL POINT: the check NEVER trusts a hand-written counter.
+ * It always recounts from the source. The counter-proof
+ * "the counter set to 0 by hand" verifies it: a frozen counter cannot
+ * turn the check green.
  *
- * Usage : node test-identite.js
- * RC 0 = tout passe, RC 1 = au moins un contrôle échoue.
+ * Usage: node test-identite.js
+ * RC 0 = everything passes, RC 1 = at least one check fails.
  */
 const fs = require('fs');
 const path = require('path');
@@ -51,16 +51,16 @@ function check(label, ok, detail) {
 }
 
 // ---------------------------------------------------------------------------
-// 1. Le code actif : commentaires et chaînes RETIRÉS
+// 1. The active code: comments and strings STRIPPED
 // ---------------------------------------------------------------------------
 
 /**
- * Le code exécutable d'un fichier JavaScript : les commentaires et le
- * CONTENU des chaînes sont remplacés par des espaces, le code des
- * expressions `${...}` d'un gabarit est conservé.
+ * The executable code of a JavaScript file: the comments and the
+ * CONTENT of the strings are replaced by spaces, the code of the
+ * `${...}` expressions of a template literal is kept.
  *
- * Un `asApp` écrit dans un commentaire ou dans une chaîne n'est pas un
- * appel : le compter serait un faux positif.
+ * An `asApp` written in a comment or in a string is not a call:
+ * counting it would be a false positive.
  *
  * @param {string} src
  * @returns {string}
@@ -71,7 +71,7 @@ function sansCommentaires(src, garderChaines) {
   const n = src.length;
   let mode = 'code';
   let quote = '';
-  let acc = 0; // profondeur d'accolades dans un ${ ... }
+  let acc = 0; // brace depth inside a ${ ... }
   const vide = (c) => (garderChaines ? c : c === '\n' ? '\n' : ' ');
   while (i < n) {
     const c = src[i];
@@ -104,7 +104,7 @@ function sansCommentaires(src, garderChaines) {
       if (c === quote) { out += garderChaines ? c : ' '; i += 1; mode = 'code'; continue; }
       out += vide(c); i += 1; continue;
     }
-    // gabarit (template literal)
+    // template literal
     if (c === '\\') { out += garderChaines ? c + (src[i + 1] || '') : '  '; i += 2; continue; }
     if (c2 === '${') { out += '  '; i += 2; mode = 'code'; acc = 1; continue; }
     if (c === '`') { out += ' '; i += 1; mode = 'code'; continue; }
@@ -113,21 +113,21 @@ function sansCommentaires(src, garderChaines) {
   return out;
 }
 
-/** Le code actif : commentaires ET contenu des chaînes retirés. */
+/** The active code: comments AND string content stripped. */
 function codeActif(src) {
   return sansCommentaires(src, false);
 }
 
-/** Le code sans les commentaires, mais AVEC le contenu des chaînes. */
+/** The code without the comments, but WITH the string content. */
 function codeAvecChaines(src) {
   return sansCommentaires(src, true);
 }
 
 /**
- * Les appels d'identité dans le code actif d'une source.
+ * The identity calls in the active code of a source.
  *
- * On compte les EXPRESSIONS D'APPEL (`asApp(`, `asUser(`) : le mot seul
- * n'est pas un appel.
+ * We count the CALL EXPRESSIONS (`asApp(`, `asUser(`): the word alone
+ * is not a call.
  *
  * @param {string} src
  * @returns {{asApp: number, asUser: number}}
@@ -143,16 +143,16 @@ function compter(source) {
 }
 
 // ---------------------------------------------------------------------------
-// 2. Le contrôle : il RECOMPTE, il ne fait confiance à aucun compteur écrit
+// 2. The check: it RECOUNTS, it trusts no hand-written counter
 // ---------------------------------------------------------------------------
 
 /**
- * Le verdict du contrôle d'identité sur une source.
+ * The verdict of the identity check on a source.
  *
- * @param {string} source  le code à mesurer
- * @param {object} [compteFige] IGNORÉ à dessein — c'est la contre-épreuve :
- *        un compteur écrit à la main ne doit pas pouvoir rendre le contrôle
- *        vert. Le paramètre existe pour le prouver.
+ * @param {string} source  the code to measure
+ * @param {object} [compteFige] IGNORED on purpose — this is the counter-proof:
+ *        a hand-written counter must not be able to turn the check green.
+ *        The parameter exists to prove that.
  * @returns {{ok: boolean, asApp: number, asUser: number, raison: string}}
  */
 function verifier(source, compteFige) {
@@ -176,7 +176,7 @@ function verifier(source, compteFige) {
   return { ok: true, asApp: c.asApp, asUser: c.asUser, raison: '' };
 }
 
-/** Les fichiers JS/JSX du dossier src/. */
+/** The JS/JSX files of the src/ folder. */
 function fichiersSrc() {
   const liste = [];
   (function parcourir(dossier) {
@@ -194,7 +194,7 @@ function fichiersSrc() {
   return liste.sort();
 }
 
-/** Le source complet de src/, concaténé (le contrôle porte sur l'ensemble). */
+/** The complete source of src/, concatenated (the check covers the whole set). */
 function sourceSrc() {
   return fichiersSrc()
     .map((f) => fs.readFileSync(f, 'utf8'))
@@ -202,9 +202,9 @@ function sourceSrc() {
 }
 
 /**
- * Un texte de documentation ramené à une seule ligne : les `*` de début de
- * ligne du JSDoc et les blancs sont retirés. Sans cela, une phrase coupée
- * entre deux lignes ne se retrouverait pas d'un bout à l'autre.
+ * A documentation text flattened to a single line: the leading `*` of the
+ * JSDoc lines and the blanks are removed. Without that, a sentence split
+ * over two lines would not be found end to end.
  */
 function textePlat(texte) {
   return String(texte)
@@ -213,7 +213,7 @@ function textePlat(texte) {
     .trim();
 }
 
-/** Le bloc de documentation juste au-dessus d'une fonction. */
+/** The documentation block just above a function. */
 function docAuDessus(source, signature) {
   const i = source.indexOf(signature);
   if (i === -1) return '';
@@ -225,7 +225,7 @@ function docAuDessus(source, signature) {
 }
 
 // ---------------------------------------------------------------------------
-// 3. La plateforme simulée (pour les contrôles de COMPORTEMENT)
+// 3. The simulated platform (for the BEHAVIOUR checks)
 // ---------------------------------------------------------------------------
 
 let SCENARIO = {};
@@ -252,13 +252,13 @@ api.fetch = async () => {
 };
 
 // ---------------------------------------------------------------------------
-// 4. Les contrôles
+// 4. The checks
 // ---------------------------------------------------------------------------
 
 async function controles() {
   const res = {};
 
-  // --- A. le CODE ----------------------------------------------------------
+  // --- A. the CODE ---------------------------------------------------------
   const sourceIndex = fs.readFileSync(path.join(SRC, 'index.js'), 'utf8');
   const parFichier = fichiersSrc().map((f) => ({
     fichier: path.relative(APP, f),
@@ -276,8 +276,8 @@ async function controles() {
   res['ID-04 the identity declared in the report is the one of the code (asUser)'] =
     /const IDENTITE_LECTURE = 'asUser'/.test(codeAvecChaines(sourceIndex));
 
-  // La raison écrite dans le code (règle 2 de la revue : une raison, pas
-  // une excuse).
+  // The reason written in the code (rule 2 of the review: a reason,
+  // not an excuse).
   const docClient = docAuDessus(sourceIndex, 'function client(');
   const docClientPlat = textePlat(docClient);
   res['ID-05 the reason for the identity choice is WRITTEN in the code (Marketplace rule quoted)'] =
@@ -285,10 +285,10 @@ async function controles() {
     /Marketplace/.test(docClientPlat) &&
     /permissions REST APIs/.test(docClientPlat);
 
-  // --- B. le COMPORTEMENT ---------------------------------------------------
+  // --- B. the BEHAVIOUR -----------------------------------------------------
   const moteur = require('./src/index.js');
 
-  // B1. la plateforme refuse l'identité de l'appelant (401)
+  // B1. the platform refuses the caller's identity (401)
   SCENARIO = {
     '/rest/api/3/serverInfo': { status: 401, body: {} },
   };
@@ -301,7 +301,7 @@ async function controles() {
     refusIdentite.findings.length === 0 &&
     /could not be run with your own permissions/.test(refusIdentite.autorisation.message);
 
-  // B2. la plateforme refuse la LECTURE du contenu (403 sur tout, sonde OK)
+  // B2. the platform refuses the READ of the content (403 everywhere, probe OK)
   SCENARIO = {
     '/rest/api/3/serverInfo': { status: 200, body: { baseUrl: 'https://demo.atlassian.net' } },
     '/rest/servicedeskapi/info': { status: 403, body: {} },
@@ -317,7 +317,7 @@ async function controles() {
     refusLecture.autorisation.httpStatus === 403 &&
     refusLecture.findings.length === 0;
 
-  // B3. la lecture passe : le rapport déclare l'identité utilisée
+  // B3. the read succeeds: the report declares the identity used
   SCENARIO = {
     '/rest/api/3/serverInfo': { status: 200, body: { baseUrl: 'https://demo.atlassian.net' } },
     '/rest/servicedeskapi/info': { status: 200, body: { isLicensedForUse: true } },
@@ -338,13 +338,13 @@ async function controles() {
 }
 
 // ---------------------------------------------------------------------------
-// 5. Les contre-épreuves : le contrôle doit savoir dire NON
+// 5. The counter-proofs: the check must be able to say NO
 // ---------------------------------------------------------------------------
 
 /**
- * La contre-épreuve du compteur figé : on passe au contrôle un compteur
- * écrit à la main (« asApp = 0 ») sur une source qui contient bel et bien un
- * appel `asApp()`. Le contrôle doitignorer ce compteur et rester ROUGE.
+ * The frozen-counter counter-proof: we hand the check a counter written
+ * by hand ("asApp = 0") on a source that really does contain an `asApp()`
+ * call. The check must ignore that counter and stay RED.
  */
 function contreEpreuveCompteFige() {
   const source = fs.readFileSync(path.join(SRC, 'index.js'), 'utf8');
@@ -355,8 +355,8 @@ function contreEpreuveCompteFige() {
 }
 
 /**
- * La contre-épreuve du moteur : une copie du moteur lit avec l'identité de
- * l'app. Le contrôle doit la voir.
+ * The engine counter-proof: a copy of the engine reads with the app
+ * identity. The check must see it.
  */
 function contreEpreuveMoteurAsApp() {
   const source = fs.readFileSync(path.join(SRC, 'index.js'), 'utf8');
@@ -367,8 +367,8 @@ function contreEpreuveMoteurAsApp() {
 }
 
 /**
- * La contre-épreuve de la déclaration : l'identité annoncée dans le rapport
- * dérive du code. Le contrôle doit le voir.
+ * The declaration counter-proof: the identity announced in the report
+ * drifts from the code. The check must see it.
  */
 function contreEpreuveDeclarationDerivee() {
   const source = fs.readFileSync(path.join(SRC, 'index.js'), 'utf8');
@@ -376,14 +376,14 @@ function contreEpreuveDeclarationDerivee() {
   if (sabotaged === source) return { erreur: 'the mutation changed nothing' };
   const declaree = /const IDENTITE_LECTURE = '([^']+)'/.exec(codeAvecChaines(sabotaged));
   const verifie = verifier(sabotaged);
-  // Le contrôle doit voir à la fois le compteur et la déclaration.
+  // The check must see both the counter and the declaration.
   const rouge = verifie.ok === false || !declaree || declaree[1] !== 'asUser';
   return { rouge: rouge, detail: 'declaration = ' + (declaree ? declaree[1] : '?') };
 }
 
 /**
- * La contre-épreuve de la raison : on efface la raison écrite dans le code.
- * Le contrôle ID-05 doit devenir faux.
+ * The reason counter-proof: we erase the reason written in the code.
+ * The ID-05 check must become false.
  */
 function contreEpreuveRaisonEffacee() {
   const source = fs.readFileSync(path.join(SRC, 'index.js'), 'utf8');
@@ -397,7 +397,7 @@ function contreEpreuveRaisonEffacee() {
 }
 
 // ---------------------------------------------------------------------------
-// 6. Exécution
+// 6. Execution
 // ---------------------------------------------------------------------------
 
 (async () => {

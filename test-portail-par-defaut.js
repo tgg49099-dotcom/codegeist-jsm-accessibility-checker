@@ -1,22 +1,22 @@
 /**
- * Test « comme un juge » : le VRAI scan (src/index.js, lancerScan) sur un site
- * qui ressemble à ce qu'un juge de Codegeist crée en deux clics :
- *   A. un projet Jira Service Management créé depuis le modèle « IT service
- *      management » (types de demande et champs par défaut, en anglais) ;
- *   B. le repli Jira (JSM non actif) avec des tickets en anglais.
+ * "As a judge" test: the REAL scan (src/index.js, lancerScan) on a site
+ * that looks like what a Codegeist judge builds in two clicks:
+ *   A. a Jira Service Management project created from the "IT service
+ *      management" template (request types and default fields, in English);
+ *   B. the Jira fallback (JSM not active) with tickets in English.
  *
- * Les textes des modèles sont reconstitués (non copiés d'un site réel) : ce
- * qui compte ici est leur FORME (champs système `summary`, `description`,
- * `attachment` ; noms de types de demande courts ; contenu en anglais).
+ * The template texts are reconstructed (not copied from a real site): what
+ * matters here is their SHAPE (system fields `summary`, `description`,
+ * `attachment`; short request type names; content in English).
  *
- * Deux exigences, mesurées séparément :
- *   1. contenu CORRECT -> aucun constat « finding » (prouvé), et pas de bruit
- *      1.3.5 sur les champs système ;
- *   2. vraies fautes écrites EN ANGLAIS -> détectées (click here, read more,
- *      heading « Details », bouton rouge en haut à droite, nom de champ vide).
+ * Two requirements, measured separately:
+ *   1. CORRECT content -> no "finding" (proven), and no 1.3.5 noise
+ *      on the system fields;
+ *   2. real mistakes written IN ENGLISH -> detected (click here, read more,
+ *      "Details" heading, red button at the top right, empty field name).
  *
- * Plate-forme simulée sur `@forge/api` (même méthode que test-mcp.js).
- * Usage : node test-portail-par-defaut.js   (RC 0 = tout passe)
+ * Platform simulated on `@forge/api` (same method as test-mcp.js).
+ * Usage: node test-portail-par-defaut.js   (RC 0 = everything passes)
  */
 const api = require('@forge/api');
 
@@ -43,7 +43,7 @@ api.asApp = () => client;
 const { lancerScan } = require('./src/index.js');
 
 // ---------------------------------------------------------------------------
-// Briques ADF
+// ADF building blocks
 // ---------------------------------------------------------------------------
 const t = (text, marks) => (marks ? { type: 'text', text, marks } : { type: 'text', text });
 const p = (...content) => ({ type: 'paragraph', content });
@@ -52,7 +52,7 @@ const lien = (text, href) => t(text, [{ type: 'link', attrs: { href } }]);
 const doc = (...content) => ({ type: 'doc', version: 1, content });
 
 // ---------------------------------------------------------------------------
-// A. JSM, modèle « IT service management » (contenu correct)
+// A. JSM, "IT service management" template (correct content)
 // ---------------------------------------------------------------------------
 const champ = (fieldId, name, required, description, type, custom) => ({
   fieldId, name, description: description || '', required, visible: true,
@@ -86,7 +86,7 @@ function scenarioJsm(champsParType) {
 }
 
 // ---------------------------------------------------------------------------
-// B. Repli Jira, tickets en anglais
+// B. Jira fallback, tickets in English
 // ---------------------------------------------------------------------------
 function scenarioJira(issues) {
   return {
@@ -122,7 +122,7 @@ const resume = (findings) => {
 };
 
 (async () => {
-  // A1 — modèle JSM tel quel
+  // A1 — the JSM template as it is
   SCENARIO = scenarioJsm(() => CHAMPS_BASE);
   let r = await lancerScan();
   let f = r.findings;
@@ -135,7 +135,7 @@ const resume = (findings) => {
   check('A1 no 2.4.2 on the default request type names',
     f.filter((c) => c.critere === '2.4.2').length === 0, f.filter((c) => c.critere === '2.4.2').map((c) => c.valeur).join(' | '));
 
-  // A2 — vraies fautes ajoutées par un administrateur (en anglais)
+  // A2 — real mistakes added by an administrator (in English)
   SCENARIO = scenarioJsm((rt) => rt.id === '4'
     ? [...CHAMPS_BASE,
       champ('customfield_10050', '', true, ''),
@@ -149,7 +149,7 @@ const resume = (findings) => {
   check('A2 custom field "Ref" with no purpose reported (1.3.5)', f.some((c) => c.critere === '1.3.5' && c.valeur === 'Ref'));
   check('A2 English email field recognized (no 1.3.5)', !f.some((c) => c.critere === '1.3.5' && c.valeur === 'Your work email'));
 
-  // B1 — repli Jira, tickets corrects en anglais
+  // B1 — Jira fallback, correct tickets in English
   SCENARIO = scenarioJira(TICKETS_CORRECTS);
   r = await lancerScan();
   f = r.findings;
@@ -158,7 +158,7 @@ const resume = (findings) => {
   check('B1 no "finding" (proven) on correct tickets', f.filter((c) => !c.a_verifier).length === 0,
     f.filter((c) => !c.a_verifier).map((c) => c.critere + ' ' + JSON.stringify(c.valeur)).join(' | '));
 
-  // B2 — ticket fautif en anglais
+  // B2 — faulty ticket in English
   SCENARIO = scenarioJira([TICKET_FAUTIF]);
   r = await lancerScan();
   f = r.findings;

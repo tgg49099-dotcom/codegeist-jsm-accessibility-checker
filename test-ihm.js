@@ -1,38 +1,38 @@
 /**
- * test-ihm.js — preuve HORS LIGNE de l'IHM.
+ * test-ihm.js — OFFLINE PROOF OF THE UI.
  *
- * Ce qui restait en suspens : le code de l'interface existe,
- * mais rien ne prouve, hors ligne, que
- *   (1) le manifeste n'expose PLUS AUCUN module public appelable SANS
- *       authentification (le module `rovo:mcp` n'en est pas un :
- *       c'est un serveur d'outils porté par l'identité de l'appelant) ;
- *   (2) le resolver refuse un appel sans compte connecté ;
- *   (3) l'interface n'utilise que des composants UI Kit 2 (@forge/react) ;
- *   (4) l'interface est en ANGLAIS ;
- *   (5) l'interface appelle le MÊME moteur de scan que le déclencheur d'hier.
+ * What was still open: the UI code exists,
+ * but nothing proves, offline, that
+ *   (1) the manifest exposes NO MORE public module callable WITHOUT
+ *       authentication (the `rovo:mcp` module is not one:
+ *       it is a tool server carried by the caller's identity);
+ *   (2) the resolver refuses a call with no signed-in account;
+ *   (3) the UI uses only UI Kit 2 components (@forge/react);
+ *   (4) the UI is in ENGLISH;
+ *   (5) the UI calls the SAME scan engine as yesterday's trigger.
  *
- * Depuis le 09/11/2026 : le manifeste déclare désormais QUATRE types de
- * modules (`jira:adminPage`, `function`, `action`, `rovo:mcp`). Les contrôles
- * MANIFEST-02 et MANIFEST-05 ont donc été réécrits, et les contrôles
- * MANIFEST-12 à MANIFEST-16 ont été ajoutés pour le module MCP : un seul
- * serveur, deux outils, chaque outil est une action déclarée, chaque action
- * pointe une fonction dont le handler existe, chaque description tient dans
- * les 255 caractères imposés par Atlassian.
+ * Since 09/11/2026: the manifest now declares FOUR module types
+ * (`jira:adminPage`, `function`, `action`, `rovo:mcp`). The MANIFEST-02 and
+ * MANIFEST-05 checks were therefore rewritten, and the MANIFEST-12 to
+ * MANIFEST-16 checks were added for the MCP module: a single
+ * server, two tools, each tool is a declared action, each action
+ * points to a function whose handler exists, each description fits within
+ * the 255 characters imposed by Atlassian.
  *
- * POINT MÉTHODOLOGIQUE (leçon des relectures précédentes) : chaque contrôle est
- * une FONCTION, appelée sur le fichier RÉEL, puis sur une COPIE SABOTÉE. Le
- * contrôle doit rester VERT sur le fichier réel et devenir ROUGE sur la copie
- * sabotée : sans cette contre-épreuve, « 0 violation » ne prouve rien (un
- * harnais qui ne teste rien est vert).
+ * METHODOLOGICAL POINT (lesson of the previous reviews): each check is a
+ * FUNCTION, called on the REAL file, then on a SABOTAGED COPY. The check must
+ * stay GREEN on the real file and turn RED on the sabotaged copy: without
+ * this counter-proof, "0 violation" proves nothing (a harness that tests
+ * nothing is green).
  *
- * Un contrôle « ne doit PAS contenir » se fait sur le CODE SEUL : les
- * commentaires sont retirés avant la recherche (sinon le commentaire qui
- * documente la correction triggerait le contrôle). Un contrôle « doit
- * contenir » lit le fichier BRUT (un commentaire qui documente un
- * historique a le droit d'y être).
+ * A "must NOT contain" check is done on the CODE ALONE: the comments
+ * are removed before the search (otherwise the comment documenting
+ * the fix would trigger the check). A "must contain" check reads
+ * the RAW file (a comment documenting a history has the right to
+ * be there).
  *
- * Usage : node test-ihm.js
- * RC 0 = tout passe, RC 1 = au moins un contrôle échoue.
+ * Usage: node test-ihm.js
+ * RC 0 = everything passes, RC 1 = at least one check fails.
  */
 const fs = require('fs');
 const path = require('path');
@@ -48,10 +48,10 @@ function check(label, ok, detail) {
 }
 
 // ---------------------------------------------------------------------------
-// 1. Le manifeste : plus AUCUN module public, plus AUCUN appel sortant.
+// 1. The manifest: no MORE public module, no MORE outgoing call.
 // ---------------------------------------------------------------------------
 
-/** Retire les commentaires d'un YAML/JS de façon simple et sûre. */
+/** Removes the comments of a YAML/JS file in a simple and safe way. */
 function sansCommentaires(texte) {
   return texte
     .split('\n')
@@ -64,8 +64,8 @@ function sansCommentaires(texte) {
 }
 
 /**
- * Les modules déclarés, lus par structure YAML simplifiée (le manifeste est
- * un fichier écrit à la main : 2 niveaux, `- key:`).
+ * The declared modules, read through a simplified YAML structure (the
+ * manifest is a hand-written file: 2 levels, `- key:`).
  */
 function modulesDuManifeste(texte) {
   const lignes = texte.split('\n');
@@ -78,7 +78,7 @@ function modulesDuManifeste(texte) {
       continue;
     }
     if (dansModules && /^[a-zA-Z]/.test(l) && !/^modules:/.test(l)) {
-      dansModules = false; // une nouvelle section racine
+      dansModules = false; // a new root section
     }
     if (!dansModules) continue;
     const mType = /^ {2}([a-zA-Z][\w:.-]*):\s*$/.exec(l);
@@ -103,10 +103,10 @@ function scopesDuManifeste(texte) {
 }
 
 /**
- * Le BLOC d'un type de module, ancré sur sa section (jamais sur le fichier
- * entier) : sans cette ancre, un contrôle « le module X expose 2 outils »
- * pourrait être satisfait par un mot écrit dans un commentaire ou ailleurs
- * dans le fichier.
+ * The BLOCK of a module type, anchored on its section (never on the whole
+ * file): without that anchor, a check like "module X exposes 2 tools"
+ * could be satisfied by a word written in a comment or somewhere else
+ * in the file.
  */
 function blocType(code, type) {
   const lignes = code.split('\n');
@@ -134,8 +134,8 @@ function blocType(code, type) {
 }
 
 /**
- * Les ITEMS d'un type de module : pour chacun, sa clé, sa fonction, son
- * handler, sa liste d'outils et sa description (scalaire plié compris).
+ * The ITEMS of a module type: for each one, its key, its function, its
+ * handler, its tool list and its description (folded scalar included).
  */
 function itemsType(code, type) {
   const bloc = blocType(code, type);
@@ -201,10 +201,10 @@ function controlesManifeste(texte) {
   const code = sansCommentaires(texte);
   const modules = modulesDuManifeste(code);
   const types = modules.map((m) => m.type);
-  // Les modules publics = des points d'entrée appelables par quiconque trouve
-  // une URL. `rovo:mcp` n'en est pas un : c'est un serveur d'outils dont
-  // l'appel est porté par l'identité de l'appelant (vérifié par le code,
-  // src/mcp.js). Le contrôle porte donc sur les types EXACTS.
+  // The public modules = entry points callable by anyone who finds
+  // a URL. `rovo:mcp` is not one: it is a tool server whose
+  // calls are carried by the caller's identity (verified by the code,
+  // src/mcp.js). The check therefore targets the EXACT types.
   const PUBLICS = ['webtrigger', 'productTrigger', 'scheduleTrigger', 'trigger'];
   const publics = types.filter((t) => PUBLICS.indexOf(t) !== -1);
 
@@ -270,7 +270,7 @@ function controlesManifeste(texte) {
 }
 
 // ---------------------------------------------------------------------------
-// 2. Le resolver : la porte d'identité.
+// 2. The resolver: the identity gate.
 // ---------------------------------------------------------------------------
 
 const resolver = require(path.join(APP, 'src', 'resolvers.js'));
@@ -304,8 +304,8 @@ async function controlesResolver() {
   res['GATE-05 rendering the page starts no scan'] =
     rendu && rendu.ok === true && rendu.report === undefined;
 
-  // Le MÊME moteur que le déclencheur d'hier : la démo rend les 23 constats
-  // seedés, et le « scan » appelle bien le moteur (et pas un panneau figé).
+  // The SAME engine as yesterday's trigger: the demo returns the 23 seeded
+  // findings, and "scan" does call the engine (and not a frozen panel).
   const demo = await resolver.handler(
     { call: { functionKey: 'scanDemo', payload: {} }, context: { accountId: 'compte' } },
     { principal: { accountId: 'compte' } }
@@ -321,10 +321,10 @@ async function controlesResolver() {
 }
 
 // ---------------------------------------------------------------------------
-// 3. L'interface : composants UI Kit 2, pas de HTML brut, en anglais.
+// 3. The UI: UI Kit 2 components, no raw HTML, in English.
 // ---------------------------------------------------------------------------
 
-/** Les composants exportés par le paquet INSTALLÉ (@forge/react). */
+/** The components exported by the INSTALLED package (@forge/react). */
 function composantsUIKit2() {
   const racine = path.join(APP, 'node_modules', '@forge', 'react', 'out');
   if (!fs.existsSync(racine)) return null;
@@ -345,7 +345,7 @@ function composantsUIKit2() {
   })(racine);
   for (const f of fichiers) {
     const src = fs.readFileSync(f, 'utf8');
-    // `export declare const X: …` et `export declare function X(…)`
+    // `export declare const X: …` and `export declare function X(…)`
     const re = /export\s+declare\s+(?:const|function|class)\s+([A-Za-z_$][\w$]*)/g;
     let m;
     while ((m = re.exec(src))) noms.add(m[1]);
@@ -361,11 +361,11 @@ function composantsUIKit2() {
   return noms;
 }
 
-/** Le code JSX SANS les commentaires (contrôles « ne doit pas contenir »). */
+/** The JSX code WITHOUT the comments ("must not contain" checks). */
 function codeJsxSansCommentaires(src) {
-  // On remplace les commentaires de ligne et de bloc par des espaces, en
-  // Tenant compte des chaînes (un « // » dans une chaîne n'est pas un
-  // commentaire).
+  // We replace the line and block comments by spaces, taking
+  // the strings into account (a "//" inside a string is not a
+  // comment).
   let out = '';
   let i = 0;
   const n = src.length;
@@ -387,7 +387,7 @@ function codeJsxSansCommentaires(src) {
       if (c === '\n') { mode = 'code'; out += '\n'; i += 1; continue; }
       out += ' '; i += 1; continue;
     }
-    // dans une chaîne
+    // inside a string
     if (c === '\\') { out += c + (src[i + 1] || ''); i += 2; continue; }
     out += c;
     if (c === mode) { mode = 'code'; }
@@ -420,7 +420,7 @@ function controlesInterface(texteJsx, composants) {
   res['UI-07 no <a href> tag to an external site'] =
     !/<a\s[^>]*href\s*=\s*["']https?:/i.test(code);
 
-  // Les composants importés de @forge/react existent-ils dans le paquet ?
+  // Do the components imported from @forge/react exist in the package?
   const m = /import\s+ForgeReconciler\s*,\s*\{([^}]*)\}\s+from\s+["']@forge\/react["']/.exec(code);
   const importes = m
     ? m[1].split(',').map((x) => x.trim()).filter(Boolean)
@@ -430,8 +430,8 @@ function controlesInterface(texteJsx, composants) {
     importes.every((nom) => composants.has(nom));
   res['UI-09 the list of imported components is not empty'] = importes.length >= 5;
 
-  // L'interface est en ANGLAIS : pas de caractère accentué ni de mot français
-  // dans le TEXTE affiché (les chaînes de l'interface, pas les commentaires).
+  // The UI is in ENGLISH: no accented character and no French word
+  // in the DISPLAYED TEXT (the UI strings, not the comments).
   const chaines = [];
   const re = />([^<>{}]{4,})</g;
   let mm;
@@ -448,7 +448,7 @@ function controlesInterface(texteJsx, composants) {
 }
 
 // ---------------------------------------------------------------------------
-// Exécution
+// Execution
 // ---------------------------------------------------------------------------
 
 (async () => {
@@ -473,8 +473,8 @@ function controlesInterface(texteJsx, composants) {
   if (ci.coupables.length) console.log('   (French texts: ' + JSON.stringify(ci.coupables) + ')');
 
   // -------------------------------------------------------------------------
-  // 4. LA CONTRE-ÉPREUVE : les mêmes contrôles sur des copies SABOTÉES
-  //    doivent devenir ROUGES. Sans cela, « 0 violation » ne prouve rien.
+  // 4. THE COUNTER-PROOF: the same checks on SABOTAGED copies
+  //    must turn RED. Without that, "0 violation" proves nothing.
   // -------------------------------------------------------------------------
   console.log('');
   console.log('== 4. COUNTER-PROOF (the harness must turn RED) ==');
@@ -510,7 +510,7 @@ function controlesInterface(texteJsx, composants) {
       famille: 'UI',
       attendu: 'UI-10 all displayed texts are in English',
     },
-    // --- sabotages du module rovo:mcp : le module rovo:mcp et ses deux outils -----
+    // --- sabotages of the rovo:mcp module: the module and its two tools -----------
     {
       nom: 'an MCP tool no longer points to a declared action',
       mutant: (t) => t.replace('        - scan_accessibility\n', '        - outil_qui_nexiste_pas\n'),

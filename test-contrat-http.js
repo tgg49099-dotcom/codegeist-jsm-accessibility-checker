@@ -1,28 +1,28 @@
 /**
- * Test hors ligne du CONTRAT DU RESOLVER (src/resolvers.js).
+ * Offline test of the RESOLVER CONTRACT (src/resolvers.js).
  *
- * Le contrat, en une phrase : **une donnée personnelle reçue dans l'appel
- * (champs `nom` et `e-mail`) n'est JAMAIS renvoyée en clair**, et le masque
- * ne s'applique qu'aux champs RÉELLEMENT présents (un champ absent n'est
- * jamais inventé).
+ * The contract, in one sentence: **a personal datum received in the call
+ * (fields `nom` and `e-mail`) is NEVER returned in clear text**, and the mask
+ * only applies to the fields REALLY present (an absent field is never
+ * invented).
  *
- * Depuis le 05/11/2026 : le point d'entrée testé n'est plus un handler
- * HTTP public, c'est le resolver que la page d'administration appelle
- * (`invoke('scan', …)` / `invoke('scanDemo', …)`). On teste donc :
- *   1. les fonctions pures (masque, collecte des champs, balayage) ;
- *   2. la GÂCHE D'IDENTITÉ : un appel sans compte connecté est REFUSÉ, un
- *      appel avec un compte est accepté, et la réponse dit qui a demandé ;
- *   3. le point d'entrée réel, en mode DÉMO (aucun appel à un site) ;
- *   4. le point d'entrée réel, en mode SCAN, avec une API Atlassian
- *      neutralisée — et, surtout, avec des données de site qui contiennent
- *      LE NOM ET L'E-MAIL : on vérifie que le balayage les masque aussi, et
- *      pas seulement que l'app « oublie » de les renvoyer.
+ * Since 05/11/2026: the entry point under test is no longer a public
+ * HTTP handler, it is the resolver that the administration page calls
+ * (`invoke('scan', …)` / `invoke('scanDemo', …)`). We therefore test:
+ *   1. the pure functions (mask, field collection, scan);
+ *   2. the IDENTITY GATE: a call without a signed-in account is REFUSED, a
+ *      call with an account is accepted, and the response says who asked;
+ *   3. the real entry point, in DEMO mode (no call to a site);
+ *   4. the real entry point, in SCAN mode, with a neutralised Atlassian
+ *      API — and, above all, with site data that contains
+ *      THE NAME AND THE E-MAIL: we verify that the scan masks them too, and
+ *      not only that the app "forgets" to return them.
  *
- * Usage : node test-contrat-http.js
- * RC 0 = tout passe, RC 1 = au moins un contrôle échoue.
+ * Usage: node test-contrat-http.js
+ * RC 0 = everything passes, RC 1 = at least one check fails.
  *
- * Le contre-proof (le harnais doit devenir ROUGE quand le contrat est cassé)
- * est dans test-contrat-http-contre-epreuve.js.
+ * The counter-proof (the harness must turn RED when the contract is broken)
+ * is in test-contrat-http-contre-epreuve.js.
  */
 const fs = require('fs');
 const path = require('path');
@@ -58,7 +58,7 @@ function appeler(functionKey, payload, contexte, runtimePayload) {
   );
 }
 
-// --- 1. le masque (fonction pure) --------------------------------------------
+// --- 1. the mask (pure function) ---------------------------------------------
 
 check('MASQUE-01 a name longer than 3 characters renders only its first letter',
   c.masquerValeur(NOM) === 'C***', c.masquerValeur(NOM));
@@ -79,7 +79,7 @@ check('MASQUE-08 the mask never contains the value it masks',
     (v) => v.length === 0 || !c.masquerValeur(v).includes(v)
   ));
 
-// --- 2. la collecte des champs présents ---------------------------------------
+// --- 2. collecting the fields that are present --------------------------------
 
 check('RECU-01 an empty call receives no field',
   Object.keys(c.champsPvRecus({})).length === 0);
@@ -119,7 +119,7 @@ check('RECU-15 repeated parameters: all values are collected for masking',
 check('RECU-16 the page payload (object) is read as a body',
   c.champsPvRecus({ body: { nom: NOM, 'e-mail': EMAIL } })['e-mail'] === EMAIL);
 
-// --- 3. la GÂCHE D'IDENTITÉ : seul un utilisateur connecté déclenche un scan --
+// --- 3. the IDENTITY GATE: only a signed-in user triggers a scan --------------
 
 (async () => {
   const sansIdentite = await appeler('scanDemo', {}, {}, {});
@@ -136,8 +136,8 @@ check('RECU-16 the page payload (object) is read as a body',
     avecIdentite.requestedBy && avecIdentite.requestedBy.accountId === COMPTE,
     JSON.stringify(avecIdentite.requestedBy));
 
-  // Le compte peut aussi arriver par le contexte de l'appel : c'est le même
-  // compte, porté par l'autre canal. Le resolver ne doit pas le perdre.
+  // The account can also arrive through the call context: it is the same
+  // account, carried by the other channel. The resolver must not lose it.
   const parContexte = await appeler('scanDemo', {}, { accountId: COMPTE }, {});
   check('GATE-05 the account carried by the call context is accepted too',
     parContexte.ok === true && parContexte.requestedBy.accountId === COMPTE);
@@ -152,12 +152,12 @@ check('RECU-16 the page payload (object) is read as a body',
     renduPage.ok === true && renduPage.page === 'admin' && !renduPage.report,
     JSON.stringify(renduPage).slice(0, 120));
 
-  // --- 4. le point d'entrée de l'app, en mode DÉMO : cas rouge ------------------
+  // --- 4. the entry point of the app, in DEMO mode: red case --------------------
 
-  // Le mode démo ne doit appeler AUCUNE API : les DEUX identités sont
-  // neutralisées. Depuis le correctif d'identité, c'est `asUser` que le moteur emploie ;
-  // `asApp` est neutralisée elle aussi, pour que le contrôle voie une
-  // éventuelle régression vers une identité plus large.
+  // Demo mode must call NO API: BOTH identities are
+  // neutralised. Since the identity fix, the engine uses `asUser`;
+  // `asApp` is neutralised too, so that the check sees a possible
+  // regression to a broader identity.
   const asAppOriginal = api.asApp;
   const asUserOriginal = api.asUser;
   let appelsApi = 0;
@@ -207,7 +207,7 @@ check('RECU-16 the page payload (object) is read as a body',
     rapportRouge.constats.length === 23, String(rapportRouge.constats.length));
   check('ROUGE-10 no call to the Atlassian API in demo mode', appelsApi === 0, String(appelsApi));
 
-  // --- 5. le point d'entrée de l'app, en mode DÉMO : cas vert ----------------
+  // --- 5. the entry point of the app, in DEMO mode: green case ---------------
 
   const vert = await appeler('scanDemo', {});
   const rapportVert = vert.report;
@@ -228,7 +228,7 @@ check('RECU-16 the page payload (object) is read as a body',
     rapportVert.constats.length === 23, String(rapportVert.constats.length));
   check('VERT-05 the green case response does contain a report', !!rapportVert);
 
-  // --- 6. l'export CSV applique le contrat lui aussi ------------------------
+  // --- 6. the CSV export applies the contract too ---------------------------
 
   const csvRep = await appeler('scanDemo', { nom: NOM });
   const csv = String(csvRep.csv);
@@ -238,17 +238,17 @@ check('RECU-16 the page payload (object) is read as a body',
     csv.trim().split('\r\n').length === 24,
     String(csv.trim().split('\r\n').length));
 
-  // --- 7. mode SCAN : le balayage s'applique aussi aux données du site ------
-  // L'API Atlassian est neutralisée par un faux site dont les DONNÉES
-  // contiennent le nom et l'e-mail : on vérifie que la réponse les masque
-  // (et pas qu'ils ont simplement disparu du faux site).
+  // --- 7. SCAN mode: the scan applies to the site data too ------------------
+  // The Atlassian API is neutralised by a fake site whose DATA
+  // contains the name and the e-mail: we verify that the response masks them
+  // (and not that they simply vanished from the fake site).
   api.asUser = () => ({
     requestJira: async (p) => {
       const chemin = String(p && p.value_ ? p.value_ : p);
       let body = {};
       if (chemin.indexOf('/rest/api/3/mypermissions') !== -1) {
-        // Le contrôle d'administration du resolver (src/resolvers.js) : sur ce
-        // faux site, le compte connecté EST administrateur.
+        // The administration check of the resolver (src/resolvers.js): on this
+        // fake site, the signed-in account IS an administrator.
         body = {
           permissions: {
             ADMINISTER: { key: 'ADMINISTER', name: 'Administer Jira', type: 'GLOBAL', havePermission: true },
@@ -287,7 +287,7 @@ check('RECU-16 the page payload (object) is read as a body',
       rapportScan.privacy.receivedFields.join(',') === 'nom,e-mail' &&
       rapportScan.privacy.maskedValues.nom === 'C***');
 
-  // Fuite par espaces autour du champ, par corps texte/buffer et paramètres répétés dans le scan
+  // Leak through spaces around the field, through a text/buffer body and repeated parameters in the scan
   const scanFuites = await appeler('scan', { ' nom ': ['Camille', 'Dupont'] });
   const corpsScanFuites = JSON.stringify(scanFuites);
   check('SCAN-06 data with spaces around the name does not leak into the response',
@@ -297,10 +297,10 @@ check('RECU-16 the page payload (object) is read as a body',
   check('SCAN-08 the url-encoded body does not leak into the response',
     corpsScanFuites.indexOf('camille.dupont@example.com') === -1);
 
-  // Le contenu lu SUR LE SITE est renvoyé tel quel : c'est ce contenu que
-  // l'app vérifie, et c'est ce que dit la phrase affichée dans la réponse.
-  // Ce contrôle lie la phrase au comportement : si le contenu du site était
-  // masqué un jour, la phrase devrait le dire — et ce test le signalerait.
+  // The content read ON THE SITE is returned as is: it is that content the
+  // app checks, and it is what the sentence displayed in the response says.
+  // This check ties the sentence to the behaviour: if the site content were
+  // ever masked, the sentence would have to say so — and this test would flag it.
   const scanSansRecu = await appeler('scan', {});
   const corpsSansRecu = JSON.stringify(scanSansRecu);
   check('SCAN-09 site content not received in the request is returned as is',
@@ -310,9 +310,9 @@ check('RECU-16 the page payload (object) is read as a body',
   api.asApp = asAppOriginal;
   api.asUser = asUserOriginal;
 
-  // --- 8. la requête n'est jamais journalisée --------------------------------
-  // Le contrôle porte sur le CODE (arbre syntaxique), pas sur le texte : un
-  // « console.log » dans un commentaire ne compte pas, et inversement.
+  // --- 8. the request is never logged ----------------------------------------
+  // The check is about the CODE (syntax tree), not the text: a
+  // "console.log" inside a comment does not count, and the other way round.
   const acorn = require('acorn');
   let appelsConsole = 0;
   for (const fichier of ['index.js', 'resolvers.js']) {

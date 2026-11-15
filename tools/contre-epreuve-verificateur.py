@@ -33,7 +33,7 @@ MANIFESTE = os.path.join(RACINE, "manifest.yml")
 
 PY = sys.executable or "python3"
 
-# Chaque sabotage : (nom, transformation du manifeste, contrôle qui doit être rouge)
+# Each sabotage: (name, manifest transformation, check that must turn red)
 SABOTAGES = [
     (
         "a public module (webtrigger) is reintroduced",
@@ -65,7 +65,7 @@ SABOTAGES = [
         lambda s: re.sub(r"\n  jira:adminPage:\n(?:    .*\n)+", "\n", s, count=1),
         "VERIF-03",
     ),
-    # --- sabotages du module rovo:mcp : le module rovo:mcp et ses deux outils ------
+    # --- sabotages of the rovo:mcp module: the rovo:mcp module and its two tools ------
     (
         "an MCP tool no longer points to a declared action",
         lambda s: s.replace("\n        - scan_accessibility\n", "\n        - scan_qui_nexiste_pas\n", 1),
@@ -122,14 +122,14 @@ def dire(ok, libelle, detail=""):
 
 
 def main():
-    # --- 1. le manifeste réel : le vérificateur doit être vert --------------
+    # --- 1. the real manifest: the checker must be green --------------
     rc, out, err = lancer(MANIFESTE)
     dire(rc == 0, "the verifier accepts the real manifest (RC 0)", "RC=%d" % rc)
     dire("Traceback" not in err, "the verifier does not crash on the real manifest")
     if rc != 0:
         print(out)
 
-    # --- 2. les sabotages : le vérificateur doit devenir rouge --------------
+    # --- 2. the sabotages: the checker must turn red --------------
     sabotage_dir = os.path.join(RACINE, "tools", ".contre-epreuve")
     os.makedirs(sabotage_dir, exist_ok=True)
     with open(MANIFESTE, "r", encoding="utf-8") as f:

@@ -60,7 +60,7 @@ def preparer(racine_de_test):
     return racine_de_test
 
 
-# Chaque sabotage : (nom, fichier vise, transformation, controle qui doit etre rouge)
+# Each sabotage: (name, target file, transformation, check that must turn red)
 SABOTAGES = [
     (
         "a second copy of the notice is cited in the README",
@@ -85,8 +85,8 @@ SABOTAGES = [
     (
         "the published page disappears from the notice",
         "PRIVACY.md",
-        # toutes les occurrences : la notice citait la page publiee a deux
-        # endroits, il faut les enlever tous les deux.
+        # all occurrences: the notice cited the published page in two
+        # places, both of them have to be removed.
         lambda s: s.replace("https://labs.chiffreo.ch/privacy.html", ""),
         "NOTICE-04",
     ),
@@ -123,14 +123,14 @@ def lancer(racine_de_test):
 
 
 def main():
-    # --- 1. les documents reels : le verificateur doit etre vert ------------
+    # --- 1. the real documents: the checker must be green ------------
     rc, out, err = lancer(RACINE)
     dire(rc == 0, "the verifier accepts the real documents (RC 0)", "RC=%d" % rc)
     dire("Traceback" not in err, "the verifier does not crash on the real documents")
     if rc != 0:
         print(out)
 
-    # --- 2. les sabotages : le verificateur doit devenir rouge -------------
+    # --- 2. the sabotages: the checker must turn red -------------
     base = os.path.join(RACINE, "tools", ".contre-epreuve-notice")
     shutil.rmtree(base, ignore_errors=True)
     os.makedirs(base, exist_ok=True)

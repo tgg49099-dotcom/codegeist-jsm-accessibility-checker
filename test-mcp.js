@@ -1,40 +1,40 @@
 /**
- * test-mcp.js — preuve HORS LIGNE des deux outils Rovo MCP
+ * test-mcp.js — OFFLINE PROOF of the two Rovo MCP tools
  * (09/11/2026).
  *
- * CE QUE CE TEST PROUVE, ET CE QU'IL NE PROUVE PAS
+ * WHAT THIS TEST PROVES, AND WHAT IT DOES NOT PROVE
  *
- * Le module `rovo:mcp` expose deux outils : `scan_accessibility(url)` et
- * `list_last_findings()`. Un outil d'agent lit le site de l'appelant : la
- * question n'est donc pas « est-ce que le rapport est joli ? » mais
- * « l'outil peut-il lire ce que l'appelant n'a pas le droit de lire ? ».
+ * The `rovo:mcp` module exposes two tools: `scan_accessibility(url)` and
+ * `list_last_findings()`. An agent tool reads the caller's site: the
+ * question is therefore not "is the report pretty?" but
+ * "can the tool read what the caller is not allowed to read?".
  *
- * Ce test branche un FAUX PLATEFORME sur `@forge/api` (les deux clients
- * `asUser` et `asApp` sont remplacés) et observe ce que le code fait
- * VRAIMENT :
+ * This test plugs a FAKE PLATFORM into `@forge/api` (both the `asUser`
+ * and `asApp` clients are replaced) and observes what the code actually
+ * does:
  *
- *   - quelle identité est utilisée pour chaque appel (asUser ou asApp) ;
- *   - quels chemins sont demandés, et si l'URL fournie est jamais demandée ;
- *   - si le stockage ou un appel externe sont touchés (jamais) ;
- *   - si l'outil refuse quand la plateforme refuse, quand l'URL pointe vers
- *     un autre site, ou quand le contenu est en lecture refusée ;
- *   - si la page d'administration (qui existait AVANT l'ajout des outils Rovo MCP) lit
- *     toujours avec l'identité de l'app — le module MCP ne l'a pas changée.
+ *   - which identity is used for each call (asUser or asApp);
+ *   - which paths are requested, and whether the given URL is ever requested;
+ *   - whether the storage or an external call are touched (never);
+ *   - whether the tool refuses when the platform refuses, when the URL points
+ *     to another site, or when the content cannot be read;
+ *   - whether the administration page (which existed BEFORE the Rovo MCP tools
+ *     were added) still reads with the app identity — the MCP module did not
+ *     change it.
  *
- * CE QUE CE TEST NE PROUVE PAS : l'appel MCP réel. Il ne peut pas être
- * exécuté depuis ce conteneur (il faut une session d'administrateur Atlassian
- * et le consentement de l'utilisateur). Ce qui est vérifié ici, c'est le
- * CODE ; l'observation du déploiement est une autre étape (le déploiement
- * n'a pas eu lieu : ce correctif ne déploie rien).
+ * WHAT THIS TEST DOES NOT PROVE: the real MCP call. It cannot be run from
+ * this container (it needs an Atlassian administrator session and the user's
+ * consent). What is verified here is the CODE; observing the deployment is a
+ * separate step (the deployment did not happen: this fix deploys nothing).
  *
- * POINT MÉTHODOLOGIQUE : comme les autres harnais du dépôt, chaque contrôle
- * est rejoué sur une COPIE SABOTÉE du fichier `src/mcp.js`. Un contrôle qui
- * ne sait pas dire non ne prouve rien. Un sabotage qui fait CRASER le
- * harnais ne prouve rien non plus : la détection doit être un ÉCHEC
- * explicite, pas une exception.
+ * METHODOLOGICAL POINT: like the other harnesses in the repo, every check
+ * is replayed on a SABOTAGED COPY of the `src/mcp.js` file. A check that
+ * cannot say no proves nothing. A sabotage that makes the harness CRASH
+ * proves nothing either: the detection must be an explicit
+ * FAILURE, not an exception.
  *
- * Usage : node test-mcp.js
- * RC 0 = tout passe, RC 1 = au moins un contrôle échoue.
+ * Usage: node test-mcp.js
+ * RC 0 = everything passes, RC 1 = at least one check fails.
  */
 const fs = require('fs');
 const path = require('path');
@@ -55,16 +55,16 @@ function check(label, ok, detail) {
 }
 
 // ---------------------------------------------------------------------------
-// 1. Le faux plateforme
+// 1. The fake platform
 // ---------------------------------------------------------------------------
 
-/** Les appels observés : identité, méthode, chemin. */
+/** The observed calls: identity, method, path. */
 let APPELS = [];
-/** Les appels à un service extérieur (api.fetch) : doivent rester à zéro. */
+/** The calls to an external service (api.fetch): must stay at zero. */
 let APPELS_EXTERNES = [];
-/** Les accès au stockage (api.storage) : doivent rester à zéro. */
+/** The accesses to the storage (api.storage): must stay at zero. */
 let ACCES_STOCKAGE = [];
-/** Le scénario en cours : chemin -> { status, body }. */
+/** The scenario in progress: path -> { status, body }. */
 let SCENARIO = {};
 
 function reponse(status, body) {
@@ -96,8 +96,8 @@ function clientPour(identite) {
   };
 }
 
-// On remplace les clients SUR L'OBJET DU MODULE (@forge/api est un singleton :
-// src/mcp.js et src/index.js voient les mêmes remplacements).
+// We replace the clients ON THE MODULE OBJECT (@forge/api is a singleton:
+// src/mcp.js and src/index.js see the same replacements).
 api.asUser = () => clientPour('asUser');
 api.asApp = () => clientPour('asApp');
 api.fetch = async (r) => {
@@ -117,7 +117,7 @@ api.storage = {
   },
 };
 
-// --- les fixtures de démonstration du dépôt, réutilisées telles quelles -----
+// --- the demo fixtures of the repo, reused as they are ----------------------
 const TYPES_DEMANDE = require('./src/demo/demo-jsm-requesttypes-DEMO-304.json');
 const CHAMPS_DEMANDE = require('./src/demo/demo-jsm-requesttype-fields-DEMO-303.json');
 
@@ -126,20 +126,20 @@ const URL_PORTAL = 'https://' + HOTE_SITE + '/servicedesk/customer/portals';
 const URL_ETRANGERE = 'https://autre-tenant.atlassian.net/servicedesk/customer/portals';
 
 /**
- * L'endpoint du contrôle d'administration (le MÊME pour la page et pour les
- * outils MCP : src/droits-admin.js).
+ * The endpoint of the administration check (the SAME one for the page and for
+ * the MCP tools: src/droits-admin.js).
  */
 const CHEMIN_PERMISSIONS = '/rest/api/3/mypermissions?permissions=ADMINISTER,SYSTEM_ADMIN';
 
 /**
- * Les appels qui ne lisent PAS le contenu du site : le contrôle
- * d'administration et la sonde d'identité. Tout le reste est une lecture.
+ * The calls that do NOT read the site content: the administration check
+ * and the identity probe. Everything else is a read.
  */
 function estLectureDeContenu(appel) {
   return appel.chemin !== CHEMIN_PERMISSIONS && appel.chemin !== '/rest/api/3/serverInfo';
 }
 
-/** Un site JSM minimal : les mêmes données que la démonstration du dépôt. */
+/** A minimal JSM site: the same data as the repo demo. */
 function scenarioJsm() {
   const s = {};
   s['/rest/api/3/serverInfo'] = { status: 200, body: { baseUrl: 'https://' + HOTE_SITE } };
@@ -154,13 +154,13 @@ function scenarioJsm() {
     status: 200,
     body: { requestTypeFields: [] },
   };
-  // La recherche Jira (POST) n'est appelée qu'en mode repli, mais elle fait
-  // partie des lectures du site : elle doit répondre aussi.
+  // The Jira search (POST) is only called in fallback mode, but it is
+  // part of the site reads: it must answer too.
   s['/rest/api/3/search/jql'] = { status: 200, body: { issues: [] } };
   s['/rest/api/3/field'] = { status: 200, body: [] };
   s['/rest/api/3/project'] = { status: 200, body: [] };
-  // Le contrôle d'administration du resolver (src/resolvers.js) : sur ce site
-  // de démonstration, le compte connecté EST administrateur.
+  // The administration check of the resolver (src/resolvers.js): on this demo
+  // site, the signed-in account IS an administrator.
   s['/rest/api/3/mypermissions?permissions=ADMINISTER,SYSTEM_ADMIN'] = {
     status: 200,
     body: {
@@ -172,15 +172,15 @@ function scenarioJsm() {
   return s;
 }
 
-/** Toutes les lectures du contenu sont refusées (le cas 403). */
+/** All the content reads are refused (the 403 case). */
 function scenarioLectureRefusee() {
   const s = scenarioJsm();
   s['/rest/api/3/serverInfo'] = { status: 200, body: { baseUrl: 'https://' + HOTE_SITE } };
   for (const chemin of Object.keys(s)) {
-    // Le contrôle d'administration et la sonde d'identité répondent : le cas
-    // testé ici est « le CONTENU est en lecture refusée », pas « l'appelant
-    // n'est pas administrateur » (celui-ci est couvert par la suite
-    // test-mcp-admin.js).
+    // The administration check and the identity probe answer: the case
+    // tested here is "the CONTENT cannot be read", not "the caller
+    // is not an administrator" (the latter is covered by the
+    // test-mcp-admin.js suite).
     if (chemin === '/rest/api/3/serverInfo' || chemin === CHEMIN_PERMISSIONS) continue;
     s[chemin] = { status: 403, body: { errorMessages: ['forbidden'] } };
   }
@@ -196,8 +196,8 @@ function remettreAZero() {
 const mcp = require('./src/mcp.js');
 const resolver = require('./src/resolvers.js');
 
-// Un mutant laissé par une exécution interrompue ne doit pas traîner dans les
-// sources : on nettoie avant de commencer.
+// A mutant left over by an interrupted run must not linger in the
+// sources: we clean up before starting.
 (function nettoyerMutants() {
   const dir = path.join(APP, 'src');
   for (const f of fs.readdirSync(dir)) {
@@ -206,10 +206,10 @@ const resolver = require('./src/resolvers.js');
 })();
 
 // ---------------------------------------------------------------------------
-// 2. Les contrôles
+// 2. The checks
 // ---------------------------------------------------------------------------
 
-/** Les lignes de la section « Read » du rapport : chemins et statuts, rien d'autre. */
+/** The lines of the "Read" section of the report: paths and statuses, nothing else. */
 function lignesRead(texte) {
   const marqueur = 'Read (paths and status only, no content):';
   const i = texte.indexOf(marqueur);
@@ -222,7 +222,7 @@ function lignesRead(texte) {
 async function controles() {
   const res = {};
 
-  // --- A. la plateforme refuse l'appelant (401 sur la sonde) ---------------
+  // --- A. the platform refuses the caller (401 on the probe) ---------------
   SCENARIO = scenarioJsm();
   SCENARIO['/rest/api/3/serverInfo'] = { status: 401, body: {} };
   remettreAZero();
@@ -234,7 +234,7 @@ async function controles() {
   res['MCP-03 the refusal explains how to authorize the application'] =
     /Allow access/.test(refus401);
 
-  // --- B. l'URL pointe vers un autre site ---------------------------------
+  // --- B. the URL points to another site ----------------------------------
   SCENARIO = scenarioJsm();
   remettreAZero();
   const refusHote = await mcp.scanAccessibility({ url: URL_ETRANGERE }, { accountId: 'acc-1' });
@@ -245,7 +245,7 @@ async function controles() {
   res['MCP-06 the URL is NEVER requested to the platform'] =
     APPELS_EXTERNES.length === 0 && !APPELS.some((a) => a.chemin.indexOf('autre-tenant') !== -1);
 
-  // --- C. une URL qui n'est pas une URL ------------------------------------
+  // --- C. a URL that is not a URL ------------------------------------------
   SCENARIO = scenarioJsm();
   remettreAZero();
   const refusUrl = await mcp.scanAccessibility({ url: 'pas une url' }, { accountId: 'acc-1' });
@@ -253,7 +253,7 @@ async function controles() {
   res['MCP-08 an unreadable URL triggers NO read of the site'] =
     APPELS.length === 2 && APPELS.filter(estLectureDeContenu).length === 0;
 
-  // --- D. le scan normal ----------------------------------------------------
+  // --- D. the normal scan ---------------------------------------------------
   SCENARIO = scenarioJsm();
   remettreAZero();
   const rapport = await mcp.scanAccessibility({ url: URL_PORTAL }, { accountId: 'acc-1' });
@@ -280,14 +280,14 @@ async function controles() {
   res['MCP-19 no write call (GET only, apart from the Jira search)'] =
     APPELS.every((a) => a.methode === 'GET');
 
-  // --- E. le contenu est en lecture refusée (403) --------------------------
+  // --- E. the content cannot be read (403) ---------------------------------
   SCENARIO = scenarioLectureRefusee();
   remettreAZero();
   const refus403 = await mcp.scanAccessibility({ url: URL_PORTAL }, { accountId: 'acc-1' });
   res['MCP-20 content that cannot be read gives a REFUSAL, not an empty report'] =
     /could not be run with your own permissions/.test(refus403) && !/Findings: 0/.test(refus403);
 
-  // --- F. le second outil ----------------------------------------------------
+  // --- F. the second tool ----------------------------------------------------
   SCENARIO = scenarioJsm();
   remettreAZero();
   const liste = await mcp.listLastFindings({}, { accountId: 'acc-1' });
@@ -298,7 +298,7 @@ async function controles() {
   res['MCP-23 the second tool reads with the caller\'s identity'] =
     APPELS.length > 1 && APPELS.every((a) => a.identite === 'asUser');
 
-  // --- G. la page d'administration n'a PAS changé ----------------------------
+  // --- G. the administration page has NOT changed ----------------------------
   SCENARIO = scenarioJsm();
   remettreAZero();
   const page = await resolver.handler(
@@ -310,7 +310,7 @@ async function controles() {
   res['MCP-25 the administration page still renders its report'] =
     page && page.ok === true && !!page.report && !!page.report.findings;
 
-  // --- H. aucun secret ni clé dans le code des outils ----------------------
+  // --- H. no secret nor key in the code of the tools -----------------------
   const source = fs.readFileSync(SRC_MCP, 'utf8');
   res['MCP-26 the tools code contains neither key nor token'] =
     !/api[_-]?key|secret|token\s*[:=]|Bearer\s/i.test(source);
@@ -319,10 +319,10 @@ async function controles() {
 }
 
 // ---------------------------------------------------------------------------
-// 3. Les contre-épreuves : le harnais doit savoir dire NON
+// 3. The counter-proofs: the harness must be able to say NO
 // ---------------------------------------------------------------------------
 
-/** Écrase la source des outils et renvoie le module saboté. */
+/** Overwrites the source of the tools and returns the sabotaged module. */
 function moduleSabotage(nom, mutation) {
   const source = fs.readFileSync(SRC_MCP, 'utf8');
   const mutant = mutation(source);
@@ -337,12 +337,12 @@ function moduleSabotage(nom, mutation) {
 }
 
 /**
- * Sabotage du MOTEUR (src/index.js) : le module des outils est recompilé
- * pour pointer sur le moteur saboté, sinon le sabotage ne servirait à rien.
+ * Sabotage of the ENGINE (src/index.js): the module of the tools is recompiled
+ * to point at the sabotaged engine, otherwise the sabotage would be useless.
  *
- * C'est le contrôle qui change de nature depuis le correctif du contrôle d'identité : l'identité
- * n'est plus choisie par un drapeau, elle estUnique dans le code. Le
- * sabotage vérifie donc que le contrôle voit l'identité RÉELLEMENT utilisée.
+ * This is the check that changed nature since the identity check fix: the
+ * identity is no longer chosen by a flag, it is unique in the code. The
+ * sabotage therefore verifies that the check sees the identity ACTUALLY used.
  */
 function moduleSabotageMoteur(nom, mutation) {
   const sourceMoteur = fs.readFileSync(SRC_INDEX, 'utf8');
@@ -375,7 +375,7 @@ function remplacerTout(source, avant, apres) {
   return source.split(avant).join(apres);
 }
 
-/** Chaque sabotage : un mutant, un contrôle qui doit devenir FAUX. */
+/** Each sabotage: a mutant, a check that must become FALSE. */
 const SABOTAGES = [
   {
     nom: 'the engine reads with the app identity instead of the caller\'s',
@@ -461,7 +461,7 @@ const SABOTAGES = [
 ];
 
 // ---------------------------------------------------------------------------
-// Exécution
+// Execution
 // ---------------------------------------------------------------------------
 
 (async () => {
@@ -481,8 +481,8 @@ const SABOTAGES = [
     try {
       if (sab.erreur) throw new Error(sab.erreur);
       const encore = await s.verifier(sab.module);
-      // Le contrôle doit redevenir FAUX sur le mutant : c'est ce « faux »
-      // qui prouve que le contrôle sait dire non.
+      // The check must become FALSE again on the mutant: it is that "false"
+      // which proves that the check can say no.
       rouge = encore === false;
     } catch (e) {
       crash = e && e.message ? e.message : String(e);

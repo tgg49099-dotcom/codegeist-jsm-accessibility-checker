@@ -1,16 +1,16 @@
 /**
- * Contre-épreuve du harnais de test du mode démo.
+ * Counter-proof of the demo mode test harness.
  *
- * Un harnais qui dit « 55 contrôles PASS » ne prouve rien tant qu'on n'a pas
- * montré qu'il devient ROUGE quand la règle est cassée. Ce script :
- *   1. rejoue le harnais sur une copie INTACTE de l'app (contrôle : il doit
- *      être vert) ;
- *   2. casse une règle à la fois, sur une copie, et exige que le harnais
- *      devient ROUGE, qu'il nomme le contrôle cassé, et qu'il n'ait pas
- *      simplement CRASHÉ (un crash ne distingue pas « détecté » de « cassé »).
+ * A harness that says "55 checks PASS" proves nothing until we have shown
+ * that it turns RED when the rule is broken. This script:
+ *   1. replays the harness on an INTACT copy of the app (control: it must
+ *      be green) ;
+ *   2. breaks one rule at a time, on a copy, and requires that the harness
+ *      turns RED, that it names the broken check, and that it has not
+ *      simply CRASHED (a crash does not tell "detected" from "broken").
  *
- * Usage : node test-contre-epreuve.js
- * RC 0 = les 4 contre-épreuves sont concluantes, RC 1 = au moins une ne l'est pas.
+ * Usage: node test-contre-epreuve.js
+ * RC 0 = the 4 counter-proofs are conclusive, RC 1 = at least one is not.
  */
 const fs = require('fs');
 const os = require('os');
@@ -27,7 +27,7 @@ function check(label, ok, detail) {
   console.log((ok ? 'PASS' : 'FAIL') + '  ' + label + (detail ? '  ->  ' + detail : ''));
 }
 
-/** Copie l'app (sans node_modules) dans un dossier temporaire. */
+/** Copies the app (without node_modules) into a temporary folder. */
 function copierApp(suffixe) {
   const cible = fs.mkdtempSync(path.join(os.tmpdir(), 'pac-demo-' + suffixe + '-'));
   fs.mkdirSync(path.join(cible, 'src'), { recursive: true });
@@ -40,7 +40,7 @@ function copierApp(suffixe) {
   return cible;
 }
 
-/** Exécute le harnais dans un dossier et renvoie {code, sortie}. */
+/** Runs the harness in a folder and returns {code, sortie}. */
 function lancerHarnais(dossier) {
   const res = spawnSync(process.execPath, [path.join(dossier, 'test-demo.js')], {
     cwd: dossier,
@@ -50,12 +50,12 @@ function lancerHarnais(dossier) {
 }
 
 /**
- * Supprime le dossier temporaire du harnais.
+ * Deletes the harness temporary folder.
  *
- * SANS CETTE SUPPRESSION, chaque passage de la suite laisse un dossier dans
- * /tmp. Or /tmp est un tmpfs de 256 Mo : apres quelques dizaines de passages
- * (mesuré le 10/11/2026 : /tmp était à 100 %, 720 dossiers de sabotage
- * accumulés), la suite crasherait sur « ENOSPC: no space left on device ».
+ * WITHOUT THIS DELETION, each run of the suite leaves a folder in
+ * /tmp. But /tmp is a 256 MB tmpfs: after a few dozen runs
+ * (measured on 10/11/2026: /tmp was at 100 %, 720 sabotage folders
+ * accumulated), the suite would crash on "ENOSPC: no space left on device".
  */
 function nettoyer(dossier) {
   try {
@@ -65,7 +65,7 @@ function nettoyer(dossier) {
   }
 }
 
-/** Remplace une chaîne unique et vérifie qu'elle n'était présente qu'une fois. */
+/** Replaces a unique string and checks that it was present only once. */
 const sabotage = (texte, avant, apres) => {
   const occurrences = texte.split(avant).length - 1;
   if (occurrences !== 1) {
@@ -74,7 +74,7 @@ const sabotage = (texte, avant, apres) => {
   return texte.replace(avant, apres);
 };
 
-// --- 0. contrôle : le harnais est vert sur une copie intacte ----------------
+// --- 0. control: the harness is green on an intact copy ---------------------
 const copieIntacte = copierApp('intact');
 const vert = lancerHarnais(copieIntacte);
 nettoyer(copieIntacte);
@@ -84,7 +84,7 @@ check(
   'exit code ' + vert.code
 );
 
-// --- 1..N : chaque sabotage doit rendre le harnais ROUGE, nommément ----------
+// --- 1..N : each sabotage must turn the harness RED, by name -----------------
 const SABOTAGES = [
   {
     nom: 'contrast threshold neutralized (1.4.3 no longer triggers)',
@@ -136,9 +136,9 @@ for (const test of SABOTAGES) {
   const res = lancerHarnais(dossier);
   nettoyer(dossier);
   const sortie = res.sortie;
-  // Le contrôle cassé doit être nommé SUR UNE LIGNE « FAIL » : le simple fait
-  // que son étiquette apparaisse quelque part (y compris sur une ligne PASS)
-  // ne prouverait rien.
+  // The broken check must be named ON A "FAIL" LINE: the mere fact
+  // that its label appears somewhere (including on a PASS line)
+  // would prove nothing.
   const mentionne = new RegExp('^FAIL\\s+' + test.attendu + '\\b', 'm').test(sortie);
   const aEchoue = /FAILURE\(S\)/.test(sortie);
   const aCrash = /\n\s+at\s|Error:|TypeError:|ReferenceError:/.test(sortie);

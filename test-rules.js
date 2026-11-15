@@ -1,8 +1,8 @@
 /**
- * Test hors ligne des règles du scanner — utilise les fonctions RÉELLES de
- * src/index.js (aucune copie recopiée) contre les données réelles du site
- * (fetchées ce jour) et un sabotage simulé.
- * Usage : node test-rules.js /tmp/fields.json /tmp/issues.json
+ * Offline test of the scanner rules — uses the REAL functions of
+ * src/index.js (no copied duplicate) against the real site data
+ * (fetched today) and a simulated sabotage.
+ * Usage: node test-rules.js /tmp/fields.json /tmp/issues.json
  */
 const fs = require('fs');
 const { _rules } = require('./src/index.js');

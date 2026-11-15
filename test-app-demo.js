@@ -1,19 +1,19 @@
 /**
- * Test hors ligne du point d'entrée de l'app en mode DÉMO, via le RESOLVER
+ * Offline test of the app entry point in DEMO mode, through the RESOLVER
  * (src/resolvers.js).
  *
- * test-demo.js prouve que le MOTEUR (src/regles.js + src/demo.js) détecte les
- * 23 fautives. Ce test prouve que l'APP elle-même — le resolver que la page
- * d'administration appelle, c'est-à-dire le code qui sera réellement
- * déployé — renvoie ce verdict, et qu'elle ne fait AUCUN appel à un site en
- * mode démo.
+ * test-demo.js proves that the ENGINE (src/regles.js + src/demo.js) detects
+ * the 23 issues. This test proves that the APP itself — the resolver that
+ * the administration page calls, that is to say the code that will really
+ * be deployed — returns that verdict, and that it makes NO call to any site
+ * in demo mode.
  *
- * Depuis le 05/11/2026 : l'entrée est `invoke('scanDemo', …)`, pas une URL
- * publique. Un appel sans compte connecté doit être refusé (GATE) : le mode
- * démo n'est pas une porte dérobée.
+ * Since 05/11/2026: the entry point is `invoke('scanDemo', …)`, not a public
+ * URL. A call with no signed-in account must be refused (GATE): demo
+ * mode is not a back door.
  *
- * Usage : node test-app-demo.js
- * RC 0 = tout passe, RC 1 = au moins un contrôle échoue.
+ * Usage: node test-app-demo.js
+ * RC 0 = everything passes, RC 1 = at least one check fails.
  */
 const path = require('path');
 const api = require('@forge/api');
@@ -38,7 +38,7 @@ function appelerDemo(payload) {
   );
 }
 
-// --- 0. l'API Atlassian est neutralisée : le mode démo ne doit rien appeler --
+// --- 0. the Atlassian API is neutralized: demo mode must call nothing --------
 const asAppOriginal = api.asApp;
 let appelsApi = 0;
 api.asApp = () => {
@@ -46,7 +46,7 @@ api.asApp = () => {
   throw new Error('API CALL FORBIDDEN IN DEMO MODE');
 };
 
-// --- 1. le resolver renvoie le rapport de démonstration ----------------------
+// --- 1. the resolver returns the demo report ---------------------------------
 (async () => {
   const sansCompte = await resolver.handler(
     { call: { functionKey: 'scanDemo', payload: {} }, context: {} },
@@ -130,10 +130,10 @@ api.asApp = () => {
     rapport.limites.join(' | ').slice(0, 120)
   );
 
-  // --- 2. aucun appel API n'a été fait --------------------------------------
+  // --- 2. no API call was made ----------------------------------------------
   check('no call to the Atlassian API in demo mode', appelsApi === 0, String(appelsApi));
 
-  // --- 3. export CSV via le même point d'entrée -----------------------------
+  // --- 3. CSV export through the same entry point ---------------------------
   const reponseCsv = await appelerDemo();
   const lignesCsv = String(reponseCsv.csv).trim().split('\r\n');
   check('the CSV has 24 lines (1 header + 23 findings)', lignesCsv.length === 24, String(lignesCsv.length));
@@ -144,7 +144,7 @@ api.asApp = () => {
   );
   check('no API call during the CSV export', appelsApi === 0, String(appelsApi));
 
-  // --- 4. le mode démo ne contient aucune donnée de site --------------------
+  // --- 4. demo mode contains no site data -----------------------------------
   const corps = JSON.stringify(reponse);
   check(
     'the response contains neither a site URL nor a token',

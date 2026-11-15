@@ -1,10 +1,10 @@
 /**
- * Test « comme un juge » : types de demande CACHÉS du portail.
- * Dans JSM, un type de demande qui n'appartient à aucun groupe du portail
- * (groupIds vide) n'est pas affiché aux clients (« Hidden from portal »).
- * Le scan du PORTAIL ne doit ni le juger, ni lui donner une des 5 places
- * lues, au détriment d'un type réellement affiché.
- * Usage : node test-types-caches.js   (RC 0 = tout passe)
+ * "As a judge" test: request types HIDDEN from the portal.
+ * In JSM, a request type that belongs to no portal group (empty groupIds)
+ * is not displayed to the customers ("Hidden from portal").
+ * The PORTAL scan must neither judge it nor give it one of the 5 read
+ * slots at the expense of a type that is really displayed.
+ * Usage: node test-types-caches.js   (RC 0 = everything passes)
  */
 const api = require('@forge/api');
 let checks = 0, failures = 0;
@@ -30,8 +30,8 @@ const SC = {
 };
 for (const rt of TYPES) {
   const f = [champ('summary', 'Summary', true, 'Tell us in one line.'), champ('description', 'Description', false)];
-  if (rt.id === '90') f.push(champ('customfield_10090', '', true, ''));          // défaut sur un type CACHÉ
-  if (rt.id === '5') f.push(champ('customfield_10055', '', true, ''));           // vrai défaut sur le 5e type AFFICHÉ
+  if (rt.id === '90') f.push(champ('customfield_10090', '', true, ''));          // default on a HIDDEN type
+  if (rt.id === '5') f.push(champ('customfield_10055', '', true, ''));           // real default on the 5th DISPLAYED type
   SC['/rest/servicedeskapi/servicedesk/1/requesttype/' + rt.id + '/field'] = { status: 200, body: { requestTypeFields: f } };
 }
 const client = { requestJira: async (r) => { const d = SC[chemin(r).split('?')[0]]; return d ? rep(d.status, d.body) : rep(404, { errorMessages: ['not found'] }); } };
