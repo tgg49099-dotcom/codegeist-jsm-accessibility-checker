@@ -17,6 +17,48 @@ public URL: until version 2.4.0 the app answered a web trigger declared with
 | **Permissions** | Read-only: `read:jira-work`, `read:servicedesk-request` |
 | **App version in this repository** | the code of **production 2.10.0**, deployed on 15 November 2026 at 13:36:51 UTC (14:36:51 Zurich on 15 November, version id `09201e49-daac-48f6-bf92-c1c73e01ffcc`; the version record was updated 20 seconds later, at 13:37:11 UTC). The code served in production 2.10.0 is the code of 2.9.0 **plus the hidden-request-type fix**: a request type whose `groupIds` is empty is "Hidden from portal" — the customer never sees it — so the scan neither judges it nor spends one of the five places it reads on it. The development environment runs **2.11.0** (deployed on 15 November 2026 at 07:06:16 UTC): a different build, which adds an `app.licensing.enabled` block and is **not** the code of this branch — the judge's installation link points at production, whose manifest declares no licence. Forge assigns the numbers itself (the manifest declares no `app.version`), so the two environments number the same code differently |
 
+
+## In two minutes (for the Codegeist judges)
+
+**The problem.** Your customers never open Jira — they open your service portal.
+Since 28 June 2025, the European Accessibility Act (Directive (EU) 2019/882)
+requires the websites and online applications of consumer services such as
+e-commerce and consumer banking to be "perceivable, operable, understandable
+and robust" (Annex I, Section IV). Many of those teams run support through a
+service portal.
+
+**Who it is for.** The service desk owners of those teams: the people who write
+the request types, field labels, descriptions and page titles that customers
+fill and read.
+
+**What you will see.** In **Administration → Apps → Portal Accessibility Checker
+for JSM**, the button **Run the demo scan (no site needed)** runs the rule engine
+on bundled sample data; **Run the scan** reads your own portal. Each finding ties
+a value the app really read to a WCAG 2.2 criterion, its location and a message;
+what only exists in the rendered page is marked "human review" in the
+**Review** column, never guessed, and the app never says "compliant". The findings can be copied as CSV.
+
+**Why it is different.** axe and Lighthouse check a rendered page; this app
+checks the source of the portal content inside JSM, where it is edited, and an
+AI agent can run the same scan through two read-only tools on Atlassian's MCP
+server.
+
+**Why you can trust it.** Only a Jira administrator can scan (checked on the
+server, with the caller's own identity); two read-only scopes, no egress, no
+storage. The rule engine is tested offline with `npm install && npm test`, no
+Atlassian account needed — see [Run the tests](#run-the-tests-offline-no-atlassian-account-needed).
+What has **not** been run yet is stated plainly in
+[Limitations](#limitations-stated-plainly).
+
+**Contents:** [What it does](#what-it-does) ·
+[Criteria checked](#the-13-wcag-22-criteria-it-checks) ·
+[MCP tools](#the-two-tools-on-atlassians-mcp-server-deployed-since-production-260) ·
+[Privacy contract](#the-privacy-contract-of-the-scan-request) ·
+[Run the tests](#run-the-tests-offline-no-atlassian-account-needed) ·
+[Deploy](#deploy-it-on-your-own-site) · [Architecture](#architecture) ·
+[Limitations](#limitations-stated-plainly) ·
+[Contest entry](#contest-entry-and-marketplace-listing--state-on-15-november-2026)
+
 ## What it does
 
 You open **Administration → Apps → Portal Accessibility Checker for JSM**, and you
