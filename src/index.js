@@ -496,10 +496,17 @@ async function scanJsm() {
   }
   for (const desk of (desks.body.values || []).slice(0, 3)) {
     const rts = await jget(route`/rest/servicedeskapi/servicedesk/${desk.id}/requesttype`, JSM_HDRS);
-    const values = (rts.body.values || []).slice(0, 5);
+    // A request type that belongs to NO portal group (`groupIds` empty) is
+    // "Hidden from portal": customers never see it (e.g. "Emailed request").
+    // The scan is a scan of the PORTAL: a hidden type is neither judged nor
+    // given one of the 5 places read. A type without `groupIds` is kept.
+    const tousTypes = rts.body.values || [];
+    const caches = tousTypes.filter((rt) => Array.isArray(rt.groupIds) && rt.groupIds.length === 0);
+    const values = tousTypes.filter((rt) => !caches.includes(rt)).slice(0, 5);
     sources[`GET /rest/servicedeskapi/servicedesk/${desk.id}/requesttype`] = {
       httpStatus: rts.status,
       excerpt: values.map((rt) => ({ id: rt.id, name: rt.name, description: rt.description || '' })),
+      hiddenFromPortal: caches.map((rt) => ({ id: rt.id, name: rt.name })),
     };
 
     // Moteur WCAG 2.2 — E5 : types de demande (aide présente ou non d'un type
