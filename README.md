@@ -404,6 +404,7 @@ verify.
 
 ```
 npm install
+npm test                          # 15 suites, 362 checks — every node suite below, in one go
 node test-ihm.js                 # 43 checks — the interface replaces the public trigger
 node test-contrat-http.js                 # 59 checks — the privacy contract (masking, absent fields, logs)
 node test-app-demo.js                     # 22 checks — the resolver returns the 23/23 verdict
@@ -419,12 +420,22 @@ node test-identite.js             # 12 checks — 0 asApp() in the active code, 
 node test-mcp-porte.js            # 16 checks — the administrator door, with five counter-proofs
 node test-refus-non-admin.js       # 14 checks — a NON-administrator is refused, on the page AND on the
                                           #            two MCP tools, and nothing of the site is read
+node test-portail-par-defaut.js    # 14 checks — a judge's English site: the default JSM portal and
+                                          #            plain Jira tickets, no false "finding"
+node test-types-caches.js          #  4 checks — a request type hidden from the portal is neither judged
+                                          #            nor counted in the five types read
 python3 tools/verifier-manifest-cycle134.py       # 18 checks — no public module, no egress, two read scopes,
                                                    #           one rovo:mcp module with two tools
-python3 tools/contre-epreuve-verificateur.py      # 28 checks — that checker turns RED on 9 sabotages
-python3 tools/verifier-notice-pv.py               #  5 checks — § 8 of PRIVACY.md quotes the code verbatim,
+python3 tools/contre-epreuve-verificateur.py      # 29 checks — that checker turns RED on 9 sabotages
+python3 tools/verifier-notice-pv.py               #  7 checks — § 8 of PRIVACY.md quotes the code verbatim,
                                                    #           and there is exactly ONE privacy URL
+python3 tools/contre-epreuve-notice.py            # 14 checks — that check turns RED on each sabotage of the notice
 ```
+
+Every count above is checked, not typed: `python3 tools/verifier-chiffres-tests.py`
+runs each suite and each tool, counts its PASS lines and fails if a number of this
+section (or of the layout section below) differs, or if a suite of `npm test` is
+missing here; `--counter-proof` breaks this README five ways and requires it to fail.
 
 `test-rules.js` needs two JSON files you can export from any Jira site you
 administer: `GET /rest/api/3/field` and `POST /rest/api/3/search/jql` (16 checks
@@ -487,8 +498,8 @@ docs/             the criterion-by-criterion basis, incl. what REST can prove
 tools/            the manifest checker (and its counter-proof) and the check that
                   the privacy notice quotes the code verbatim
 PRIVACY.md        the privacy notice (what is read, where it goes, how long it is kept)
-test-*.js         the offline harness (314 checks in eleven suites, plus 51 checks
-                  in the three tools of tools/)
+test-*.js         the offline harness (362 checks in fifteen suites, plus 68 checks
+                  in the four tools of tools/)
 ```
 
 One rule engine, two data sources, one interface. No data is stored, no content
