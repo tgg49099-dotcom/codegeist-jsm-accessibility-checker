@@ -100,7 +100,7 @@ def controle(libelle, ok, detail=""):
 
 
 def sans_commentaire(ligne):
-    """Retire le commentaire d'une ligne (le manifeste n'a pas de '#' dans une valeur)."""
+    """Removes the comment of a line (the manifest has no '#' inside a value)."""
     i = ligne.find("#")
     if i == -1:
         return ligne
@@ -108,13 +108,13 @@ def sans_commentaire(ligne):
 
 
 def lire_manifeste(chemin):
-    """Renvoie (racines, modules, scopes, brut).
+    """Returns (racines, modules, scopes, brut).
 
-    racines : la liste des clés racines déclarées (`modules`, `permissions`, …)
-    modules : dict type -> liste d'items (chaque item : dict avec au moins
-              `key`, plus les champs lus, plus `tools` pour les modules qui
-              en déclarent)
-    scopes  : la liste des scopes déclarés sous `permissions: > scopes:`
+    racines : the list of the declared root keys (`modules`, `permissions`, …)
+    modules : dict type -> list of items (each item: a dict with at least
+              `key`, the fields that are read, and `tools` for the modules
+              that declare them)
+    scopes  : the list of the scopes declared under `permissions: > scopes:`
     """
     with open(chemin, "r", encoding="utf-8") as f:
         brut = f.read()
@@ -230,7 +230,7 @@ def lire_manifeste(chemin):
 
 
 def modules_publics(racines, modules):
-    """Types de modules publics trouvés (dans les clés ou dans le texte)."""
+    """Types of public modules found (in the keys or in the text)."""
     trouves = []
     for m in modules:
         base = m.split(":")[0].strip().lower()

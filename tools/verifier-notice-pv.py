@@ -18,8 +18,8 @@ TWO THINGS ARE CHECKED HERE, both of them things that silently drifted before:
      a new URL has to be added to that list on purpose, so it shows up in the
      diff.
 
-Usage : python3 tools/verifier-notice-pv.py [racine-du-depot]
-Code de sortie : 0 = tout passe, 1 = au moins un contrôle échoue.
+Usage: python3 tools/verifier-notice-pv.py [racine-du-depot]
+Exit code: 0 = every check passed, 1 = at least one check failed.
 """
 
 import os
@@ -70,7 +70,7 @@ def lire(chemin):
 
 
 def phrase_pv(racine):
-    """La constante PHRASE_PV du moteur, telle qu'elle est écrite dans le code."""
+    """The PHRASE_PV constant of the engine, as it is written in the code."""
     src = lire(os.path.join(racine, "src", "index.js"))
     m = re.search(r"const\s+PHRASE_PV\s*=\s*\n?\s*'((?:[^'\\]|\\.)*)'", src)
     if not m:
@@ -79,7 +79,7 @@ def phrase_pv(racine):
 
 
 def citation_notice(racine):
-    """Le bloc cité en § 8 de PRIVACY.md, reassemblé en une seule phrase."""
+    """The block quoted in § 8 of PRIVACY.md, reassembled into a single sentence."""
     priv = lire(os.path.join(racine, "PRIVACY.md"))
     m = re.search(r"##\s*8\..*?\n\n(> .*?)\n\n", priv, re.S)
     if not m:

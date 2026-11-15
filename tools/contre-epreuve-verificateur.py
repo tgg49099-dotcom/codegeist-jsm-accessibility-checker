@@ -1,25 +1,25 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-contre-epreuve-verificateur.py — la contre-épreuve du vérificateur de manifeste.
+contre-epreuve-verificateur.py — the counter-proof of the manifest checker.
 
-POURQUOI CE FILE
+WHY THIS FILE
 ----------------
-Un vérificateur qui dit « 10 contrôles PASS » ne prouve rien tant qu'on n'a pas
-montré qu'il SAIT dire non. Ce script sabotise le manifeste de quatre façons
-et exige que le vérificateur :
+A checker that says "10 checks PASS" proves nothing until we have shown
+that it KNOWS how to say no. This script sabotages the manifest in four ways
+and requires that the checker:
 
-  1. sorte avec le code 1 (échec) ;
-  2. nomme le contrôle cassé sur une ligne « FAIL » (un simple plantage ne
-     compterait pas : un harnais qui crash a la fin signale aussi un échec,
-     et il validerait donc un produit cassé) ;
-  3. ne plante pas (aucune trace Python dans la sortie).
+  1. exits with the code 1 (failure);
+  2. names the broken check on a "FAIL" line (a plain crash would not count:
+     a harness that crashes at the end also reports a failure, and it would
+     therefore validate a broken product);
+  3. does not crash (no Python traceback in the output).
 
-Il contrôle aussi le cas inverse : sur le manifeste RÉEL, le vérificateur doit
-sortir avec 0.
+It also checks the opposite case: on the REAL manifest, the checker
+must exit with 0.
 
-Usage : python3 tools/contre-epreuve-verificateur.py
-Code de sortie : 0 = la contre-épreuve est bonne, 1 = elle a échoué.
+Usage: python3 tools/contre-epreuve-verificateur.py
+Exit code: 0 = the counter-proof is good, 1 = it failed.
 """
 
 import os
