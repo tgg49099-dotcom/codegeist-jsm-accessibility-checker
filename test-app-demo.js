@@ -43,7 +43,7 @@ const asAppOriginal = api.asApp;
 let appelsApi = 0;
 api.asApp = () => {
   appelsApi += 1;
-  throw new Error('APPEL API INTERDIT DANS LE MODE DÉMO');
+  throw new Error('API CALL FORBIDDEN IN DEMO MODE');
 };
 
 // --- 1. le resolver renvoie le rapport de démonstration ----------------------
@@ -53,35 +53,35 @@ api.asApp = () => {
     {}
   );
   check(
-    'le mode démo refuse un appel sans compte connecté',
+    'demo mode refuses a call with no signed-in account',
     sansCompte.ok === false && sansCompte.error === 'NOT_AUTHENTICATED',
     JSON.stringify(sansCompte).slice(0, 100)
   );
 
   const reponse = await appelerDemo();
-  check('le resolver répond ok', reponse.ok === true, JSON.stringify(reponse.ok));
+  check('the resolver answers ok', reponse.ok === true, JSON.stringify(reponse.ok));
   check(
-    'le resolver répond « qui a demandé »',
+    'the resolver answers "who asked"',
     reponse.requestedBy && reponse.requestedBy.accountId === COMPTE,
     JSON.stringify(reponse.requestedBy)
   );
 
   const rapport = reponse.report;
-  check('le rapport est présent', !!rapport);
+  check('the report is present', !!rapport);
   if (!rapport) {
     api.asApp = asAppOriginal;
     process.exit(1);
   }
 
-  check('le rapport est en mode démo', rapport.mode === 'demo', rapport.mode);
+  check('the report is in demo mode', rapport.mode === 'demo', rapport.mode);
   check(
-    'le rapport est horodaté (ISO 8601)',
+    'the report is timestamped (ISO 8601)',
     typeof rapport.generatedAt === 'string' && !isNaN(Date.parse(rapport.generatedAt)),
     rapport.generatedAt
   );
-  check('le rapport contient 23 constats', rapport.constats.length === 23, String(rapport.constats.length));
+  check('the report contains 23 findings', rapport.constats.length === 23, String(rapport.constats.length));
   check(
-    'le verdict est « ok »',
+    'the verdict is "ok"',
     rapport.contrat.ok === true,
     JSON.stringify({
       manquees: rapport.contrat.fautives_manquees,
@@ -90,68 +90,68 @@ api.asApp = () => {
     })
   );
   check(
-    '23 fautives détectées sur 23',
+    '23 seeded issues detected out of 23',
     rapport.contrat.fautives_detectees === 23 && rapport.contrat.fautives_total === 23,
     rapport.contrat.fautives_detectees + '/' + rapport.contrat.fautives_total
   );
   check(
-    '0 faute manquée',
+    '0 missed seeded issue',
     rapport.contrat.fautives_manquees.length === 0,
     rapport.contrat.fautives_manquees.join(',')
   );
   check(
-    '0 faux positif sur les 6 contrôles négatifs',
+    '0 false positive on the 6 negative checks',
     rapport.contrat.faux_positifs.length === 0 && rapport.contrat.controles_negatifs_total === 6,
     rapport.contrat.faux_positifs.join(',')
   );
   check(
-    '0 constat hors contrat',
+    '0 finding outside the contract',
     rapport.contrat.constats_hors_contrat.length === 0,
     rapport.contrat.constats_hors_contrat.join(' | ')
   );
   check(
-    'le rapport par critère couvre les 13 critères de la fiche',
+    'the report by criterion covers the 13 criteria of the sheet',
     rapport.rapport_par_critere.criteres.length === 13,
     String(rapport.rapport_par_critere.criteres.length)
   );
   check(
-    'les 6 fichiers de démonstration sont listés comme sources',
+    'the 6 demo files are listed as sources',
     rapport.sources.fixtures.length === 6,
     String(rapport.sources.fixtures.length)
   );
   check(
-    'le rapport rappelle que le mode démo ne lit rien sur un site',
+    'the report reminds that demo mode reads nothing on a site',
     rapport.nature.indexOf('no call is made') !== -1 || rapport.limites.join(' ').indexOf('reads nothing') !== -1,
     rapport.nature.slice(0, 80)
   );
   check(
-    'le rapport rappelle qu\'un constat n\'est pas une conformité',
+    'the report reminds that a finding is not a conformance',
     rapport.limites.join(' ').indexOf('never a verdict of conformance') !== -1,
     rapport.limites.join(' | ').slice(0, 120)
   );
 
   // --- 2. aucun appel API n'a été fait --------------------------------------
-  check('aucun appel à l\'API Atlassian en mode démo', appelsApi === 0, String(appelsApi));
+  check('no call to the Atlassian API in demo mode', appelsApi === 0, String(appelsApi));
 
   // --- 3. export CSV via le même point d'entrée -----------------------------
   const reponseCsv = await appelerDemo();
   const lignesCsv = String(reponseCsv.csv).trim().split('\r\n');
-  check('le CSV a 24 lignes (1 en-tête + 23 constats)', lignesCsv.length === 24, String(lignesCsv.length));
+  check('the CSV has 24 lines (1 header + 23 findings)', lignesCsv.length === 24, String(lignesCsv.length));
   check(
-    'le CSV porte les 9 colonnes de la fiche, en anglais',
+    'the CSV carries the 9 columns of the sheet, in English',
     lignesCsv[0] === '"criterion","level","confidence","source","resource","location","value","message","to_verify"',
     lignesCsv[0]
   );
-  check('aucun appel API pendant l\'export CSV', appelsApi === 0, String(appelsApi));
+  check('no API call during the CSV export', appelsApi === 0, String(appelsApi));
 
   // --- 4. le mode démo ne contient aucune donnée de site --------------------
   const corps = JSON.stringify(reponse);
   check(
-    'la réponse ne contient ni URL de site ni jeton',
+    'the response contains neither a site URL nor a token',
     !/https?:\/\/[^\s"]*atlassian\.net/.test(corps) && !/Bearer\s/.test(corps)
   );
   check(
-    'la réponse ne contient ni clé, ni mot de passe, ni secret',
+    'the response contains neither a key, nor a password, nor a secret',
     !/(api[_-]?key|secret|password|passwd|token)\s*[=:]\s*["'][^"']{8,}/i.test(corps)
   );
 
@@ -159,13 +159,13 @@ api.asApp = () => {
 
   console.log('');
   if (failures === 0) {
-    console.log('== TOUT PASS (' + checks + ' contrôles) : le resolver renvoie le verdict 23/23 ==');
+    console.log('== ALL PASS (' + checks + ' checks): the resolver returns the 23/23 verdict ==');
     process.exit(0);
   }
-  console.log('== ' + failures + ' ÉCHEC(S) sur ' + checks + ' contrôles ==');
+  console.log('== ' + failures + ' FAILURE(S) on ' + checks + ' checks ==');
   process.exit(1);
 })().catch((e) => {
   api.asApp = asAppOriginal;
-  console.log('FAIL  le handler a levé une exception : ' + (e && e.stack));
+  console.log('FAIL  the handler threw an exception: ' + (e && e.stack));
   process.exit(1);
 });

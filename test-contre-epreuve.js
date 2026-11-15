@@ -61,7 +61,7 @@ function nettoyer(dossier) {
   try {
     fs.rmSync(dossier, { recursive: true, force: true });
   } catch (e) {
-    console.log('AVERTISSEMENT : le dossier temporaire n a pas pu etre supprime : ' + e.message);
+    console.log('WARNING: the temporary folder could not be deleted: ' + e.message);
   }
 }
 
@@ -69,7 +69,7 @@ function nettoyer(dossier) {
 const sabotage = (texte, avant, apres) => {
   const occurrences = texte.split(avant).length - 1;
   if (occurrences !== 1) {
-    throw new Error('ancre non unique (' + occurrences + ' fois) : ' + avant);
+    throw new Error('non-unique anchor (' + occurrences + ' times): ' + avant);
   }
   return texte.replace(avant, apres);
 };
@@ -79,36 +79,36 @@ const copieIntacte = copierApp('intact');
 const vert = lancerHarnais(copieIntacte);
 nettoyer(copieIntacte);
 check(
-  'contrôle : le harnais est VERT sur une copie intacte (RC 0)',
+  'control: the harness is GREEN on an intact copy (exit code 0)',
   vert.code === 0,
-  'RC ' + vert.code
+  'exit code ' + vert.code
 );
 
 // --- 1..N : chaque sabotage doit rendre le harnais ROUGE, nommément ----------
 const SABOTAGES = [
   {
-    nom: 'seuil de contraste neutralisé (1.4.3 ne se déclenche plus)',
+    nom: 'contrast threshold neutralized (1.4.3 no longer triggers)',
     fichier: 'src/regles.js',
     avant: 'const SEUIL_CONTRASTE_NORMAL = 4.5;',
     apres: 'const SEUIL_CONTRASTE_NORMAL = 0.1;',
     attendu: 'DEMO-26',
   },
   {
-    nom: 'texte alternatif : la clé absente n\'est plus détectée (1.1.1)',
+    nom: 'alt text: the missing key is no longer detected (1.1.1)',
     fichier: 'src/regles.js',
     avant: "if (!('alt' in attrs)) {",
     apres: 'if (false) {',
     attendu: 'DEMO-01',
   },
   {
-    nom: 'aide inconsistente : la comparaison des types de demande est coupée (3.2.6)',
+    nom: 'inconsistent help: the comparison of request types is cut off (3.2.6)',
     fichier: 'src/regles.js',
     avant: 'if (avecAide.length > 0 && sansAide.length > 0) {',
     apres: 'if (false) {',
     attendu: 'DEMO-40',
   },
   {
-    nom: 'toute image est signalée : faux positif sur le contrôle négatif SANTÉ-01',
+    nom: 'every image is flagged: false positive on the negative check SANTÉ-01',
     fichier: 'src/regles.js',
     avant: "if (!('alt' in attrs)) {",
     apres: 'if (true) {',
@@ -128,7 +128,7 @@ for (const test of SABOTAGES) {
     erreur = e.message;
   }
   if (erreur) {
-    check(test.nom + ' : sabotage applicable', false, erreur);
+    check(test.nom + ' : sabotage can be applied', false, erreur);
     nettoyer(dossier);
     continue;
   }
@@ -140,20 +140,20 @@ for (const test of SABOTAGES) {
   // que son étiquette apparaisse quelque part (y compris sur une ligne PASS)
   // ne prouverait rien.
   const mentionne = new RegExp('^FAIL\\s+' + test.attendu + '\\b', 'm').test(sortie);
-  const aEchoue = /ÉCHEC\(S\)/.test(sortie);
+  const aEchoue = /FAILURE\(S\)/.test(sortie);
   const aCrash = /\n\s+at\s|Error:|TypeError:|ReferenceError:/.test(sortie);
   check(
-    test.nom + ' : le harnais devient ROUGE',
+    test.nom + ' : the harness turns RED',
     res.code === 1 && aEchoue,
-    'RC ' + res.code
+    'exit code ' + res.code
   );
   check(
-    test.nom + ' : le harnais nomme le contrôle cassé (' + test.attendu + ')',
+    test.nom + ' : the harness names the broken check (' + test.attendu + ')',
     mentionne,
     mentionne ? '' : sortie.slice(-400)
   );
   check(
-    test.nom + ' : le harnais a ÉCHOUÉ, il n\'a pas crashé',
+    test.nom + ' : the harness FAILED, it did not crash',
     !aCrash,
     aCrash ? sortie.slice(-400) : ''
   );
@@ -161,8 +161,8 @@ for (const test of SABOTAGES) {
 
 console.log('');
 if (failures === 0) {
-  console.log('== TOUT PASS (' + checks + ' contrôles) : le harnais est rouge quand la règle est cassée ==');
+  console.log('== ALL PASS (' + checks + ' checks): the harness turns RED when a rule is broken ==');
   process.exit(0);
 }
-console.log('== ' + failures + ' ÉCHEC(S) sur ' + checks + ' contrôles ==');
+console.log('== ' + failures + ' FAILURE(S) on ' + checks + ' checks ==');
 process.exit(1);

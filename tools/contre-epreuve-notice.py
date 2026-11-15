@@ -63,7 +63,7 @@ def preparer(racine_de_test):
 # Chaque sabotage : (nom, fichier vise, transformation, controle qui doit etre rouge)
 SABOTAGES = [
     (
-        "une seconde copie de la notice est citee dans le README",
+        "a second copy of the notice is cited in the README",
         "README.md",
         lambda s: s.replace(
             "https://labs.chiffreo.ch/privacy.html",
@@ -73,7 +73,7 @@ SABOTAGES = [
         "NOTICE-04",
     ),
     (
-        "une URL non autorisee (qui n'est pas une copie de la notice) est citee",
+        "an unauthorized URL (which is not a copy of the notice) is cited",
         "PRIVACY.md",
         lambda s: s.replace(
             "https://labs.chiffreo.ch/privacy.html",
@@ -83,7 +83,7 @@ SABOTAGES = [
         "NOTICE-04",
     ),
     (
-        "la page publiee disparait de la notice",
+        "the published page disappears from the notice",
         "PRIVACY.md",
         # toutes les occurrences : la notice citait la page publiee a deux
         # endroits, il faut les enlever tous les deux.
@@ -91,7 +91,7 @@ SABOTAGES = [
         "NOTICE-04",
     ),
     (
-        "la phrase du § 8 derive de la constante PHRASE_PV",
+        "the § 8 sentence drifts from the PHRASE_PV constant",
         "PRIVACY.md",
         lambda s: re.sub(
             r"(##\s*8\..*?\n\n> )(.*?)(\n\n)",
@@ -125,8 +125,8 @@ def lancer(racine_de_test):
 def main():
     # --- 1. les documents reels : le verificateur doit etre vert ------------
     rc, out, err = lancer(RACINE)
-    dire(rc == 0, "le verificateur accepte les documents reels (RC 0)", "RC=%d" % rc)
-    dire("Traceback" not in err, "le verificateur ne plante pas sur les documents reels")
+    dire(rc == 0, "the verifier accepts the real documents (RC 0)", "RC=%d" % rc)
+    dire("Traceback" not in err, "the verifier does not crash on the real documents")
     if rc != 0:
         print(out)
 
@@ -142,26 +142,26 @@ def main():
         original = lire(chemin)
         sabotage = mutation(original)
         if sabotage == original:
-            dire(False, "sabotage « %s » : la mutation n'a rien change" % nom)
+            dire(False, "sabotage '%s': the mutation changed nothing" % nom)
             continue
         ecrire(chemin, sabotage)
         rc, out, err = lancer(racine_de_test)
         rouge = re.search(r"^FAIL\s+" + re.escape(attendu) + r"\b", out, re.M) is not None
         plante = "Traceback" in err or "Traceback" in out
-        dire(rc == 1, "sabotage « %s » : le verificateur sort en RC 1" % nom, "RC=%d" % rc)
-        dire(rouge, "sabotage « %s » : le controle %s est nomme en FAIL" % (nom, attendu))
-        dire(not plante, "sabotage « %s » : le verificateur n'a pas plante" % nom)
+        dire(rc == 1, "sabotage '%s': the verifier exits with RC 1" % nom, "RC=%d" % rc)
+        dire(rouge, "sabotage '%s': the %s control is named in a FAIL line" % (nom, attendu))
+        dire(not plante, "sabotage '%s': the verifier did not crash" % nom)
         if not rouge:
-            print("--- sortie du verificateur ---")
+            print("--- verifier output ---")
             print(out)
 
     shutil.rmtree(base, ignore_errors=True)
 
     print("")
     if echecs:
-        print("== %d ECHEC(S) : le verificateur n'est pas fiable ==" % len(echecs))
+        print("== %d FAILURE(S): the verifier is not reliable ==" % len(echecs))
         return 1
-    print("== TOUT PASS : le verificateur est vert sur les documents reels et rouge sur chaque sabotage ==")
+    print("== ALL PASS: the verifier is GREEN on the real documents and RED on each sabotage ==")
     return 0
 
 

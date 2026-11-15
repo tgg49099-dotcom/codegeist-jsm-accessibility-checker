@@ -214,41 +214,41 @@ function controlesManifeste(texte) {
   const outils = mcps.length ? mcps[0].tools : [];
 
   return {
-    'MANIFEST-01 aucun module webtrigger':
+    'MANIFEST-01 no webtrigger module':
       !/webtrigger/i.test(code) && !types.includes('webtrigger'),
-    'MANIFEST-02 aucun module public appelable sans authentification':
+    'MANIFEST-02 no public module callable without authentication':
       publics.length === 0,
-    'MANIFEST-03 le module d\'interface jira:adminPage est déclaré':
+    'MANIFEST-03 the interface module jira:adminPage is declared':
       types.includes('jira:adminPage'),
-    'MANIFEST-04 le module de fonction resolver est déclaré':
+    'MANIFEST-04 the resolver function module is declared':
       types.includes('function') &&
       modules.filter((m) => m.type === 'function')[0].keys.indexOf('resolver') !== -1,
-    'MANIFEST-05 exactement quatre types de modules (jira:adminPage, function, action, rovo:mcp)':
+    'MANIFEST-05 exactly four module types (jira:adminPage, function, action, rovo:mcp)':
       types.length === 4 &&
       types.indexOf('jira:adminPage') !== -1 &&
       types.indexOf('function') !== -1 &&
       types.indexOf('action') !== -1 &&
       types.indexOf('rovo:mcp') !== -1,
-    'MANIFEST-06 aucune sortie réseau (egress) déclarée':
+    'MANIFEST-06 no network egress declared':
       !/^\s*external\s*:/m.test(code) && !/remote\s*:/m.test(code),
-    'MANIFEST-07 aucun joker de domaine':
+    'MANIFEST-07 no domain wildcard':
       !/\*\.[a-z0-9-]+\.[a-z]{2,}/i.test(code),
-    'MANIFEST-08 les scopes sont exactement les deux scopes de lecture':
+    'MANIFEST-08 the scopes are exactly the two read scopes':
       JSON.stringify(scopesDuManifeste(code)) ===
         JSON.stringify(['read:jira-work', 'read:servicedesk-request']),
-    'MANIFEST-09 le fichier de ressources existe':
+    'MANIFEST-09 the resource file exists':
       fs.existsSync(path.join(APP, 'src/frontend/admin.jsx')),
-    'MANIFEST-10 le handler du resolver existe':
+    'MANIFEST-10 the resolver handler exists':
       fs.existsSync(path.join(APP, 'src/resolvers.js')) &&
       /exports\.handler\s*=/.test(fs.readFileSync(path.join(APP, 'src/resolvers.js'), 'utf8')),
-    'MANIFEST-11 le commentaire d\'en-tête DOCumente le retrait du déclencheur public':
+    'MANIFEST-11 the header comment DOCuments the removal of the public trigger':
       /public trigger|webtrigger/i.test(brut),
-    'MANIFEST-12 exactement un module rovo:mcp exposant deux outils':
+    'MANIFEST-12 exactly one rovo:mcp module exposing two tools':
       mcps.length === 1 && outils.length === 2,
-    'MANIFEST-13 chaque outil MCP est une action déclarée':
+    'MANIFEST-13 every MCP tool is a declared action':
       outils.length > 0 &&
       outils.every((o) => actions.some((a) => a.key === o)),
-    'MANIFEST-14 chaque action pointe une fonction déclarée dont le handler existe':
+    'MANIFEST-14 every action points to a declared function whose handler exists':
       actions.length > 0 &&
       actions.every((a) => {
         const f = fonctions.find((x) => x.key === a.fonction);
@@ -258,10 +258,10 @@ function controlesManifeste(texte) {
         if (!fs.existsSync(fichier)) return false;
         return fs.readFileSync(fichier, 'utf8').indexOf('exports.' + pieces[pieces.length - 1]) !== -1;
       }),
-    'MANIFEST-15 chaque action a une description d\'au plus 255 caractères':
+    'MANIFEST-15 every action has a description of at most 255 characters':
       actions.length > 0 &&
       actions.every((a) => typeof a.description === 'string' && a.description.length > 0 && a.description.length <= 255),
-    'MANIFEST-16 le nom du serveur MCP fait au plus 30 caractères':
+    'MANIFEST-16 the MCP server name is at most 30 characters':
       mcps.length === 1 &&
       typeof mcps[0].nom === 'string' &&
       mcps[0].nom.length > 0 &&
@@ -281,27 +281,27 @@ async function controlesResolver() {
     { call: { functionKey: 'scan', payload: {} }, context: {} },
     {}
   );
-  res['GATE-01 un appel sans compte connecté est refusé (scan)'] =
+  res['GATE-01 a call without a signed-in account is refused (scan)'] =
     sansCompte && sansCompte.ok === false && sansCompte.error === 'NOT_AUTHENTICATED';
-  res['GATE-02 un appel sans compte connecté ne renvoie AUCUN rapport'] =
+  res['GATE-02 a call without a signed-in account returns NO report'] =
     sansCompte && sansCompte.report === undefined;
 
   const sansCompteDemo = await resolver.handler(
     { call: { functionKey: 'scanDemo', payload: {} }, context: {} },
     {}
   );
-  res['GATE-03 un appel sans compte connecté est refusé (scanDemo)'] =
+  res['GATE-03 a call without a signed-in account is refused (scanDemo)'] =
     sansCompteDemo && sansCompteDemo.ok === false;
 
   const inconnu = await resolver.handler(
     { call: { functionKey: 'autreFonction', payload: {} }, context: { accountId: 'a' } },
     { principal: { accountId: 'a' } }
   );
-  res['GATE-04 une fonction inconnue est refusée, pas exécutée'] =
+  res['GATE-04 an unknown function is refused, not executed'] =
     inconnu && inconnu.ok === false && inconnu.error === 'UNKNOWN_FUNCTION';
 
   const rendu = await resolver.handler({ context: {} }, { principal: { accountId: 'a' } });
-  res['GATE-05 l\'affichage de la page ne lance aucun scan'] =
+  res['GATE-05 rendering the page starts no scan'] =
     rendu && rendu.ok === true && rendu.report === undefined;
 
   // Le MÊME moteur que le déclencheur d'hier : la démo rend les 23 constats
@@ -310,12 +310,12 @@ async function controlesResolver() {
     { call: { functionKey: 'scanDemo', payload: {} }, context: { accountId: 'compte' } },
     { principal: { accountId: 'compte' } }
   );
-  res['GATE-06 le resolver appelle le moteur (23 constats de démonstration)'] =
+  res['GATE-06 the resolver calls the engine (23 demo findings)'] =
     demo && demo.ok === true && demo.report && demo.report.constats &&
     demo.report.constats.length === 23;
-  res['GATE-07 la réponse porte le compte qui a demandé'] =
+  res['GATE-07 the response carries the account that asked'] =
     demo && demo.requestedBy && demo.requestedBy.accountId === 'compte';
-  res['GATE-08 l\'export CSV est produit par le resolver'] =
+  res['GATE-08 the CSV export is produced by the resolver'] =
     demo && typeof demo.csv === 'string' && demo.csv.trim().split(/\r?\n/).length === 24;
   return res;
 }
@@ -405,19 +405,19 @@ function controlesInterface(texteJsx, composants) {
     const re = new RegExp('<' + t + '(\\s|>|/)', 'i');
     if (re.test(code)) trouves.push(t);
   }
-  res['UI-01 aucun composant HTML brut dans le JSX'] =
+  res['UI-01 no raw HTML component in the JSX'] =
     trouves.length === 0;
-  res['UI-02 le JSX n\'importe rien de @forge/ui (UI Kit 1, déprécié)'] =
+  res['UI-02 the JSX imports nothing from @forge/ui (UI Kit 1, deprecated)'] =
     !/@forge\/ui/.test(code);
-  res['UI-03 le JSX importe le réconciliateur UI Kit 2'] =
+  res['UI-03 the JSX imports the UI Kit 2 reconciler'] =
     /@forge\/react/.test(code) && /ForgeReconciler/.test(code);
-  res['UI-04 le bouton s\'appelle « Run the scan »'] =
+  res['UI-04 the button is called "Run the scan"'] =
     /Run the scan/.test(code);
-  res['UI-05 le bouton d\'export CSV est présent'] =
+  res['UI-05 the CSV export button is present'] =
     /Download the findings as CSV/.test(code);
-  res['UI-06 l\'interface appelle le resolver (invoke), pas un appel HTTP direct'] =
+  res['UI-06 the interface calls the resolver (invoke), not a direct HTTP call'] =
     /runScan|runDemoScan/.test(code) && !/XMLHttpRequest|fetch\s*\(/.test(code);
-  res['UI-07 aucune balise <a href> vers un site externe'] =
+  res['UI-07 no <a href> tag to an external site'] =
     !/<a\s[^>]*href\s*=\s*["']https?:/i.test(code);
 
   // Les composants importés de @forge/react existent-ils dans le paquet ?
@@ -425,10 +425,10 @@ function controlesInterface(texteJsx, composants) {
   const importes = m
     ? m[1].split(',').map((x) => x.trim()).filter(Boolean)
     : [];
-  res['UI-08 tous les composants importés existent dans @forge/react installé'] =
+  res['UI-08 all imported components exist in the installed @forge/react'] =
     composants !== null &&
     importes.every((nom) => composants.has(nom));
-  res['UI-09 la liste des composants importés est non vide'] = importes.length >= 5;
+  res['UI-09 the list of imported components is not empty'] = importes.length >= 5;
 
   // L'interface est en ANGLAIS : pas de caractère accentué ni de mot français
   // dans le TEXTE affiché (les chaînes de l'interface, pas les commentaires).
@@ -439,9 +439,9 @@ function controlesInterface(texteJsx, composants) {
   const texteAffiche = chaines.join(' ');
   const francais = /[àâäçéèêëîïôöùûüÿœæ]|\b(le|la|les|des|une|un|est|sont|dans|pour|avec|sans|sur|par|ne|pas|que|qui|aux|du|de|au|constat|résultat|lecture|seule|renvoie|trouve|étiquette|libellé|utilisateur)\b/i;
   const coupables = chaines.filter((s) => francais.test(s));
-  res['UI-10 tous les textes affichés sont en anglais'] =
+  res['UI-10 all displayed texts are in English'] =
     coupables.length === 0;
-  res['UI-11 l\'interface annonce la confidentialité et le contrôle d\'administration'] =
+  res['UI-11 the interface states the confidentiality and the administration check'] =
     /signed-in Jira\s+administrator/.test(code) && /reads only/.test(code);
 
   return { res, importes, trouves, coupables };
@@ -456,86 +456,86 @@ function controlesInterface(texteJsx, composants) {
   const jsx = fs.readFileSync(path.join(APP, 'src', 'frontend', 'admin.jsx'), 'utf8');
   const composants = composantsUIKit2();
 
-  console.log('== 1. LE MANIFESTE (aucun module public sans authentification) ==');
+  console.log('== 1. THE MANIFEST (no public module without authentication) ==');
   const cm = controlesManifeste(manifeste);
   Object.keys(cm).forEach((k) => check(k, cm[k]));
 
   console.log('');
-  console.log('== 2. LE RESOLVER (la porte d\'identité) ==');
+  console.log('== 2. THE RESOLVER (the identity gate) ==');
   const cr = await controlesResolver();
   Object.keys(cr).forEach((k) => check(k, cr[k]));
 
   console.log('');
-  console.log('== 3. L\'INTERFACE (UI Kit 2, anglais) ==');
+  console.log('== 3. THE INTERFACE (UI Kit 2, English) ==');
   const ci = controlesInterface(jsx, composants);
   Object.keys(ci.res).forEach((k) => check(k, ci.res[k]));
-  if (ci.trouves.length) console.log('   (balises brutes trouvées : ' + ci.trouves.join(', ') + ')');
-  if (ci.coupables.length) console.log('   (textes français : ' + JSON.stringify(ci.coupables) + ')');
+  if (ci.trouves.length) console.log('   (raw tags found: ' + ci.trouves.join(', ') + ')');
+  if (ci.coupables.length) console.log('   (French texts: ' + JSON.stringify(ci.coupables) + ')');
 
   // -------------------------------------------------------------------------
   // 4. LA CONTRE-ÉPREUVE : les mêmes contrôles sur des copies SABOTÉES
   //    doivent devenir ROUGES. Sans cela, « 0 violation » ne prouve rien.
   // -------------------------------------------------------------------------
   console.log('');
-  console.log('== 4. CONTRE-ÉPREUVE (le harnais doit devenir rouge) ==');
+  console.log('== 4. COUNTER-PROOF (the harness must turn RED) ==');
 
   const sabotages = [
     {
-      nom: 'un webtrigger réintroduit dans le manifeste',
+      nom: 'a webtrigger reintroduced in the manifest',
       mutant: (t) => t.replace('modules:', 'modules:\n  webtrigger:\n    - key: scan-trigger\n      handler: scan.handler\n'),
       famille: 'MANIFEST',
-      attendu: 'MANIFEST-01 aucun module webtrigger',
+      attendu: 'MANIFEST-01 no webtrigger module',
     },
     {
-      nom: 'un scope d\'écriture réintroduit',
+      nom: 'a write scope reintroduced',
       mutant: (t) => t.replace('    - read:jira-work', '    - write:jira-work'),
       famille: 'MANIFEST',
-      attendu: 'MANIFEST-08 les scopes sont exactement les deux scopes de lecture',
+      attendu: 'MANIFEST-08 the scopes are exactly the two read scopes',
     },
     {
-      nom: 'un appel sortant (egress) réintroduit',
+      nom: 'an outgoing call (egress) reintroduced',
       mutant: (t) => t.replace('permissions:', 'external:\n  fetch:\n    - host: "*.atlassian.net"\npermissions:'),
       famille: 'MANIFEST',
-      attendu: 'MANIFEST-06 aucune sortie réseau (egress) déclarée',
+      attendu: 'MANIFEST-06 no network egress declared',
     },
     {
-      nom: 'une balise HTML brute dans l\'interface',
+      nom: 'a raw HTML tag in the interface',
       mutant: (t) => t.replace('<Text>', '<div><Text>').replace('</Text>', '</Text></div>'),
       famille: 'UI',
-      attendu: 'UI-01 aucun composant HTML brut dans le JSX',
+      attendu: 'UI-01 no raw HTML component in the JSX',
     },
     {
-      nom: 'un message en français dans l\'interface',
+      nom: 'a French message in the interface',
       mutant: (t) => t.replace('Run the scan', 'Lancer le scan'),
       famille: 'UI',
-      attendu: 'UI-10 tous les textes affichés sont en anglais',
+      attendu: 'UI-10 all displayed texts are in English',
     },
     // --- sabotages du module rovo:mcp : le module rovo:mcp et ses deux outils -----
     {
-      nom: 'un outil MCP ne pointe plus vers une action déclarée',
+      nom: 'an MCP tool no longer points to a declared action',
       mutant: (t) => t.replace('        - scan_accessibility\n', '        - outil_qui_nexiste_pas\n'),
       famille: 'MANIFEST',
-      attendu: 'MANIFEST-13 chaque outil MCP est une action déclarée',
+      attendu: 'MANIFEST-13 every MCP tool is a declared action',
     },
     {
-      nom: 'un deuxième serveur MCP est déclaré',
+      nom: 'a second MCP server is declared',
       mutant: (t) =>
         t.replace(
           '  rovo:mcp:\n',
           '  rovo:mcp:\n    - key: pac-jsm-mcp-bis\n      name: Second serveur\n      tools:\n        - scan_accessibility\n'
         ),
       famille: 'MANIFEST',
-      attendu: 'MANIFEST-12 exactement un module rovo:mcp exposant deux outils',
+      attendu: 'MANIFEST-12 exactly one rovo:mcp module exposing two tools',
     },
     {
-      nom: 'la description d\'une action dépasse 255 caractères',
+      nom: 'the description of an action exceeds 255 characters',
       mutant: (t) =>
         t.replace(
           '        permissions. Nothing is written or stored.\n',
           '        permissions. Nothing is written or stored. ' + 'Ce texte est volontairement trop long. '.repeat(12) + '\n'
         ),
       famille: 'MANIFEST',
-      attendu: 'MANIFEST-15 chaque action a une description d\'au plus 255 caractères',
+      attendu: 'MANIFEST-15 every action has a description of at most 255 characters',
     },
   ];
 
@@ -554,16 +554,16 @@ function controlesInterface(texteJsx, composants) {
     } catch (e) {
       aEchoue = false;
       rouge = false;
-      console.log('   (le harnais a CRASHÉ sur « ' + s.nom + ' » : ' + e.message + ')');
+      console.log('   (the harness CRASHED on "' + s.nom + '": ' + e.message + ')');
     }
-    check('CONTRE-ÉPREUVE « ' + s.nom + ' » est détecté (échec explicite, sans crash)', rouge);
+    check('CONTRE-PROOF "' + s.nom + '" is detected (explicit failure, no crash)', rouge);
   }
 
   console.log('');
   if (failures === 0) {
-    console.log('== TOUT PASS (' + checks + ' contrôles) : l\'IHM remplace le déclencheur public ==');
+    console.log('== ALL PASS (' + checks + ' checks): the UI replaces the public trigger ==');
   } else {
-    console.log('== ' + failures + ' ÉCHEC(S) sur ' + checks + ' contrôles ==');
+    console.log('== ' + failures + ' FAILURE(S) on ' + checks + ' checks ==');
   }
   process.exit(failures === 0 ? 0 : 1);
 })().catch((e) => {

@@ -36,7 +36,7 @@ PY = sys.executable or "python3"
 # Chaque sabotage : (nom, transformation du manifeste, contrôle qui doit être rouge)
 SABOTAGES = [
     (
-        "un module public (webtrigger) est réintroduit",
+        "a public module (webtrigger) is reintroduced",
         lambda s: s.replace(
             "\nmodules:\n",
             "\nmodules:\n  webtrigger:\n    - key: scan-trigger\n      function: resolver\n"
@@ -47,7 +47,7 @@ SABOTAGES = [
         "VERIF-01",
     ),
     (
-        "une sortie réseau (external) est réintroduite",
+        "a network egress (external) is reintroduced",
         lambda s: s.replace(
             "\npermissions:\n",
             "\nexternal:\n  fetch:\n    - host: \"*.atlassian.net\"\npermissions:\n",
@@ -56,28 +56,28 @@ SABOTAGES = [
         "VERIF-02",
     ),
     (
-        "un scope d'écriture est réintroduit",
+        "a write scope is reintroduced",
         lambda s: s.replace("    - read:jira-work\n", "    - write:jira-work\n", 1),
         "VERIF-08",
     ),
     (
-        "le module d'interface est supprimé",
+        "the interface module is removed",
         lambda s: re.sub(r"\n  jira:adminPage:\n(?:    .*\n)+", "\n", s, count=1),
         "VERIF-03",
     ),
     # --- sabotages du module rovo:mcp : le module rovo:mcp et ses deux outils ------
     (
-        "un outil MCP ne pointe plus vers une action déclarée",
+        "an MCP tool no longer points to a declared action",
         lambda s: s.replace("\n        - scan_accessibility\n", "\n        - scan_qui_nexiste_pas\n", 1),
         "VERIF-14",
     ),
     (
-        "le module rovo:mcp n'expose plus qu'un outil",
+        "the rovo:mcp module now exposes only one tool",
         lambda s: s.replace("\n        - list_last_findings\n", "\n", 1),
         "VERIF-13",
     ),
     (
-        "un deuxième serveur MCP est déclaré",
+        "a second MCP server is declared",
         lambda s: s.replace(
             "\n  rovo:mcp:\n",
             "\n  rovo:mcp:\n    - key: pac-jsm-mcp-bis\n      name: Second MCP\n      tools:\n        - scan_accessibility\n",
@@ -86,7 +86,7 @@ SABOTAGES = [
         "VERIF-12",
     ),
     (
-        "la description d'une action dépasse 255 caractères",
+        "an action description exceeds 255 characters",
         lambda s: s.replace(
             "        permissions. Nothing is written or stored.\n",
             "        permissions. Nothing is written or stored. "
@@ -97,7 +97,7 @@ SABOTAGES = [
         "VERIF-17",
     ),
     (
-        "le module action est supprimé",
+        "the action module is removed",
         lambda s: re.sub(r"\n  action:\n(?:    .*\n|      .*\n)+", "\n", s, count=1),
         "VERIF-05",
     ),
@@ -124,8 +124,8 @@ def dire(ok, libelle, detail=""):
 def main():
     # --- 1. le manifeste réel : le vérificateur doit être vert --------------
     rc, out, err = lancer(MANIFESTE)
-    dire(rc == 0, "le vérificateur accepte le manifeste réel (RC 0)", "RC=%d" % rc)
-    dire("Traceback" not in err, "le vérificateur ne plante pas sur le manifeste réel")
+    dire(rc == 0, "the verifier accepts the real manifest (RC 0)", "RC=%d" % rc)
+    dire("Traceback" not in err, "the verifier does not crash on the real manifest")
     if rc != 0:
         print(out)
 
@@ -138,7 +138,7 @@ def main():
     for i, (nom, mutation, attendu) in enumerate(SABOTAGES):
         sabotage = mutation(original)
         if sabotage == original:
-            dire(False, "sabotage « %s » : la mutation n'a rien changé" % nom)
+            dire(False, "sabotage [%s]: the mutation changed nothing" % nom)
             continue
         chemin = os.path.join(RACINE, "manifest.sabotage-%d.yml" % i)
         with open(chemin, "w", encoding="utf-8") as f:
@@ -147,11 +147,11 @@ def main():
             rc, out, err = lancer(chemin)
             rouge = re.search(r"^FAIL\s+" + re.escape(attendu) + r"\b", out, re.M) is not None
             plante = "Traceback" in err or "Traceback" in out
-            dire(rc == 1, "sabotage « %s » : le vérificateur sort en RC 1" % nom, "RC=%d" % rc)
-            dire(rouge, "sabotage « %s » : le contrôle %s est nommé en FAIL" % (nom, attendu))
-            dire(not plante, "sabotage « %s » : le vérificateur n'a pas planté" % nom)
+            dire(rc == 1, "sabotage [%s]: the verifier exits with RC 1" % nom, "RC=%d" % rc)
+            dire(rouge, "sabotage [%s]: the check %s is named on a FAIL line" % (nom, attendu))
+            dire(not plante, "sabotage [%s]: the verifier did not crash" % nom)
             if not rouge:
-                print("--- sortie du vérificateur ---")
+                print("--- verifier output ---")
                 print(out)
         finally:
             if os.path.exists(chemin):
@@ -164,9 +164,9 @@ def main():
 
     print("")
     if echecs:
-        print("== %d ÉCHEC(S) : le vérificateur n'est pas fiable ==" % len(echecs))
+        print("== %d FAILURE(S) ==" % len(echecs))
         return 1
-    print("== TOUT PASS : le vérificateur est vert sur le manifeste réel et rouge sur chaque sabotage ==")
+    print("== ALL PASS: the verifier is GREEN on the real manifest and RED on every sabotage ==")
     return 0
 
 

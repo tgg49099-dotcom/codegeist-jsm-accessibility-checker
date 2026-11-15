@@ -489,7 +489,7 @@ async function controles(set) {
   const manifeste = controleManifeste();
   res['P-04 every entry point declared in manifest.yml reaches a guarded handler'] =
     manifeste.ok;
-  if (!manifeste.ok) console.log('DETAIL P-04 : ' + manifeste.problemes.join(' | '));
+  if (!manifeste.ok) console.log('DETAIL P-04: ' + manifeste.problemes.join(' | '));
 
   // --- P-05 : the shared check ITSELF throws ------------------------------
   let repLeve = null;
@@ -737,6 +737,6 @@ async function verdictsSabotes(nom, mutations) {
   console.log('');
   console.log('== SUMMARY ==');
   console.log('checks: ' + checks + '  failures: ' + failures);
-  console.log(failures === 0 ? 'VERDICT: VERT' : 'VERDICT: ROUGE');
+  console.log(failures === 0 ? 'VERDICT: GREEN' : 'VERDICT: RED');
   process.exit(failures === 0 ? 0 : 1);
 })();

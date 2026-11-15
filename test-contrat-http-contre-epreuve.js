@@ -78,7 +78,7 @@ function nettoyer(dossier) {
   try {
     fs.rmSync(dossier, { recursive: true, force: true });
   } catch (e) {
-    console.log('AVERTISSEMENT : le dossier temporaire n a pas pu etre supprime : ' + e.message);
+    console.log('WARNING: the temporary folder could not be deleted: ' + e.message);
   }
 }
 
@@ -86,7 +86,7 @@ function nettoyer(dossier) {
 const sabotage = (texte, avant, apres) => {
   const occurrences = texte.split(avant).length - 1;
   if (occurrences !== 1) {
-    throw new Error('ancre non unique (' + occurrences + ' fois) : ' + avant);
+    throw new Error('non-unique anchor (' + occurrences + ' times): ' + avant);
   }
   return texte.replace(avant, apres);
 };
@@ -96,43 +96,43 @@ const copieIntacte = copierApp('intact');
 const vert = lancerHarnais(copieIntacte);
 nettoyer(copieIntacte);
 check(
-  'contrôle : le harnais est VERT sur une copie intacte (RC 0)',
-  vert.code === 0 && /TOUT PASS/.test(vert.sortie),
+  'control: the harness is GREEN on an intact copy (RC 0)',
+  vert.code === 0 && /ALL PASS/.test(vert.sortie),
   'RC ' + vert.code + ' | ' + vert.sortie.slice(-160).replace(/\n/g, ' ')
 );
 
 // --- 1..N : chaque sabotage doit rendre le harnais ROUGE, nommément ----------
 const SABOTAGES = [
   {
-    nom: 'le masque est supprimé : la valeur reçue revient en clair',
+    nom: 'the mask is removed: the received value comes back in clear text',
     fichier: 'src/index.js',
     avant: "  return s.slice(0, 1) + '***';",
     apres: '  return s;',
     attendu: 'ROUGE-06',
   },
   {
-    nom: 'le balayage du corps est désactivé : une donnée du site qui porte le nom fuit',
+    nom: 'the body scan is disabled: site data carrying the name leaks',
     fichier: 'src/index.js',
     avant: '      s = s.replace(new RegExp(echapperRegExp(r.valeur), \'gi\'), () => r.masque);',
     apres: '      s = s;',
     attendu: 'SCAN-01',
   },
   {
-    nom: 'les champs absents sont inventés : la section privacy en annonce toujours deux',
+    nom: 'absent fields are invented: the privacy section always announces two',
     fichier: 'src/index.js',
     avant: '  const recus = Object.keys(pvRecus || {});',
     apres: '  const recus = Object.keys(CHAMPS_PV);',
     attendu: 'VERT-02',
   },
   {
-    nom: 'la collecte est désactivée : le payload de la page est ignoré au lieu d\'être masqué',
+    nom: 'the collection is disabled: the page payload is ignored instead of being masked',
     fichier: 'src/index.js',
     avant: '  ajouter(corpsRequete(requete.body));',
     apres: '  // sabotage : le corps de la requête n\'est plus collecté',
     attendu: 'ROUGE-05',
   },
   {
-    nom: 'la phrase affichée redevient plus forte que le code : elle affirme ne jamais rendre un nom en clair',
+    nom: 'the displayed statement becomes stronger than the code: it claims never to return a name in clear text',
     fichier: 'src/index.js',
     avant:
       'A name or e-mail address that it receives in the request is returned as a mask, never in clear text.',
@@ -141,21 +141,21 @@ const SABOTAGES = [
     attendu: 'ROUGE-08b',
   },
   {
-    nom: 'le contenu du site est masqué : la phrase dit qu\'il est renvoyé tel quel',
+    nom: 'the site content is masked: the statement says it is returned as is',
     fichier: 'src/index.js',
     avant: '      id: f.id,\n      name: f.name,',
     apres: "      id: f.id,\n      name: '***',",
     attendu: 'SCAN-09',
   },
   {
-    nom: 'la gâche d\'identité est supprimée : un appel sans compte connecté est accepté',
+    nom: 'the identity gate is removed: a call without a signed-in account is accepted',
     fichier: 'src/resolvers.js',
     avant: '  return principal.accountId || context.accountId || null;',
     apres: "  return 'acc-quelconque';",
     attendu: 'GATE-01',
   },
   {
-    nom: 'le resolver n\'appelle plus le moteur (panneau figé) en mode démo',
+    nom: 'the resolver no longer calls the engine (frozen panel) in demo mode',
     fichier: 'src/resolvers.js',
     avant: '  const report = moteur.rapportDemo({ pvRecus });',
     apres:
@@ -163,7 +163,7 @@ const SABOTAGES = [
     attendu: 'ROUGE-09',
   },
   {
-    nom: 'le resolver n\'appelle plus le moteur (panneau figé) en mode scan',
+    nom: 'the resolver no longer calls the engine (frozen panel) in scan mode',
     fichier: 'src/resolvers.js',
     avant: '  const report = await moteur.lancerScan({ pvRecus });',
     apres:
@@ -184,7 +184,7 @@ for (const test of SABOTAGES) {
     erreur = e.message;
   }
   if (erreur) {
-    check(test.nom + ' : sabotage applicable', false, erreur);
+    check(test.nom + ': sabotage applicable', false, erreur);
     nettoyer(dossier);
     continue;
   }
@@ -196,20 +196,20 @@ for (const test of SABOTAGES) {
   // que son étiquette aparaisse quelque part (y compris sur une ligne PASS)
   // ne prouverait rien.
   const mentionne = new RegExp('^FAIL\\s+' + test.attendu + '\\b', 'm').test(sortie);
-  const aEchoue = /ÉCHEC\(S\)/.test(sortie);
+  const aEchoue = /FAILURE\(S\)/.test(sortie);
   const aCrash = /a levé une exception|Error:|TypeError:|ReferenceError:|SyntaxError:/.test(sortie);
   check(
-    test.nom + ' : le harnais devient ROUGE',
+    test.nom + ': the harness turns RED',
     res.code === 1 && aEchoue,
     'RC ' + res.code
   );
   check(
-    test.nom + ' : le harnais nomme le contrôle cassé (' + test.attendu + ')',
+    test.nom + ': the harness names the broken check (' + test.attendu + ')',
     mentionne,
     mentionne ? '' : sortie.slice(-400)
   );
   check(
-    test.nom + ' : le harnais a ÉCHOUÉ, il n\'a pas crashé',
+    test.nom + ': the harness FAILED, it did not crash',
     !aCrash,
     aCrash ? sortie.slice(-400) : ''
   );
@@ -218,9 +218,9 @@ for (const test of SABOTAGES) {
 console.log('');
 if (failures === 0) {
   console.log(
-    '== TOUT PASS (' + checks + ' contrôles) : le harnais est rouge quand le contrat est cassé =='
+    '== ALL PASS (' + checks + ' checks): the harness turns red when the contract is broken =='
   );
   process.exit(0);
 }
-console.log('== ' + failures + ' ÉCHEC(S) sur ' + checks + ' contrôles ==');
+console.log('== ' + failures + ' FAILURE(S) on ' + checks + ' checks ==');
 process.exit(1);

@@ -162,7 +162,7 @@ function verifier(source, compteFige) {
       ok: false,
       asApp: c.asApp,
       asUser: c.asUser,
-      raison: c.asApp + ' appel(s) asApp() dans le code actif',
+      raison: c.asApp + ' asApp() call(s) in the active code',
     };
   }
   if (c.asUser < 1) {
@@ -170,7 +170,7 @@ function verifier(source, compteFige) {
       ok: false,
       asApp: c.asApp,
       asUser: c.asUser,
-      raison: 'aucun appel asUser() : le site ne serait lu avec aucune identité',
+      raison: 'no asUser() call: the site would be read with no identity at all',
     };
   }
   return { ok: true, asApp: c.asApp, asUser: c.asUser, raison: '' };
@@ -244,11 +244,11 @@ api.asUser = () => ({
 });
 api.asApp = () => ({
   requestJira: async () => {
-    throw new Error('APPEL AVEC L\'IDENTITÉ DE L\'APP INTERDIT DANS CE TEST');
+    throw new Error('CALL WITH THE APP IDENTITY IS FORBIDDEN IN THIS TEST');
   },
 });
 api.fetch = async () => {
-  throw new Error('APPEL EXTERNE INTERDIT DANS CE TEST');
+  throw new Error('EXTERNAL CALL IS FORBIDDEN IN THIS TEST');
 };
 
 // ---------------------------------------------------------------------------
@@ -267,20 +267,20 @@ async function controles() {
   const totalApp = parFichier.reduce((n, c) => n + c.asApp, 0);
   const totalUser = parFichier.reduce((n, c) => n + c.asUser, 0);
 
-  res['ID-01 AUCUN appel asApp() dans le code actif de src/ (moteur, resolver, outils, IHM)'] =
+  res['ID-01 NO asApp() call in the active code of src/ (engine, resolver, tools, UI)'] =
     totalApp === 0;
-  res['ID-02 le moteur lit le site avec asUser()'] =
+  res['ID-02 the engine reads the site with asUser()'] =
     (parFichier.find((c) => c.fichier === path.join('src', 'index.js')) || {}).asUser >= 1;
-  res['ID-03 les outils MCP lisent le site avec asUser()'] =
+  res['ID-03 the MCP tools read the site with asUser()'] =
     (parFichier.find((c) => c.fichier === path.join('src', 'mcp.js')) || {}).asUser >= 1;
-  res['ID-04 l\'identité déclarée dans le rapport est celle du code (asUser)'] =
+  res['ID-04 the identity declared in the report is the one of the code (asUser)'] =
     /const IDENTITE_LECTURE = 'asUser'/.test(codeAvecChaines(sourceIndex));
 
   // La raison écrite dans le code (règle 2 de la revue : une raison, pas
   // une excuse).
   const docClient = docAuDessus(sourceIndex, 'function client(');
   const docClientPlat = textePlat(docClient);
-  res['ID-05 la raison du choix d\'identité est ÉCRITE dans le code (règle Marketplace citée)'] =
+  res['ID-05 the reason for the identity choice is WRITTEN in the code (Marketplace rule quoted)'] =
     /asUser/.test(docClientPlat) &&
     /Marketplace/.test(docClientPlat) &&
     /permissions REST APIs/.test(docClientPlat);
@@ -293,7 +293,7 @@ async function controles() {
     '/rest/api/3/serverInfo': { status: 401, body: {} },
   };
   const refusIdentite = await moteur.lancerScan({ pvRecus: {} });
-  res['ID-06 une identité refusée (401) donne un REFUS, pas un rapport vide'] =
+  res['ID-06 a refused identity (401) gives a REFUSAL, not an empty report'] =
     refusIdentite.mode === 'refus-acces' &&
     refusIdentite.autorisation &&
     refusIdentite.autorisation.ok === false &&
@@ -310,7 +310,7 @@ async function controles() {
     '/rest/api/3/search/jql': { status: 403, body: {} },
   };
   const refusLecture = await moteur.lancerScan({ pvRecus: {} });
-  res['ID-07 une lecture refusée (403) donne un REFUS, pas un rapport vide'] =
+  res['ID-07 a refused read (403) gives a REFUSAL, not an empty report'] =
     refusLecture.mode === 'refus-acces' &&
     refusLecture.autorisation &&
     refusLecture.autorisation.ok === false &&
@@ -324,7 +324,7 @@ async function controles() {
     '/rest/servicedeskapi/servicedesk': { status: 200, body: { values: [] } },
   };
   const rapport = await moteur.lancerScan({ pvRecus: {} });
-  res['ID-08 une lecture réussie déclare l\'identity utilisée (asUser)'] =
+  res['ID-08 a successful read declares the identity used (asUser)'] =
     rapport.mode === 'jsm' &&
     rapport.autorisation &&
     rapport.autorisation.ok === true &&
@@ -349,7 +349,7 @@ async function controles() {
 function contreEpreuveCompteFige() {
   const source = fs.readFileSync(path.join(SRC, 'index.js'), 'utf8');
   const sabotaged = source.replace('return api.asUser();', 'return api.asApp();');
-  if (sabotaged === source) return { erreur: 'la mutation n\'a rien changé' };
+  if (sabotaged === source) return { erreur: 'the mutation changed nothing' };
   const verdict = verifier(sabotaged, { asApp: 0, asUser: 0 });
   return { rouge: verdict.ok === false, detail: verdict.raison };
 }
@@ -361,7 +361,7 @@ function contreEpreuveCompteFige() {
 function contreEpreuveMoteurAsApp() {
   const source = fs.readFileSync(path.join(SRC, 'index.js'), 'utf8');
   const sabotaged = source.replace('return api.asUser();', 'return api.asApp();');
-  if (sabotaged === source) return { erreur: 'la mutation n\'a rien changé' };
+  if (sabotaged === source) return { erreur: 'the mutation changed nothing' };
   const verdict = verifier(sabotaged);
   return { rouge: verdict.ok === false, detail: verdict.raison };
 }
@@ -373,12 +373,12 @@ function contreEpreuveMoteurAsApp() {
 function contreEpreuveDeclarationDerivee() {
   const source = fs.readFileSync(path.join(SRC, 'index.js'), 'utf8');
   const sabotaged = source.replace("const IDENTITE_LECTURE = 'asUser';", "const IDENTITE_LECTURE = 'asApp';");
-  if (sabotaged === source) return { erreur: 'la mutation n\'a rien changé' };
+  if (sabotaged === source) return { erreur: 'the mutation changed nothing' };
   const declaree = /const IDENTITE_LECTURE = '([^']+)'/.exec(codeAvecChaines(sabotaged));
   const verifie = verifier(sabotaged);
   // Le contrôle doit voir à la fois le compteur et la déclaration.
   const rouge = verifie.ok === false || !declaree || declaree[1] !== 'asUser';
-  return { rouge: rouge, detail: 'déclaration = ' + (declaree ? declaree[1] : '?') };
+  return { rouge: rouge, detail: 'declaration = ' + (declaree ? declaree[1] : '?') };
 }
 
 /**
@@ -388,12 +388,12 @@ function contreEpreuveDeclarationDerivee() {
 function contreEpreuveRaisonEffacee() {
   const source = fs.readFileSync(path.join(SRC, 'index.js'), 'utf8');
   const doc = docAuDessus(source, 'function client(');
-  if (!doc) return { erreur: 'aucun bloc de documentation trouvé' };
-  const sabotaged = source.replace(doc, '/**\n * (raison absente)\n */');
-  if (sabotaged === source) return { erreur: 'la mutation n\'a rien changé' };
+  if (!doc) return { erreur: 'no documentation block found' };
+  const sabotaged = source.replace(doc, '/**\n * (reason absent)\n */');
+  if (sabotaged === source) return { erreur: 'the mutation changed nothing' };
   const doc2 = textePlat(docAuDessus(sabotaged, 'function client('));
   const rouge = !/Marketplace/.test(doc2) || !/permissions REST APIs/.test(doc2);
-  return { rouge: rouge, detail: 'reste : ' + JSON.stringify(doc2.slice(0, 60)) };
+  return { rouge: rouge, detail: 'remaining: ' + JSON.stringify(doc2.slice(0, 60)) };
 }
 
 // ---------------------------------------------------------------------------
@@ -401,19 +401,19 @@ function contreEpreuveRaisonEffacee() {
 // ---------------------------------------------------------------------------
 
 (async () => {
-  console.log('== 1. LE CONTRÔLE D\'IDENTITÉ (code actif + comportement) ==');
+  console.log('== 1. THE IDENTITY CHECK (active code + behaviour) ==');
   const res = await controles();
   const detail = res['__detail__'];
   delete res['__detail__'];
   Object.keys(res).forEach((k) => check(k, res[k]));
 
   console.log('');
-  console.log('== 2. CONTRE-ÉPREUVES (le contrôle doit savoir dire NON) ==');
+  console.log('== 2. THE COUNTER-PROOFS (the check must be able to say NO) ==');
   const contreEpreuves = [
-    ['le moteur lit avec l\'identité de l\'app (asApp)', contreEpreuveMoteurAsApp],
-    ['le compteur d\'appels est passé à 0 à la main', contreEpreuveCompteFige],
-    ['l\'identité déclarée dans le rapport dérive du code', contreEpreuveDeclarationDerivee],
-    ['la raison écrite dans le code est effacée', contreEpreuveRaisonEffacee],
+    ['the engine reads with the app identity (asApp)', contreEpreuveMoteurAsApp],
+    ['the call counter was set to 0 by hand', contreEpreuveCompteFige],
+    ['the identity declared in the report drifts from the code', contreEpreuveDeclarationDerivee],
+    ['the reason written in the code is erased', contreEpreuveRaisonEffacee],
   ];
   for (const [nom, fn] of contreEpreuves) {
     let rouge = false;
@@ -428,21 +428,21 @@ function contreEpreuveRaisonEffacee() {
       crash = e && e.message ? e.message : String(e);
     }
     check(
-      'CONTRE-ÉPREUVE « ' + nom + ' » est détectée (échec explicite, sans crash)',
+      'CONTRE-PROOF "' + nom + '" is detected (explicit failure, no crash)',
       rouge && !crash,
-      crash ? 'crash : ' + crash : detailCp
+      crash ? 'crash: ' + crash : detailCp
     );
   }
 
   console.log('');
-  console.log('== DÉTAIL DES COMPTES ==');
+  console.log('== DETAIL OF THE COUNTS ==');
   console.log(detail);
   console.log('');
 
   if (failures === 0) {
-    console.log('== TOUT PASS (' + checks + ' contrôles) : le site est lu avec l\'identité de l\'appelant, et rien d\'autre ==');
+    console.log('== ALL PASS (' + checks + ' checks): the site is read with the caller\'s identity, and nothing else ==');
   } else {
-    console.log('== ' + failures + ' ÉCHEC(S) sur ' + checks + ' contrôles ==');
+    console.log('== ' + failures + ' FAILURE(S) on ' + checks + ' checks ==');
   }
   process.exit(failures === 0 ? 0 : 1);
 })().catch((e) => {

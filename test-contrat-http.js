@@ -60,95 +60,95 @@ function appeler(functionKey, payload, contexte, runtimePayload) {
 
 // --- 1. le masque (fonction pure) --------------------------------------------
 
-check('MASQUE-01 un nom de plus de 3 caractères ne rend que sa première lettre',
+check('MASQUE-01 a name longer than 3 characters renders only its first letter',
   c.masquerValeur(NOM) === 'C***', c.masquerValeur(NOM));
-check('MASQUE-02 un e-mail ne rend ni la partie locale ni le domaine',
+check('MASQUE-02 an e-mail renders neither the local part nor the domain',
   c.masquerValeur(EMAIL) === 'c***@***', c.masquerValeur(EMAIL));
-check('MASQUE-03 une chaîne vide rend "***" (et jamais la valeur)',
+check('MASQUE-03 an empty string renders "***" (and never the value)',
   c.masquerValeur('') === '***', JSON.stringify(c.masquerValeur('')));
-check('MASQUE-04 une valeur de moins de 3 caractères rend "***" (jamais la valeur)',
+check('MASQUE-04 a value shorter than 3 characters renders "***" (never the value)',
   c.masquerValeur('AB') === '***', JSON.stringify(c.masquerValeur('AB')));
-check('MASQUE-05 une valeur d\'un seul caractère rend "***" (jamais la valeur)',
+check('MASQUE-05 a one-character value renders "***" (never the value)',
   c.masquerValeur('A') === '***', JSON.stringify(c.masquerValeur('A')));
-check('MASQUE-06 les caractères spéciaux ne fuient pas dans le masque',
+check('MASQUE-06 special characters do not leak into the mask',
   c.masquerValeur('O\'Brien "x" <b> & é') === 'O***', c.masquerValeur('O\'Brien "x" <b> & é'));
-check('MASQUE-07 un e-mail à partie locale courte rend "***@***"',
+check('MASQUE-07 an e-mail with a short local part renders "***@***"',
   c.masquerValeur('a@b.co') === '***@***', c.masquerValeur('a@b.co'));
-check('MASQUE-08 le masque ne contient jamais la valeur qu\'il masque',
+check('MASQUE-08 the mask never contains the value it masks',
   [NOM, EMAIL, '', 'AB', 'A', 'O\'Brien "x" <b> & é', 'a@b.co'].every(
     (v) => v.length === 0 || !c.masquerValeur(v).includes(v)
   ));
 
 // --- 2. la collecte des champs présents ---------------------------------------
 
-check('RECU-01 un appel vide ne reçoit aucun champ',
+check('RECU-01 an empty call receives no field',
   Object.keys(c.champsPvRecus({})).length === 0);
-check('RECU-02 les paramètres de requête sont lus (forme officielle { nom: [..] })',
+check('RECU-02 query parameters are read (official shape { nom: [..] })',
   c.champsPvRecus({ queryParameters: { nom: [NOM] } }).nom === NOM);
-check('RECU-03 un paramètre présent mais VIDE reste présent (et n\'est pas perdu)',
+check('RECU-03 a present but EMPTY parameter stays present (and is not lost)',
   c.champsPvRecus({ queryParameters: { nom: [''] } }).nom === '');
-check('RECU-04 l\'alias "email" est reconnu comme le champ "e-mail"',
+check('RECU-04 the "email" alias is recognized as the "e-mail" field',
   c.champsPvRecus({ queryParameters: { email: [EMAIL] } })['e-mail'] === EMAIL);
-check('RECU-05 le corps de requête (objet) est lu',
+check('RECU-05 the request body (object) is read',
   c.champsPvRecus({ body: { nom: NOM } }).nom === NOM);
-check('RECU-06 le corps de requête (JSON) est lu',
+check('RECU-06 the request body (JSON) is read',
   c.champsPvRecus({ body: JSON.stringify({ 'e-mail': EMAIL }) })['e-mail'] === EMAIL);
-check('RECU-07 la query string brute est décodée',
+check('RECU-07 the raw query string is decoded',
   c.champsPvRecus({ queryString: '?nom=Camille%20Dupont' }).nom === NOM);
-check('RECU-08 un paramètre absent n\'est jamais inventé',
+check('RECU-08 an absent parameter is never invented',
   c.champsPvRecus({ queryParameters: { autre: ['x'] } }).nom === undefined &&
     c.champsPvRecus({ queryParameters: { autre: ['x'] } })['e-mail'] === undefined);
-check('RECU-09 un en-tête HTTP portant le même nom est traité comme un champ',
+check('RECU-09 an HTTP header carrying the same name is treated as a field',
   c.champsPvRecus({ headers: { 'e-mail': EMAIL } })['e-mail'] === EMAIL);
-check('RECU-10 les paramètres de requête priment sur le corps',
+check('RECU-10 query parameters take precedence over the body',
   c.champsPvRecus({ queryParameters: { nom: [NOM] }, body: { nom: 'Autre' } }).nom === NOM);
-check('RECU-11 espaces autour du nom de champ dans les queryParameters',
+check('RECU-11 spaces around the field name in queryParameters',
   c.champsPvRecus({ queryParameters: { ' nom ': [NOM] } }).nom === NOM);
-check('RECU-12 espaces autour du nom de champ dans les en-têtes HTTP',
+check('RECU-12 spaces around the field name in HTTP headers',
   c.champsPvRecus({ headers: { ' e-mail ': EMAIL } })['e-mail'] === EMAIL);
-check('RECU-13 corps texte brut (form-urlencoded) lu',
+check('RECU-13 raw text body (form-urlencoded) read',
   c.champsPvRecus({ body: 'nom=Camille%20Dupont&email=camille.dupont%40example.com' }).nom === NOM &&
     c.champsPvRecus({ body: 'nom=Camille%20Dupont&email=camille.dupont%40example.com' })['e-mail'] === EMAIL);
-check('RECU-14 corps Buffer brut (form-urlencoded) lu',
+check('RECU-14 raw Buffer body (form-urlencoded) read',
   c.champsPvRecus({ body: Buffer.from('nom=Camille%20Dupont') }).nom === NOM);
-check('RECU-15 paramètres répétés : toutes les valeurs sont collectées pour le masquage',
+check('RECU-15 repeated parameters: all values are collected for masking',
   (() => {
     const r = c.champsPvRecus({ queryParameters: { nom: ['Camille', 'Dupont'] } });
     return Array.isArray(r.nom) ? r.nom.includes('Camille') && r.nom.includes('Dupont') : r.nom === 'Camille,Dupont';
   })());
-check('RECU-16 le payload de la page (objet) est lu comme un corps',
+check('RECU-16 the page payload (object) is read as a body',
   c.champsPvRecus({ body: { nom: NOM, 'e-mail': EMAIL } })['e-mail'] === EMAIL);
 
 // --- 3. la GÂCHE D'IDENTITÉ : seul un utilisateur connecté déclenche un scan --
 
 (async () => {
   const sansIdentite = await appeler('scanDemo', {}, {}, {});
-  check('GATE-01 un appel sans compte connecté est REFUSÉ',
+  check('GATE-01 a call without a signed-in account is REFUSED',
     sansIdentite.ok === false && sansIdentite.error === 'NOT_AUTHENTICATED',
     JSON.stringify(sansIdentite).slice(0, 120));
-  check('GATE-02 le refus ne contient aucun rapport',
+  check('GATE-02 the refusal contains no report',
     !sansIdentite.report && !sansIdentite.csv);
 
   const avecIdentite = await appeler('scanDemo', {}, {}, runtime);
-  check('GATE-03 un appel avec un compte connecté est accepté',
+  check('GATE-03 a call with a signed-in account is accepted',
     avecIdentite.ok === true, JSON.stringify(avecIdentite).slice(0, 80));
-  check('GATE-04 la réponse dit QUI a lancé le scan',
+  check('GATE-04 the response says WHO started the scan',
     avecIdentite.requestedBy && avecIdentite.requestedBy.accountId === COMPTE,
     JSON.stringify(avecIdentite.requestedBy));
 
   // Le compte peut aussi arriver par le contexte de l'appel : c'est le même
   // compte, porté par l'autre canal. Le resolver ne doit pas le perdre.
   const parContexte = await appeler('scanDemo', {}, { accountId: COMPTE }, {});
-  check('GATE-05 le compte porté par le contexte de l\'appel est accepté aussi',
+  check('GATE-05 the account carried by the call context is accepted too',
     parContexte.ok === true && parContexte.requestedBy.accountId === COMPTE);
 
   const fonctionInconnue = await appeler('autreFonction', {}, {}, runtime);
-  check('GATE-06 une fonction inconnue est refusée sans planter',
+  check('GATE-06 an unknown function is refused without crashing',
     fonctionInconnue.ok === false && fonctionInconnue.error === 'UNKNOWN_FUNCTION',
     JSON.stringify(fonctionInconnue).slice(0, 120));
 
   const renduPage = await resolver.handler({ context: {} }, runtime);
-  check('GATE-07 l\'affichage de la page ne lance aucun scan et ne plante pas',
+  check('GATE-07 rendering the page starts no scan and does not crash',
     renduPage.ok === true && renduPage.page === 'admin' && !renduPage.report,
     JSON.stringify(renduPage).slice(0, 120));
 
@@ -163,7 +163,7 @@ check('RECU-16 le payload de la page (objet) est lu comme un corps',
   let appelsApi = 0;
   const apiInterdite = () => {
     appelsApi += 1;
-    throw new Error('APPEL API INTERDIT DANS LE MODE DÉMO');
+    throw new Error('FORBIDDEN API CALL IN DEMO MODE');
   };
   api.asApp = apiInterdite;
   api.asUser = apiInterdite;
@@ -171,70 +171,70 @@ check('RECU-16 le payload de la page (objet) est lu comme un corps',
   const rouge = await appeler('scanDemo', { nom: NOM, 'e-mail': EMAIL });
   const corpsRouge = JSON.stringify(rouge);
 
-  check('ROUGE-01 la réponse ne contient pas le nom en clair',
+  check('ROUGE-01 the response does not contain the name in clear text',
     corpsRouge.indexOf(NOM) === -1, 'occurrence #' + corpsRouge.split(NOM).length);
-  check('ROUGE-02 la réponse ne contient pas l\'e-mail en clair',
+  check('ROUGE-02 the response does not contain the e-mail in clear text',
     corpsRouge.indexOf(EMAIL) === -1, 'occurrence #' + corpsRouge.split(EMAIL).length);
-  check('ROUGE-03 la réponse ne contient pas le nom en clair, sans distinction de casse',
+  check('ROUGE-03 the response does not contain the name in clear text, case-insensitively',
     corpsRouge.toLowerCase().indexOf(NOM.toLowerCase()) === -1);
 
   const rapportRouge = rouge.report;
-  check('ROUGE-04 la réponse contient un rapport', !!rapportRouge);
+  check('ROUGE-04 the response contains a report', !!rapportRouge);
   if (!rapportRouge) {
     api.asApp = asAppOriginal;
     api.asUser = asUserOriginal;
     process.exit(1);
   }
 
-  check('ROUGE-05 l\'app déclare avoir reçu les deux champs',
+  check('ROUGE-05 the app declares it received both fields',
     Array.isArray(rapportRouge.privacy.receivedFields) &&
       rapportRouge.privacy.receivedFields.join(',') === 'nom,e-mail',
     JSON.stringify(rapportRouge.privacy.receivedFields));
-  check('ROUGE-06 le nom est renvoyé masqué',
+  check('ROUGE-06 the name is returned masked',
     rapportRouge.privacy.maskedValues.nom === 'C***',
     JSON.stringify(rapportRouge.privacy.maskedValues.nom));
-  check('ROUGE-07 l\'e-mail est renvoyé masqué',
+  check('ROUGE-07 the e-mail is returned masked',
     rapportRouge.privacy.maskedValues['e-mail'] === 'c***@***',
     JSON.stringify(rapportRouge.privacy.maskedValues['e-mail']));
-  check('ROUGE-08 le rapport contient la phrase affichée dans l\'app',
+  check('ROUGE-08 the report contains the statement displayed in the app',
     typeof rapportRouge.privacy.statement === 'string' &&
       rapportRouge.privacy.statement.indexOf('returned as a mask, never in clear text') !== -1);
-  check('ROUGE-08b la phrase n\'affirme rien de plus que ce que l\'app fait',
+  check('ROUGE-08b the statement does not claim more than what the app does',
     rapportRouge.privacy.statement.indexOf('never returns a name or e-mail address in clear text') === -1 &&
       rapportRouge.privacy.statement.indexOf('returned as it is') !== -1,
     rapportRouge.privacy.statement);
-  check('ROUGE-09 le scan de démonstration est intact (23 constats)',
+  check('ROUGE-09 the demo scan is intact (23 findings)',
     rapportRouge.constats.length === 23, String(rapportRouge.constats.length));
-  check('ROUGE-10 aucun appel à l\'API Atlassian en mode démo', appelsApi === 0, String(appelsApi));
+  check('ROUGE-10 no call to the Atlassian API in demo mode', appelsApi === 0, String(appelsApi));
 
   // --- 5. le point d'entrée de l'app, en mode DÉMO : cas vert ----------------
 
   const vert = await appeler('scanDemo', {});
   const rapportVert = vert.report;
-  check('VERT-01 l\'app ne déclare aucun champ reçu',
+  check('VERT-01 the app declares no received field',
     Array.isArray(rapportVert.privacy.receivedFields) &&
       rapportVert.privacy.receivedFields.length === 0,
     JSON.stringify(rapportVert.privacy.receivedFields));
-  check('VERT-02 aucun masque n\'est inventé',
+  check('VERT-02 no mask is invented',
     rapportVert.privacy.maskedValues &&
       Object.keys(rapportVert.privacy.maskedValues).length === 0,
     JSON.stringify(rapportVert.privacy.maskedValues));
-  check('VERT-03 ni "nom" ni "e-mail" n\'apparaissent dans la section privacy',
+  check('VERT-03 neither "nom" nor "e-mail" appear in the privacy section',
     !('nom' in rapportVert.privacy.maskedValues) &&
       !('e-mail' in rapportVert.privacy.maskedValues) &&
       rapportVert.privacy.receivedFields.indexOf('nom') === -1 &&
       rapportVert.privacy.receivedFields.indexOf('e-mail') === -1);
-  check('VERT-04 le scan de démonstration est inchangé (23 constats)',
+  check('VERT-04 the demo scan is unchanged (23 findings)',
     rapportVert.constats.length === 23, String(rapportVert.constats.length));
-  check('VERT-05 la réponse du cas vert contient bien un rapport', !!rapportVert);
+  check('VERT-05 the green case response does contain a report', !!rapportVert);
 
   // --- 6. l'export CSV applique le contrat lui aussi ------------------------
 
   const csvRep = await appeler('scanDemo', { nom: NOM });
   const csv = String(csvRep.csv);
-  check('CSV-01 l\'export CSV ne contient pas le nom en clair',
+  check('CSV-01 the CSV export does not contain the name in clear text',
     csv.indexOf(NOM) === -1);
-  check('CSV-02 l\'export CSV reste un CSV (24 lignes)',
+  check('CSV-02 the CSV export is still a CSV (24 lines)',
     csv.trim().split('\r\n').length === 24,
     String(csv.trim().split('\r\n').length));
 
@@ -273,16 +273,16 @@ check('RECU-16 le payload de la page (objet) est lu comme un corps',
 
   const scanRep = await appeler('scan', { nom: NOM, 'e-mail': EMAIL });
   const corpsScan = JSON.stringify(scanRep);
-  check('SCAN-01 la réponse du scan ne contient pas le nom en clair',
+  check('SCAN-01 the scan response does not contain the name in clear text',
     corpsScan.indexOf(NOM) === -1, 'occurrence #' + corpsScan.split(NOM).length);
-  check('SCAN-02 la réponse du scan ne contient pas l\'e-mail en clair',
+  check('SCAN-02 the scan response does not contain the e-mail in clear text',
     corpsScan.indexOf(EMAIL) === -1, 'occurrence #' + corpsScan.split(EMAIL).length);
-  check('SCAN-03 le scan a bien lu les données du site (elles sont masquées, pas absentes)',
+  check('SCAN-03 the scan did read the site data (they are masked, not absent)',
     corpsScan.indexOf('C***') !== -1 && corpsScan.indexOf('c***@***') !== -1);
-  check('SCAN-04 la réponse du scan contient un rapport',
+  check('SCAN-04 the scan response contains a report',
     !!scanRep.report && Array.isArray(scanRep.report.findings));
   const rapportScan = scanRep.report;
-  check('SCAN-05 la section privacy est présente dans le rapport de scan',
+  check('SCAN-05 the privacy section is present in the scan report',
     !!rapportScan.privacy &&
       rapportScan.privacy.receivedFields.join(',') === 'nom,e-mail' &&
       rapportScan.privacy.maskedValues.nom === 'C***');
@@ -290,11 +290,11 @@ check('RECU-16 le payload de la page (objet) est lu comme un corps',
   // Fuite par espaces autour du champ, par corps texte/buffer et paramètres répétés dans le scan
   const scanFuites = await appeler('scan', { ' nom ': ['Camille', 'Dupont'] });
   const corpsScanFuites = JSON.stringify(scanFuites);
-  check('SCAN-06 les données avec espaces autour du nom ne fuient pas dans la réponse',
+  check('SCAN-06 data with spaces around the name does not leak into the response',
     corpsScanFuites.indexOf('Camille') === -1);
-  check('SCAN-07 les paramètres répétés ne fuient pas dans la réponse',
+  check('SCAN-07 repeated parameters do not leak into the response',
     corpsScanFuites.indexOf('Dupont') === -1);
-  check('SCAN-08 le corps url-encoded ne fuit pas dans la réponse',
+  check('SCAN-08 the url-encoded body does not leak into the response',
     corpsScanFuites.indexOf('camille.dupont@example.com') === -1);
 
   // Le contenu lu SUR LE SITE est renvoyé tel quel : c'est ce contenu que
@@ -303,7 +303,7 @@ check('RECU-16 le payload de la page (objet) est lu comme un corps',
   // masqué un jour, la phrase devrait le dire — et ce test le signalerait.
   const scanSansRecu = await appeler('scan', {});
   const corpsSansRecu = JSON.stringify(scanSansRecu);
-  check('SCAN-09 le contenu du site non reçu dans la requête est renvoyé tel quel',
+  check('SCAN-09 site content not received in the request is returned as is',
     corpsSansRecu.indexOf(NOM) !== -1 && corpsSansRecu.indexOf(EMAIL) !== -1,
     'nom #' + corpsSansRecu.split(NOM).length + ' / e-mail #' + corpsSansRecu.split(EMAIL).length);
 
@@ -333,17 +333,17 @@ check('RECU-16 le payload de la page (objet) est lu comme un corps',
       }
     })(arbre);
   }
-  check('LOG-01 le code de l\'app ne contient AUCUNE instruction de journalisation',
+  check('LOG-01 the app code contains NO logging statement',
     appelsConsole === 0, String(appelsConsole));
 
   console.log('');
   if (failures === 0) {
-    console.log('== TOUT PASS (' + checks + ' contrôles) : le contrat du resolver tient ==');
+    console.log('== ALL PASS (' + checks + ' checks): the resolver contract holds ==');
     process.exit(0);
   }
-  console.log('== ' + failures + ' ÉCHEC(S) sur ' + checks + ' contrôles ==');
+  console.log('== ' + failures + ' FAILURE(S) on ' + checks + ' checks ==');
   process.exit(1);
 })().catch((e) => {
-  console.log('FAIL  le handler a levé une exception : ' + (e && e.stack));
+  console.log('FAIL  the handler threw an Error: ' + (e && e.stack));
   process.exit(1);
 });

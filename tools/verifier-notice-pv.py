@@ -97,50 +97,50 @@ def urls(texte):
 def main(argv):
     racine = argv[1] if len(argv) > 1 else RACINE
 
-    print("== Cohérence de la notice de confidentialité et du code ==")
+    print("== Consistency between the privacy notice and the code ==")
     print("")
 
     # --- 1. la citation § 8 est-elle la phrase du code ? -------------------
     pv = phrase_pv(racine)
     cite = citation_notice(racine)
-    controle("NOTICE-01 la constante PHRASE_PV est trouvée dans src/index.js", pv is not None)
-    controle("NOTICE-02 le § 8 de PRIVACY.md cite bien une phrase", cite is not None)
+    controle("NOTICE-01 the PHRASE_PV constant is found in src/index.js", pv is not None)
+    controle("NOTICE-02 § 8 of PRIVACY.md does quote a sentence", cite is not None)
     if pv and cite:
         identique = pv == cite
         controle(
-            "NOTICE-03 le § 8 de PRIVACY.md cite PHRASE_PV mot pour mot",
+            "NOTICE-03 § 8 of PRIVACY.md quotes PHRASE_PV word for word",
             identique,
-            "identique" if identique else "le code dit : " + pv[:90] + "… / la notice dit : " + cite[:90] + "…",
+            "identical" if identique else "the code says: " + pv[:90] + "… / the notice says: " + cite[:90] + "…",
         )
 
     # --- 2. une seule copie de la notice, et aucune URL non listée ---------
     for nom in ("README.md", "PRIVACY.md"):
         chemin = os.path.join(racine, nom)
         if not os.path.exists(chemin):
-            controle("NOTICE-04 %s existe" % nom, False)
+            controle("NOTICE-04 %s exists" % nom, False)
             continue
         trouvees = urls(lire(chemin))
         # (a) les copies de la notice : il doit y en avoir exactement une,
         #     celle qui est publiée ;
         copies = [u for u in trouvees if "privacy" in u.lower() or "policy" in u.lower()]
         controle(
-            "NOTICE-04 %s ne cite qu'une seule copie de la notice, la page publiée" % nom,
+            "NOTICE-04 %s cites only one copy of the notice, the published page" % nom,
             copies == [URL_PUBLIEE],
-            "URL trouvées : " + (", ".join(trouvees) if trouvees else "aucune"),
+            "URLs found: " + (", ".join(trouvees) if trouvees else "none"),
         )
         # (b) les autres URL citées doivent être explicitement autorisées ;
         autres = [u for u in trouvees if u != URL_PUBLIEE and u not in AUTORISEES_AUTRES]
         controle(
-            "NOTICE-04 %s ne cite aucune URL hors liste blanche" % nom,
+            "NOTICE-04 %s cites no URL outside the allowlist" % nom,
             not autres,
-            ("URL non autorisées : " + ", ".join(autres)) if autres else "aucune",
+            ("Unauthorized URLs: " + ", ".join(autres)) if autres else "none",
         )
 
     print("")
     if echecs:
-        print("== %d ÉCHEC(S) ==" % len(echecs))
+        print("== %d FAILURE(S) ==" % len(echecs))
         return 1
-    print("== TOUT PASS : la notice et le code disent la même chose ==")
+    print("== ALL PASS: the notice and the code say the same thing ==")
     return 0
 
 

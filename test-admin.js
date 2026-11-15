@@ -491,9 +491,9 @@ async function scanAvecSabotage(nom, mutations) {
 
   console.log('');
   if (failures === 0) {
-    console.log('== TOUT PASS (' + checks + ' checks) ==');
+    console.log('== ALL PASS (' + checks + ' checks) ==');
   } else {
-    console.log('== ' + failures + ' FAILURE(S) out of ' + checks + ' checks ==');
+    console.log('== ' + failures + ' FAILURE(S) on ' + checks + ' checks ==');
   }
   process.exit(failures === 0 ? 0 : 1);
 })().catch((e) => {

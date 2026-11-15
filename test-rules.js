@@ -19,12 +19,12 @@ const fields = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
 const issues = JSON.parse(fs.readFileSync(process.argv[3], 'utf8'));
 const custom = fields.filter((f) => f.custom === true);
 
-console.log('== R1 2.4.6 : étiquettes internes (attendu sur ces données FR : uniquement "development") ==');
+console.log('== R1 2.4.6: internal labels (expected on this FR data: only "development") ==');
 for (const f of custom) {
   check(f.id + ' ' + JSON.stringify(f.name), isInternalLabel(f.name).hit, f.name === 'development');
 }
 
-console.log('== R2 3.3.2 : saisie ambiguë sans instruction (attendu : 10015 date + 10017 couleur) ==');
+console.log('== R2 3.3.2: ambiguous input without instructions (expected: 10015 date + 10017 color) ==');
 for (const f of custom) {
   const t = (f.schema || {}).type || '';
   const c = (f.schema || {}).custom || '';
@@ -37,22 +37,22 @@ for (const f of custom) {
   }
 }
 check(
-  "un champ texte normal avec description vide n'est pas signalé",
+  "a normal text field with an empty description is not reported",
   isAmbiguousWithoutInstructions({ schema: { type: 'string', custom: 'x:textfield' }, description: '' }),
   false
 );
 
-console.log('== R3 2.4.2 : résumés trop courts (attendu : uniquement KAN-4 "T") ==');
+console.log('== R3 2.4.2: summaries too short (expected: only KAN-4 "T") ==');
 for (const i of issues.issues) {
   const short = typeof i.fields.summary !== 'string' || i.fields.summary.trim().length < 4;
   if (short) check(i.key + ' ' + JSON.stringify(i.fields.summary), isSummaryTooShort(i.fields.summary), true);
 }
-check("un résumé normal n'est pas signalé", isSummaryTooShort('Invoice reconciliation for the September billing batch'), false);
+check("a normal summary is not reported", isSummaryTooShort('Invoice reconciliation for the September billing batch'), false);
 
-console.log('== sabotage simulé (contre-épreuve hors ligne de la branche identifiant numérique) ==');
-check('étiquette cassée "n-a11y-10042" signalée', isInternalLabel('n-a11y-10042').hit, true);
-check('étiquette propre "Note de test accessibilité" non signalée', isInternalLabel('Note de test accessibilité').hit, false);
-check('étiquette vide non signalée (règle sans faux positif trivial)', isInternalLabel('').hit, false);
+console.log('== simulated sabotage (offline counter-proof of the numeric identifier branch) ==');
+check('broken label "n-a11y-10042" reported', isInternalLabel('n-a11y-10042').hit, true);
+check('clean label "Note de test accessibilité" not reported', isInternalLabel('Note de test accessibilité').hit, false);
+check('empty label not reported (rule with no trivial false positive)', isInternalLabel('').hit, false);
 
-console.log(failures === 0 ? '== TOUT PASS ==' : '== ' + failures + ' ÉCHEC(S) ==');
+console.log(failures === 0 ? '== ALL PASS ==' : '== ' + failures + ' FAILURE(S) ==');
 process.exit(failures === 0 ? 0 : 1);

@@ -126,13 +126,13 @@ const resume = (findings) => {
   SCENARIO = scenarioJsm(() => CHAMPS_BASE);
   let r = await lancerScan();
   let f = r.findings;
-  console.log('A1 JSM par défaut : ' + f.length + ' constats ' + resume(f));
+  console.log('A1 JSM out of the box: ' + f.length + ' findings ' + resume(f));
   check('A1 mode jsm', r.mode === 'jsm', r.mode);
-  check('A1 aucun constat « finding » (prouvé) sur un modèle correct', f.filter((c) => !c.a_verifier).length === 0,
+  check('A1 no "finding" (proven) on a correct template', f.filter((c) => !c.a_verifier).length === 0,
     f.filter((c) => !c.a_verifier).map((c) => c.critere + ' ' + JSON.stringify(c.valeur)).join(' | '));
-  check('A1 aucun 1.3.5 sur les champs système (Summary, Description, Attachment)',
+  check('A1 no 1.3.5 on the system fields (Summary, Description, Attachment)',
     f.filter((c) => c.critere === '1.3.5').length === 0, String(f.filter((c) => c.critere === '1.3.5').length));
-  check('A1 aucun 2.4.2 sur les noms des types de demande par défaut',
+  check('A1 no 2.4.2 on the default request type names',
     f.filter((c) => c.critere === '2.4.2').length === 0, f.filter((c) => c.critere === '2.4.2').map((c) => c.valeur).join(' | '));
 
   // A2 — vraies fautes ajoutées par un administrateur (en anglais)
@@ -144,31 +144,31 @@ const resume = (findings) => {
     : CHAMPS_BASE);
   r = await lancerScan();
   f = r.findings;
-  console.log('A2 JSM + fautes : ' + f.length + ' constats ' + resume(f));
-  check('A2 champ sans nom détecté (3.3.2 prouvé)', f.some((c) => c.critere === '3.3.2' && !c.a_verifier && c.emplacement === 'requestTypeFields[3].name'));
-  check('A2 champ personnalisé « Ref » sans finalité signalé (1.3.5)', f.some((c) => c.critere === '1.3.5' && c.valeur === 'Ref'));
-  check('A2 champ e-mail en anglais reconnu (pas de 1.3.5)', !f.some((c) => c.critere === '1.3.5' && c.valeur === 'Your work email'));
+  console.log('A2 JSM + faults: ' + f.length + ' findings ' + resume(f));
+  check('A2 field with no name detected (3.3.2 proven)', f.some((c) => c.critere === '3.3.2' && !c.a_verifier && c.emplacement === 'requestTypeFields[3].name'));
+  check('A2 custom field "Ref" with no purpose reported (1.3.5)', f.some((c) => c.critere === '1.3.5' && c.valeur === 'Ref'));
+  check('A2 English email field recognized (no 1.3.5)', !f.some((c) => c.critere === '1.3.5' && c.valeur === 'Your work email'));
 
   // B1 — repli Jira, tickets corrects en anglais
   SCENARIO = scenarioJira(TICKETS_CORRECTS);
   r = await lancerScan();
   f = r.findings;
-  console.log('B1 Jira tickets corrects : ' + f.length + ' constats ' + resume(f));
+  console.log('B1 correct Jira tickets: ' + f.length + ' findings ' + resume(f));
   check('B1 mode jira-fallback', r.mode === 'jira-fallback', r.mode);
-  check('B1 aucun constat « finding » (prouvé) sur des tickets corrects', f.filter((c) => !c.a_verifier).length === 0,
+  check('B1 no "finding" (proven) on correct tickets', f.filter((c) => !c.a_verifier).length === 0,
     f.filter((c) => !c.a_verifier).map((c) => c.critere + ' ' + JSON.stringify(c.valeur)).join(' | '));
 
   // B2 — ticket fautif en anglais
   SCENARIO = scenarioJira([TICKET_FAUTIF]);
   r = await lancerScan();
   f = r.findings;
-  console.log('B2 Jira ticket fautif : ' + f.length + ' constats ' + resume(f));
-  check('B2 « click here » détecté (2.4.4)', f.some((c) => c.critere === '2.4.4' && c.valeur === 'click here'));
-  check('B2 « Read more » détecté (2.4.4)', f.some((c) => c.critere === '2.4.4' && c.valeur === 'Read more'));
-  check('B2 titre « Details » détecté (2.4.6)', f.some((c) => c.critere === '2.4.6' && c.valeur === 'Details'));
-  check('B2 « red button at the top right » détecté (1.3.3)', f.some((c) => c.critere === '1.3.3'));
-  check('B2 lien descriptif non signalé', !f.some((c) => c.critere === '2.4.4' && /guide/i.test(String(c.valeur))));
+  console.log('B2 faulty Jira ticket: ' + f.length + ' findings ' + resume(f));
+  check('B2 "click here" detected (2.4.4)', f.some((c) => c.critere === '2.4.4' && c.valeur === 'click here'));
+  check('B2 "Read more" detected (2.4.4)', f.some((c) => c.critere === '2.4.4' && c.valeur === 'Read more'));
+  check('B2 "Details" heading detected (2.4.6)', f.some((c) => c.critere === '2.4.6' && c.valeur === 'Details'));
+  check('B2 "red button at the top right" detected (1.3.3)', f.some((c) => c.critere === '1.3.3'));
+  check('B2 descriptive link not reported', !f.some((c) => c.critere === '2.4.4' && /guide/i.test(String(c.valeur))));
 
-  console.log(failures === 0 ? '== TOUT PASS (' + checks + ' contrôles) : le scan tient sur un site de juge en anglais ==' : '== ' + failures + ' ÉCHEC(S) sur ' + checks + ' ==');
+  console.log(failures === 0 ? '== ALL PASS (' + checks + ' checks): the scan holds on a judge\'s site in English ==' : '== ' + failures + ' FAILURE(S) on ' + checks + ' checks ==');
   process.exit(failures === 0 ? 0 : 1);
 })().catch((e) => { console.error(e); process.exit(2); });
