@@ -483,6 +483,12 @@ missing here; `--counter-proof` breaks this README five ways and requires it to 
 administer: `GET /rest/api/3/field` and `POST /rest/api/3/search/jql` (16 checks
 — it is not part of `npm test` for that reason).
 
+The production dependencies are audited too: `npm run audit:prod` runs
+`npm audit --omit=dev --audit-level=high` and fails on any high or critical
+advisory (the Atlassian Marketplace security requirements forbid third-party
+libraries "with known critical or high vulnerabilities"). The pinned
+`prosemirror-view` override in `package.json` is what keeps that audit clean.
+
 `test-contrat-http-contre-epreuve.js` and `test-contre-epreuve.js` are
 counter-proof suites: they break the product on purpose and require the test
 harness to fail — **by naming the broken check**, because a suite that fails by

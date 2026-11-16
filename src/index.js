@@ -207,7 +207,7 @@ function refusAutorisation(status) {
 }
 
 async function jget(path, headers) {
-  // @forge/api 3.9.2 : requestJira exige un objet route (tagged template) —
+  // @forge/api (3.9.2 puis 8.5.0) : requestJira exige un objet route (tagged template) —
   // un simple string est refusé ("You must create your route using the 'route'
   // export"). requestJira couvre aussi les chemins /rest/servicedeskapi/*.
   const res = await client().requestJira(path, { headers: headers || {} });

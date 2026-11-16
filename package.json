@@ -4,10 +4,10 @@
   "private": true,
   "main": "src/resolvers.js",
   "dependencies": {
-    "@forge/api": "3.9.2",
-    "@forge/bridge": "7.2.0",
-    "@forge/react": "12.3.1",
-    "@forge/resolver": "2.0.1",
+    "@forge/api": "8.5.0",
+    "@forge/bridge": "7.3.0",
+    "@forge/react": "12.5.0",
+    "@forge/resolver": "2.0.2",
     "react": "18.3.1"
   },
   "description": "Portal Accessibility Checker for JSM — read-only WCAG 2.2 AA scan of a Jira Service Management customer portal, started from the Jira administration page (Forge app).",
@@ -31,6 +31,13 @@
     "test:csv": "node test-csv.js",
     "test:mcp-admin": "node test-mcp-admin.js",
     "test:mcp-porte": "node test-mcp-porte.js",
-    "test:refus-non-admin": "node test-refus-non-admin.js"
+    "test:refus-non-admin": "node test-refus-non-admin.js",
+    "audit:prod": "npm audit --omit=dev --audit-level=high"
+  },
+  "overrides": {
+    "prosemirror-view": "1.42.9"
+  },
+  "devDependencies": {
+    "acorn": "8.19.0"
   }
 }
