@@ -57,7 +57,7 @@ What has **not** been run yet is stated plainly in
 [Run the tests](#run-the-tests-offline-no-atlassian-account-needed) ·
 [Deploy](#deploy-it-on-your-own-site) · [Architecture](#architecture) ·
 [Limitations](#limitations-stated-plainly) ·
-[Contest entry](#contest-entry-and-marketplace-listing--state-on-15-november-2026)
+[Contest entry](#contest-entry-and-marketplace-listing--state-on-17-november-2026)
 
 ## What it does
 
@@ -83,12 +83,18 @@ allows, and offers the button as a convenience that says what happened.
 The scanner probes Jira Service Management first (`GET /rest/servicedeskapi/info`).
 If JSM is licensed on the site, it scans the customer portal content: request
 types, their fields, help texts, article content. If JSM is not licensed
-(`isLicensedForUse: false` — the exact situation of the test site this prototype
-was measured on), the same rule engine automatically falls back to the Jira
-equivalent: custom fields, field descriptions, create-screen metadata and issue
-summaries. The report records which mode ran (`mode: "jsm"` or `mode:
-"jira-fallback"`) and the raw probe result (`jsmProbe`), so nothing is claimed
-that was not measured.
+(`isLicensedForUse: false` — the situation of the test site until 17 November
+2026), the same rule engine automatically falls back to the Jira equivalent:
+custom fields, field descriptions, create-screen metadata and issue summaries.
+The report records which mode ran (`mode: "jsm"` or `mode: "jira-fallback"`) and
+the raw probe result (`jsmProbe`), so nothing is claimed that was not measured.
+
+**Measured on a real JSM portal — 17 November 2026.** The `Support` service desk
+of the test site `tgg-dev.atlassian.net` reports `isLicensedForUse: true`, so the
+scan ran in **JSM** mode: **9 GET requests, 0 refused, 7 findings — 6 × criterion
+3.3.2** (level A) **and 1 × 1.3.5** (level AA)**. They come from the request types
+read (Get IT help 1, Report a system problem 2, Report broken hardware 3, Request
+a new account 1); the numbers are verified twice — see [`docs/SCAN-JSM-2026-11-17.md`](docs/SCAN-JSM-2026-11-17.md).
 
 A second button, **Run the demo scan (no site needed)**, runs the same engine on
 six bundled fixtures — no account, no site, no tenant.
@@ -463,6 +469,8 @@ python3 tools/contre-epreuve-verificateur.py      # 29 checks — that checker t
 python3 tools/verifier-notice-pv.py               #  7 checks — § 8 of PRIVACY.md quotes the code verbatim,
                                                    #           and there is exactly ONE privacy URL
 python3 tools/contre-epreuve-notice.py            # 14 checks — that check turns RED on each sabotage of the notice
+python3 tools/verifier-scan-jsm-readme.py         # 31 checks — this README quotes the scan measured on
+                                                   #           17 November 2026, and the video it cites
 ```
 
 Every count above is checked, not typed: `python3 tools/verifier-chiffres-tests.py`
@@ -534,11 +542,20 @@ src/frontend/     the interface: admin.jsx (UI Kit 2), api.js + bridge.js (the
                   invoke() transport to the resolver)
 src/demo.js       the demo scan over src/demo/*.json fixtures
 docs/             the criterion-by-criterion basis, incl. what REST can prove
-tools/            the manifest checker (and its counter-proof) and the check that
-                  the privacy notice quotes the code verbatim
+docs/SCAN-JSM-2026-11-17.md  the measurement of the 17 November 2026 scan of a real
+                  JSM portal (count, criteria, passages), with its machine-readable
+                  twin docs/scan-jsm-2026-11-17.json
+scan-reel.js      the harness that produced that measurement: it runs the real
+                  engine (src/index.js) against a real site over REST, and refuses
+                  every call that is not a GET (except the app's own search POST)
+tools/            the manifest checker (and its counter-proof), the check that
+                  the privacy notice quotes the code verbatim, the check that this
+                  README quotes the measured scan (tools/verifier-scan-jsm-readme.py)
+                  and its counter-proof against the site
+                  (tools/contre-epreuve-scan-jsm.py)
 PRIVACY.md        the privacy notice (what is read, where it goes, how long it is kept)
-test-*.js         the offline harness (362 checks in fifteen suites, plus 68 checks
-                  in the four tools of tools/)
+test-*.js         the offline harness (362 checks in fifteen suites, plus 99 checks
+                  in the five tools of tools/)
 ```
 
 One rule engine, two data sources, one interface. No data is stored, no content
@@ -546,9 +563,14 @@ is modified: the app reads and reports.
 
 ## Limitations, stated plainly
 
-- The JSM branch of the scanner is written and deployed but was never executed
-  against a licensed JSM site: the test site used for measurement reports
-  `isLicensedForUse: false`. The Jira-fallback branch is the one measured live.
+- The JSM branch of the scanner **has now been executed against a licensed JSM
+  site**: on 17 November 2026 the scan of the `Support` service desk of the test
+  site returned 7 findings (6 × 3.3.2, 1 × 1.3.5) in `mode: "jsm"` — see
+  [`docs/SCAN-JSM-2026-11-17.md`](docs/SCAN-JSM-2026-11-17.md). Before that date
+  the measurement was made in the `jira-fallback` mode (15 November 2026). What
+  the REST API cannot see is unchanged: the scan reads the portal's source, not
+  the rendered page, so contrast, focus order, target size and status messages
+  stay out of reach.
 - Partial criteria produce *signals to verify*, not proof — the finding itself
   says which of the two it is.
 - One limit of the privacy contract, stated rather than hidden: a personal value
@@ -562,7 +584,7 @@ is modified: the app reads and reports.
   [PRIVACY.md](PRIVACY.md) § 3 spells it out.
 - The scan reflects the site **at the moment it is run**; the app keeps no history.
 
-## Contest entry and Marketplace listing — state on 15 November 2026
+## Contest entry and Marketplace listing — state on 17 November 2026
 
 * **Codegeist 2026**: this app is entered in the category *Apps for Business
   Teams*, and the bonus it claims is **Best app with Atlassian MCP** — the
@@ -578,11 +600,17 @@ is modified: the app reads and reports.
   enabled); its installation link was measured **active** on 17 November 2026 (HTTP 200,
   products `["jira"]`). The listing itself is a separate, human step (partner profile, then
   listing, then review submission). Until that exists the app is **free** and its revenue is **0 $**.
-* **Demonstration video**: **none is published yet**. The rules ask for a public
-  YouTube video of the version the judges will install; the capture plan — site,
-  version, the five shots, and what is needed to film — is written in
-  [`PLAN-CAPTURE-VIDEO.md`](PLAN-CAPTURE-VIDEO.md). The offline-built 2.5.0
-  video is **not** a demonstration of this version and is not published as one.
+* **Demonstration video**: published on 17 November 2026 and public:
+  **https://youtu.be/JAEoj9jpHMg** (channel *Tgg Labs*, 3 min 12 s, English
+  subtitles; YouTube's public oEmbed answers HTTP 200). It shows the **captured**
+  version of the app — its captions announce 2.9.0, the version served on
+  15 November 2026 — and it is not a frame-by-frame replay of the build the
+  judges install: they install the **judge copy**, which Forge numbers 2.1.0 and
+  which serves the code of this repository. The only code change made after the
+  capture (15 November 2026) is that a request type hidden from the portal is no
+  longer judged or counted. The capture plan — site, version, the five shots, and
+  what is needed to film — is written in
+  [`PLAN-CAPTURE-VIDEO.md`](PLAN-CAPTURE-VIDEO.md).
 
 ## Privacy notice
 

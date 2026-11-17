@@ -73,3 +73,27 @@ from nginx, and where it does not answer, it is a timeout.
 - nothing is uploaded to YouTube;
 - nothing is filmed (no browser, no screen, no Jira session in this container);
 - no claim that a video exists: until it is online, the submission text says "no video yet".
+
+## 7. After the plan — 17 November 2026
+
+*This section postdates the plan above. The plan is left unchanged on purpose: it is
+the trace of what had to be filmed, and when. §6 ("nothing is uploaded to YouTube")
+describes the state of **9 November 2026**; it no longer describes today.*
+
+**The video is published and public: https://youtu.be/JAEoj9jpHMg**
+
+| | |
+|---|---|
+| Public since | 17 November 2026, 15:30 |
+| Channel | *Tgg Labs* (`https://www.youtube.com/@tgglabs`) |
+| Length | 3 min 12 s |
+| Subtitles | English, manual track, verified on the reading page |
+| Public link | YouTube's public oEmbed answers **HTTP 200** for that URL (measured 17 November 2026) |
+
+What the video shows: the app inside the Jira administration area of a live site,
+recorded on **15 November 2026 against production version 2.9.0** — its captions say
+so. The judges install the **judge copy**, which Forge numbers **2.1.0** and which
+serves the code of this repository. The only code change made after the capture
+(15 November 2026, 14:31) is that a request type hidden from the portal is no longer
+judged or counted. The video is a demonstration of the app; it is not a frame-by-frame
+replay of the build the judges install.

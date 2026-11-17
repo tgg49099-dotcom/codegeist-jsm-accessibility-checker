@@ -52,6 +52,10 @@ AUTORISEES_AUTRES = {
     "https://developer.atlassian.com/platform/forge/ui-kit.md",
     # UI Kit 2: `FileCard`, the only documented download path.
     "https://developer.atlassian.com/platform/forge/ui-kit/components/file-card.md",
+    # The public demonstration video (published 17 November 2026): it is the
+    # video the contest asks for, not a copy of the notice.
+    # (Added on 17/11/2026.)
+    "https://youtu.be/JAEoj9jpHMg",
 }
 
 echecs = []
