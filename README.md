@@ -15,7 +15,7 @@ public URL: until version 2.4.0 the app answered a web trigger declared with
 | **Data leaves your site** | No. The app declares **no egress at all** |
 | **Personal data in the answer** | A name or an e-mail **typed in the page** is masked, never returned in clear text. The content read from your site is returned **as it is** — it is what the app checks (see below) |
 | **Permissions** | Read-only: `read:jira-work`, `read:servicedesk-request` |
-| **App version in this repository** | the code of **production 2.10.0**, deployed on 15 November 2026 at 13:36:51 UTC (14:36:51 Zurich on 15 November, version id `09201e49-daac-48f6-bf92-c1c73e01ffcc`; the version record was updated 20 seconds later, at 13:37:11 UTC). The code served in production 2.10.0 is the code of 2.9.0 **plus the hidden-request-type fix**: a request type whose `groupIds` is empty is "Hidden from portal" — the customer never sees it — so the scan neither judges it nor spends one of the five places it reads on it. The development environment runs **2.11.0** (deployed on 15 November 2026 at 07:06:16 UTC): a different build, which adds an `app.licensing.enabled` block and is **not** the code of this branch — the judge's installation link points at production, whose manifest declares no licence. Forge assigns the numbers itself (the manifest declares no `app.version`), so the two environments number the same code differently |
+| **App version in this repository** | the code of this branch (code files unchanged since commit `9a0d99f`, 16 November 2026: Forge packages updated, no known high or critical advisory left in production dependencies). Measured on 17 November 2026 with the Platform API: it is the code served by production **2.11.0** of the app (deployed 16 November 2026 at 16:38:53 UTC) **and** by the **judge copy** (a separate Forge app, `d6ddc803-a5a2-4c18-b918-4629395f97f9`, production **2.1.0**, deployed 17 November 2026 at 01:22:51 UTC, no licence) — the judges install the judge copy (see "Marketplace" below). Forge assigns the numbers itself (the manifest declares no `app.version`), so the two apps number the same code differently |
 
 
 ## In two minutes (for the Codegeist judges)
@@ -160,8 +160,8 @@ allowed (so the suite is not green because everything refuses). Its
 counter-proofs remove the control itself, remove the gate from the page, and
 remove the gate from the MCP path: each of the three must turn the suite RED.
 
-> **This change is deployed.** The version running in production is **2.10.0**
-> (deployed 15 November 2026 at 13:36:51 UTC): the two MCP tools apply the same
+> **This change is deployed** since production 2.8.0 and is in every later version,
+> including the judge copy: the two MCP tools apply the same
 > administrator check as the page, **before any read** of the site. The package
 > uploaded for that deployment contains the check, called before the scan.
 > Nothing in this file claims a behaviour the running app does not have.
@@ -236,27 +236,18 @@ python3 tools/contre-epreuve-verificateur.py     # the checker must turn RED on 
 > modules and the three `function` handlers — and still no `webtrigger`, no
 > `productTrigger`, no `scheduleTrigger`.
 >
-> **Production now runs 2.10.0** (deployed 15 November 2026 at **13:36:51 UTC**
-> = 14:36:51 in Zurich on 15 November, measured from the deployment record of
-> `forge deploy list --json`; the version record was updated 20 seconds later,
-> at 13:37:11 UTC), which is the code of 2.9.0 plus the **hidden-request-type
-> fix**: a request type whose `groupIds` is empty is "Hidden from portal" — the
-> customer never sees it — so the scan neither judges it nor spends one of the
-> five places it reads on it (the administrator check on the two MCP tools,
-> applied before any read of the site, is already in 2.8.0 and is unchanged).
-> `forge deploy` numbers the versions itself: the manifest declares no
-> `app.version`, so the CLI increments the minor number of the installed major
-> version — production
-> went 2.6.0 → **2.7.0** → **2.8.0** → **2.9.0** → **2.10.0**, development
-> 2.9.0 → **2.10.0** → **2.11.0** (deployed on 15 November 2026 at 07:06:16
-> UTC: a different build, which adds an `app.licensing.enabled` block — it is
-> **not** the code of this branch, and the judge's installation link points at
-> production, whose manifest declares no licence). The
-> version id of the production version is `09201e49-daac-48f6-bf92-c1c73e01ffcc`
-> — inside the same major version, the id is the same one and only `updatedAt`
-> moves. *(An earlier version of this file gave "20:54 UTC" for the deployment
-> of 9 November: the measured value was 20:00:06 UTC — the deployment record,
-> the version record and the commit date are the sources.)*
+> **Version history.** `forge deploy` numbers the versions itself: the manifest declares no
+> `app.version`, so the CLI increments the minor number of the installed major version.
+> Production went 2.6.0 → 2.7.0 → 2.8.0 → 2.9.0 → 2.10.0 (15 November 2026, the
+> hidden-request-type fix) → **2.11.0** (16 November 2026 at 16:38:53 UTC, the
+> dependency update of commit `9a0d99f`; manifest unchanged). The judge copy is a separate
+> app with its own numbering: its production **2.1.0** (17 November 2026 at 01:22:51 UTC)
+> serves the same code — 51 files compared one by one with this branch, 0 difference — and
+> its manifest differs only by the app id and a comment saying it is the judge copy. The
+> Platform API (`api.atlassian.com/graphql`, `app(id:)` → `environmentsPage`, `isLatest`)
+> is the authority for what is served on a given day.
+> The development environment numbers on its own: its 2.11.0 of 15 November 2026 (quoted
+> below) was a different build, with an `app.licensing.enabled` block; it now runs 2.12.0.
 
 **Measured on 7 November 2026** (and re-measured on 15 November 2026, after the
 deployment of 2.10.0), on both environments:
@@ -338,9 +329,9 @@ What the two tools do **not** do is the interesting part:
   asked with the caller's own identity, failing closed) runs **before any read
   of the site**. A caller who is not an administrator gets a refusal, never a
   report. *(This bullet describes the code of this repository **and** the version
-  running in production today, **2.10.0**: the check on the tools is deployed,
-  and the package uploaded for that deployment contains it, called before any
-  read.)*
+  running in every production version since **2.8.0**, including the judge copy:
+  the check on the tools is deployed, and the uploaded package contains it,
+  called before any read.)*
 * **they read the site with the caller's own permissions** (`asUser`), not with
   the app's wider ones: an agent can never read what the person who called it
   cannot read. The identity comes from the platform, never from a value the
@@ -361,8 +352,8 @@ The tools run the very same engine and the very same rules as the button
 checks all of this offline, against a simulated platform, and checks that the
 harness turns red when each of these properties is broken.
 
-> This module is **deployed**: production 2.10.0 (15 November 2026) declares the
-> `rovo:mcp` module and the two actions. The tools become usable on a site where
+> This module is **deployed**: every production version since 2.6.0, and the judge
+> copy, declare the `rovo:mcp` module and the two actions. The tools become usable on a site where
 > **Rovo is activated** (a paid plan — see below).
 
 > **Rovo is a paid Atlassian product, and the tools need it.** Atlassian states
@@ -581,12 +572,12 @@ is modified: the app reads and reports.
   exposing an MCP server" and ask for **no** Marketplace publication, so
   nothing has to be listed to claim it. The choice is written in the same
   places: the `BONUS` block of the submission text and the owner's checklist.
-* **Marketplace**: the app is **not published** and has **no listing**. Sharing
-  is enabled so the judges can install it — the installation link was measured
-  **active** again on 14 November 2026 (status `active`, products `["jira"]`,
-  same signature sha256 `1c64e881…`) — but a listing is a separate, human step
-  (partner profile, then listing, then review submission). Until that exists
-  the app is **free** and its revenue is **0 $**.
+* **Marketplace**: the app is **not published** and has **no listing** yet. Atlassian stops
+  sharing an app by installation link once it is submitted for a Marketplace listing, so the
+  judges install a separate **judge copy** (same code, its own app id, no licence, sharing
+  enabled); its installation link was measured **active** on 17 November 2026 (HTTP 200,
+  products `["jira"]`). The listing itself is a separate, human step (partner profile, then
+  listing, then review submission). Until that exists the app is **free** and its revenue is **0 $**.
 * **Demonstration video**: **none is published yet**. The rules ask for a public
   YouTube video of the version the judges will install; the capture plan — site,
   version, the five shots, and what is needed to film — is written in
