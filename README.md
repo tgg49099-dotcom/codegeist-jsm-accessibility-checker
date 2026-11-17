@@ -59,6 +59,30 @@ What has **not** been run yet is stated plainly in
 [Limitations](#limitations-stated-plainly) ·
 [Contest entry](#contest-entry-and-marketplace-listing--state-on-17-november-2026)
 
+## The scan of a real JSM portal, in images
+
+The 7 findings of the scan measured on a real JSM portal on 17 November 2026
+are published as images, in the words of the engine itself:
+
+| | image | what it shows |
+|---|---|---|
+| thumbnail | [`media/scan-jsm-vignette-1500x1000.png`](media/scan-jsm-vignette-1500x1000.png) | the run: 9 GET calls, 0 refused, 7 findings (6 on 3.3.2, 1 on 1.3.5), one finding in full, and the 9 endpoints the engine read |
+| capture 1 | [`media/scan-jsm-constat-1500x1000.png`](media/scan-jsm-constat-1500x1000.png) | one finding in plain words: criterion, level, the endpoint it was read from, resource, location, value read, the message of the engine, the review it asks for |
+| capture 2 | [`media/scan-jsm-regles-1500x1000.png`](media/scan-jsm-regles-1500x1000.png) | the rules the engine applied — level, confidence, endpoints, request types, messages — and what the scan cannot check |
+| capture 3 | [`media/scan-jsm-violations-1500x1000.png`](media/scan-jsm-violations-1500x1000.png) | the list of the 7 findings, in the table the administration page shows |
+
+These 4 images are **computed**, not drawn: every line they show comes from a
+file of this repository, and the manifest
+[`media/SCAN-JSM-SCREENSHOTS-2026-11-17.json`](media/SCAN-JSM-SCREENSHOTS-2026-11-17.json)
+says which file each line comes from. They are produced by
+[`tools/generer-images-scan-184.py`](tools/generer-images-scan-184.py) from the
+measurement of the real run
+([`docs/scan-jsm-2026-11-17.json`](docs/scan-jsm-2026-11-17.json)), and
+[`tools/verifier-images-scan-184.py`](tools/verifier-images-scan-184.py) replays
+that computation and checks the result is identical — a picture drawn by hand
+would not survive that check. Size, dimensions, md5 and the public URLs are in
+[`docs/SCAN-JSM-SCREENSHOTS-2026-11-17.md`](docs/SCAN-JSM-SCREENSHOTS-2026-11-17.md).
+
 ## What it does
 
 You open **Administration → Apps → Portal Accessibility Checker for JSM**, and you

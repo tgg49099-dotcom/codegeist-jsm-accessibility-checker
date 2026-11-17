@@ -1,0 +1,1006 @@
+{
+  "date": "2026-11-17",
+  "dimensions": [
+    1500,
+    1000
+  ],
+  "ihm": "src/frontend/admin.jsx",
+  "images": [
+    {
+      "fichier": "scan-jsm-vignette-1500x1000.png",
+      "hauteur": 1000,
+      "largeur": 1500,
+      "lignes": [
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "note": "label of the image"
+          },
+          "texte": "Site"
+        },
+        {
+          "source": {
+            "chemin": "site",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "https://tgg-dev.atlassian.net"
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "note": "label of the image"
+          },
+          "texte": "Mode"
+        },
+        {
+          "source": {
+            "chemin": "mode + jsmProbe.isLicensedForUse",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "jsm (JSM active on the site: isLicensedForUse = True)"
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "note": "label of the image"
+          },
+          "texte": "Engine"
+        },
+        {
+          "source": {
+            "chemin": "rapport.scanner",
+            "fichier": "docs/scan-jsm-2026-11-17-reprise.json"
+          },
+          "texte": "Portal Accessibility Checker for JSM (app 33f1227e-0df1-4008-b181-ea9c50b116f5)"
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "note": "label of the image"
+          },
+          "texte": "HTTP calls"
+        },
+        {
+          "source": {
+            "chemin": "appels[]",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "9 GET, 0 POST, 0 refused \u2014 read-only"
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "note": "label of the image"
+          },
+          "texte": "Findings"
+        },
+        {
+          "source": {
+            "chemin": "constats_total + repartition_criteres",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "7 (1 x 1.3.5, 6 x 3.3.2)"
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "note": "label of the image"
+          },
+          "texte": "Review"
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "ligne": 262
+          },
+          "texte": "7 to be checked by a human (a_verifier: true)"
+        },
+        {
+          "source": {
+            "chemin": "CRITERES['3.3.2'].titre",
+            "fichier": "src/regles.js"
+          },
+          "texte": "WCAG 3.3.2  Labels or Instructions"
+        },
+        {
+          "source": {
+            "chemin": "niveaux_par_critere + repartition_criteres",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "          level A \u00b7 REST-verifiable \u00b7 6 finding(s) in this scan"
+        },
+        {
+          "source": {
+            "chemin": "CRITERES['1.3.5'].titre",
+            "fichier": "src/regles.js"
+          },
+          "texte": "WCAG 1.3.5  Identify Input Purpose"
+        },
+        {
+          "source": {
+            "chemin": "niveaux_par_critere + repartition_criteres",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "          level AA \u00b7 content only (partial) \u00b7 1 finding(s) in this scan"
+        },
+        {
+          "source": {
+            "chemin": "constats[0]",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "One finding, as the engine reports it:"
+        },
+        {
+          "source": {
+            "chemin": "constats[0].ressource + .emplacement + .valeur",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "  Support > Get IT help \u00b7 requestTypeFields[0].description = \"\""
+        },
+        {
+          "source": {
+            "chemin": "constats[0].critere + .niveau + .message",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "  3.3.2 (A) Required field without instructions (`description` is empty)"
+        },
+        {
+          "source": {
+            "chemin": "appels[]",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "What the app read \u2014 9 GET calls, nothing refused:"
+        },
+        {
+          "source": {
+            "chemin": "appels[]",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "  GET  200  /rest/api/3/serverInfo"
+        },
+        {
+          "source": {
+            "chemin": "appels[]",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "  GET  200  /rest/servicedeskapi/info"
+        },
+        {
+          "source": {
+            "chemin": "appels[]",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "  GET  200  /rest/servicedeskapi/servicedesk"
+        },
+        {
+          "source": {
+            "chemin": "appels[]",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "  GET  200  /rest/servicedeskapi/servicedesk/1/requesttype"
+        },
+        {
+          "source": {
+            "chemin": "appels[]",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "  GET  200  /rest/servicedeskapi/servicedesk/1/requesttype/1/field"
+        },
+        {
+          "source": {
+            "chemin": "appels[]",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "  GET  200  /rest/servicedeskapi/servicedesk/1/requesttype/4/field"
+        },
+        {
+          "source": {
+            "chemin": "appels[]",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "  GET  200  /rest/servicedeskapi/servicedesk/1/requesttype/8/field"
+        },
+        {
+          "source": {
+            "chemin": "appels[]",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "  GET  200  /rest/servicedeskapi/servicedesk/1/requesttype/9/field"
+        },
+        {
+          "source": {
+            "chemin": "appels[]",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "  GET  200  /rest/servicedeskapi/servicedesk/1/requesttype/3/field"
+        },
+        {
+          "source": {
+            "chemin": "appels[]",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "Read-only: 9 GET, 0 POST. The app writes nothing on your site and calls no external service."
+        },
+        {
+          "source": {
+            "chemin": "md5_moteur_local",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "Source: docs/scan-jsm-2026-11-17.json \u00b7 engine md5 af2117747cc8597b09b97b8a0e349a69 \u00b7 drawn by tools/generer-images-scan-184.py"
+        }
+      ],
+      "md5": "6310a0c4b048de8101798fd14648a8bf",
+      "octets": 127122,
+      "ratio": "3:2"
+    },
+    {
+      "fichier": "scan-jsm-constat-1500x1000.png",
+      "hauteur": 1000,
+      "largeur": 1500,
+      "lignes": [
+        {
+          "source": {
+            "chemin": "CRITERES['3.3.2'].titre",
+            "fichier": "src/regles.js"
+          },
+          "texte": "WCAG 3.3.2 \u2014 Labels or Instructions"
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "note": "label of the image"
+          },
+          "texte": "Level"
+        },
+        {
+          "source": {
+            "chemin": "constats[0].niveau",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "A"
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "note": "label of the image"
+          },
+          "texte": "Confidence"
+        },
+        {
+          "source": {
+            "chemin": "constats[0].confiance",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "REST-verifiable"
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "note": "label of the image"
+          },
+          "texte": "Read from"
+        },
+        {
+          "source": {
+            "chemin": "rapport.findings[0].source",
+            "fichier": "docs/scan-jsm-2026-11-17-reprise.json"
+          },
+          "texte": "E4 \u2014 GET /rest/servicedeskapi/servicedesk/1/requesttype/1/field (200)"
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "note": "label of the image"
+          },
+          "texte": "Resource"
+        },
+        {
+          "source": {
+            "chemin": "constats[0].ressource",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "Support > Get IT help"
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "note": "label of the image"
+          },
+          "texte": "Request type"
+        },
+        {
+          "source": {
+            "chemin": "types_lus[]",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "Get IT help (id 1) of the service desk Support"
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "note": "label of the image"
+          },
+          "texte": "Fields read"
+        },
+        {
+          "source": {
+            "chemin": "rapport.read[]",
+            "fichier": "docs/scan-jsm-2026-11-17-reprise.json"
+          },
+          "texte": "Summary (required), Description, Attachment"
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "note": "label of the image"
+          },
+          "texte": "Location"
+        },
+        {
+          "source": {
+            "chemin": "constats[0].emplacement",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "requestTypeFields[0].description"
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "note": "label of the image"
+          },
+          "texte": "Value read"
+        },
+        {
+          "source": {
+            "chemin": "constats[0].valeur",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "\"\" (empty)"
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "note": "label of the image"
+          },
+          "texte": "The app says"
+        },
+        {
+          "source": {
+            "chemin": "constats[0].message",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "Required field without instructions (`description` is empty)"
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "note": "label of the image"
+          },
+          "texte": "Review"
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "ligne": 106
+          },
+          "texte": "human review (a_verifier: true)"
+        },
+        {
+          "source": {
+            "chemin": "par_passage",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "The 7 findings of this scan, by request type"
+        },
+        {
+          "source": {
+            "chemin": "par_passage['Support > Get IT help']",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "  Support > Get IT help                    1"
+        },
+        {
+          "source": {
+            "chemin": "par_passage['Support > Report a system problem']",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "  Support > Report a system problem        2"
+        },
+        {
+          "source": {
+            "chemin": "par_passage['Support > Report broken hardware']",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "  Support > Report broken hardware         3"
+        },
+        {
+          "source": {
+            "chemin": "par_passage['Support > Request a new account']",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "  Support > Request a new account          1"
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "ligne": 262
+          },
+          "texte": "What the app guarantees"
+        },
+        {
+          "source": {
+            "chemin": "rapport.limites[]",
+            "fichier": "docs/scan-jsm-2026-11-17-reprise.json"
+          },
+          "texte": "  read-only: this scan writes nothing on your site"
+        },
+        {
+          "source": {
+            "chemin": "rapport.limites[]",
+            "fichier": "docs/scan-jsm-2026-11-17-reprise.json"
+          },
+          "texte": "  the REST API does not render the portal: contrast (1.4.3), focus order (2.4.7), target size (2.5.8) and status"
+        },
+        {
+          "source": {
+            "chemin": "rapport.limites[]",
+            "fichier": "docs/scan-jsm-2026-11-17-reprise.json"
+          },
+          "texte": "    messages (4.1.3) are NOT checkable here"
+        },
+        {
+          "source": {
+            "chemin": "rapport.limites[]",
+            "fichier": "docs/scan-jsm-2026-11-17-reprise.json"
+          },
+          "texte": "  the presence of a field on a screen is read through createmeta; where a field does not appear, the finding is about"
+        },
+        {
+          "source": {
+            "chemin": "rapport.limites[]",
+            "fichier": "docs/scan-jsm-2026-11-17-reprise.json"
+          },
+          "texte": "    its metadata, not about a rendering"
+        },
+        {
+          "source": {
+            "chemin": "rapport.limites[]",
+            "fichier": "docs/scan-jsm-2026-11-17-reprise.json"
+          },
+          "texte": "  a finding is an ALERT to be checked by a human: the app does not certify any conformance"
+        },
+        {
+          "source": {
+            "chemin": "rapport.limites[]",
+            "fichier": "docs/scan-jsm-2026-11-17-reprise.json"
+          },
+          "texte": "A finding is an alert for a human to check: the app certifies no conformance."
+        },
+        {
+          "source": {
+            "chemin": "constats[0]",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "Source: docs/scan-jsm-2026-11-17.json \u00b7 drawn by tools/generer-images-scan-184.py"
+        }
+      ],
+      "md5": "271a89b451206d467ab81a9565f32c4d",
+      "octets": 114442,
+      "ratio": "3:2"
+    },
+    {
+      "fichier": "scan-jsm-regles-1500x1000.png",
+      "hauteur": 1000,
+      "largeur": 1500,
+      "lignes": [
+        {
+          "source": {
+            "chemin": "CRITERES['3.3.2'].titre",
+            "fichier": "src/regles.js"
+          },
+          "texte": "WCAG 3.3.2 \u2014 Labels or Instructions"
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "note": "label of the image"
+          },
+          "texte": "Level"
+        },
+        {
+          "source": {
+            "chemin": "niveaux_par_critere['3.3.2']",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "A"
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "note": "label of the image"
+          },
+          "texte": "Confidence"
+        },
+        {
+          "source": {
+            "chemin": "CRITERES['3.3.2'].confiance",
+            "fichier": "src/regles.js"
+          },
+          "texte": "REST-verifiable"
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "note": "label of the image"
+          },
+          "texte": "Read from"
+        },
+        {
+          "source": {
+            "chemin": "appels[]",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "GET /rest/servicedeskapi/servicedesk/1/requesttype/1/field"
+        },
+        {
+          "source": {
+            "chemin": "appels[]",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "GET /rest/servicedeskapi/servicedesk/1/requesttype/8/field"
+        },
+        {
+          "source": {
+            "chemin": "appels[]",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "GET /rest/servicedeskapi/servicedesk/1/requesttype/9/field"
+        },
+        {
+          "source": {
+            "chemin": "appels[]",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "GET /rest/servicedeskapi/servicedesk/1/requesttype/3/field"
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "note": "label of the image"
+          },
+          "texte": "Request types"
+        },
+        {
+          "source": {
+            "chemin": "types_lus[]",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "Get IT help, Report a system problem, Report broken hardware, Request a new account"
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "note": "label of the image"
+          },
+          "texte": "Findings"
+        },
+        {
+          "source": {
+            "chemin": "repartition_criteres['3.3.2']",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "6 in this scan"
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "note": "label of the image"
+          },
+          "texte": "Engine message"
+        },
+        {
+          "source": {
+            "chemin": "constats[].message (critere 3.3.2)",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "Required field without instructions (`description` is empty)"
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "note": "label of the image"
+          },
+          "texte": "Example"
+        },
+        {
+          "source": {
+            "chemin": "constats[] (critere 3.3.2)",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "Support > Get IT help \u2014 requestTypeFields[0].description = \"\""
+        },
+        {
+          "source": {
+            "chemin": "CRITERES['1.3.5'].titre",
+            "fichier": "src/regles.js"
+          },
+          "texte": "WCAG 1.3.5 \u2014 Identify Input Purpose"
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "note": "label of the image"
+          },
+          "texte": "Level"
+        },
+        {
+          "source": {
+            "chemin": "niveaux_par_critere['1.3.5']",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "AA"
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "note": "label of the image"
+          },
+          "texte": "Confidence"
+        },
+        {
+          "source": {
+            "chemin": "CRITERES['1.3.5'].confiance",
+            "fichier": "src/regles.js"
+          },
+          "texte": "content only (partial)"
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "note": "label of the image"
+          },
+          "texte": "Read from"
+        },
+        {
+          "source": {
+            "chemin": "appels[]",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "GET /rest/servicedeskapi/servicedesk/1/requesttype/9/field"
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "note": "label of the image"
+          },
+          "texte": "Request types"
+        },
+        {
+          "source": {
+            "chemin": "types_lus[]",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "Report broken hardware"
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "note": "label of the image"
+          },
+          "texte": "Findings"
+        },
+        {
+          "source": {
+            "chemin": "repartition_criteres['1.3.5']",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "1 in this scan"
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "note": "label of the image"
+          },
+          "texte": "Engine message"
+        },
+        {
+          "source": {
+            "chemin": "constats[].message (critere 1.3.5)",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "Purpose of the field not stated (no purpose keyword in the name or the description)"
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "note": "label of the image"
+          },
+          "texte": "Example"
+        },
+        {
+          "source": {
+            "chemin": "constats[] (critere 1.3.5)",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "Support > Report broken hardware \u2014 requestTypeFields[2].name = \"Affected hardware\""
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "note": "label of the image"
+          },
+          "texte": "Fields read"
+        },
+        {
+          "source": {
+            "chemin": "champs_lus + types_lus[]",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "23 fields, across 5 request types of the service desk Support"
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "ligne": 262
+          },
+          "texte": "What this scan cannot check (the app says so itself)"
+        },
+        {
+          "source": {
+            "chemin": "rapport.limites[]",
+            "fichier": "docs/scan-jsm-2026-11-17-reprise.json"
+          },
+          "texte": "  read-only: this scan writes nothing on your site"
+        },
+        {
+          "source": {
+            "chemin": "rapport.limites[]",
+            "fichier": "docs/scan-jsm-2026-11-17-reprise.json"
+          },
+          "texte": "  the REST API does not render the portal: contrast (1.4.3), focus order (2.4.7), target size (2.5.8) and status"
+        },
+        {
+          "source": {
+            "chemin": "rapport.limites[]",
+            "fichier": "docs/scan-jsm-2026-11-17-reprise.json"
+          },
+          "texte": "    messages (4.1.3) are NOT checkable here"
+        },
+        {
+          "source": {
+            "chemin": "rapport.limites[]",
+            "fichier": "docs/scan-jsm-2026-11-17-reprise.json"
+          },
+          "texte": "  the presence of a field on a screen is read through createmeta; where a field does not appear, the finding is about"
+        },
+        {
+          "source": {
+            "chemin": "rapport.limites[]",
+            "fichier": "docs/scan-jsm-2026-11-17-reprise.json"
+          },
+          "texte": "    its metadata, not about a rendering"
+        },
+        {
+          "source": {
+            "chemin": "rapport.limites[]",
+            "fichier": "docs/scan-jsm-2026-11-17-reprise.json"
+          },
+          "texte": "  a finding is an ALERT to be checked by a human: the app does not certify any conformance"
+        },
+        {
+          "source": {
+            "chemin": "CRITERES",
+            "fichier": "src/regles.js"
+          },
+          "texte": "The criteria are read from the engine's own catalogue (src/regles.js), not written by hand."
+        },
+        {
+          "source": {
+            "chemin": "constats",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "Source: docs/scan-jsm-2026-11-17.json \u00b7 drawn by tools/generer-images-scan-184.py"
+        }
+      ],
+      "md5": "e5e1fd13d8481db8e8260ee7e49b1e6f",
+      "octets": 143420,
+      "ratio": "3:2"
+    },
+    {
+      "fichier": "scan-jsm-violations-1500x1000.png",
+      "hauteur": 1000,
+      "largeur": 1500,
+      "lignes": [
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "ligne": 262
+          },
+          "texte": "7 finding(s) \u2014 7 to be checked by a human"
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "ligne": 268
+          },
+          "texte": "Mode: jsm. Read 7 source(s). Generated at 2026-11-17T20:28:35.555Z."
+        },
+        {
+          "source": {
+            "fichier": "src/frontend/admin.jsx",
+            "ligne": 88
+          },
+          "texte": "Criterion Level Where                                                Review"
+        },
+        {
+          "source": {
+            "chemin": "constats[0]",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "3.3.2     A     Support > Get IT help                                human review"
+        },
+        {
+          "source": {
+            "chemin": "constats[0].emplacement",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "                requestTypeFields[0].description"
+        },
+        {
+          "source": {
+            "chemin": "constats[0].message",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "                Required field without instructions (`description` is empty)"
+        },
+        {
+          "source": {
+            "chemin": "constats[1]",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "3.3.2     A     Support > Report a system problem                    human review"
+        },
+        {
+          "source": {
+            "chemin": "constats[1].emplacement",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "                requestTypeFields[0].description"
+        },
+        {
+          "source": {
+            "chemin": "constats[1].message",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "                Required field without instructions (`description` is empty)"
+        },
+        {
+          "source": {
+            "chemin": "constats[2]",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "3.3.2     A     Support > Report a system problem                    human review"
+        },
+        {
+          "source": {
+            "chemin": "constats[2].emplacement",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "                requestTypeFields[1].description"
+        },
+        {
+          "source": {
+            "chemin": "constats[2].message",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "                Required field without instructions (`description` is empty)"
+        },
+        {
+          "source": {
+            "chemin": "constats[3]",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "3.3.2     A     Support > Report broken hardware                     human review"
+        },
+        {
+          "source": {
+            "chemin": "constats[3].emplacement",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "                requestTypeFields[0].description"
+        },
+        {
+          "source": {
+            "chemin": "constats[3].message",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "                Required field without instructions (`description` is empty)"
+        },
+        {
+          "source": {
+            "chemin": "constats[4]",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "3.3.2     A     Support > Report broken hardware                     human review"
+        },
+        {
+          "source": {
+            "chemin": "constats[4].emplacement",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "                requestTypeFields[1].description"
+        },
+        {
+          "source": {
+            "chemin": "constats[4].message",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "                Required field without instructions (`description` is empty)"
+        },
+        {
+          "source": {
+            "chemin": "constats[5]",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "1.3.5     AA    Support > Report broken hardware                     human review"
+        },
+        {
+          "source": {
+            "chemin": "constats[5].emplacement",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "                requestTypeFields[2].name"
+        },
+        {
+          "source": {
+            "chemin": "constats[5].message",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "                Purpose of the field not stated (no purpose keyword in the name or the description)"
+        },
+        {
+          "source": {
+            "chemin": "constats[6]",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "3.3.2     A     Support > Request a new account                      human review"
+        },
+        {
+          "source": {
+            "chemin": "constats[6].emplacement",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "                requestTypeFields[1].description"
+        },
+        {
+          "source": {
+            "chemin": "constats[6].message",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "                Required field without instructions (`description` is empty)"
+        },
+        {
+          "source": {
+            "chemin": "constats[]",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "Every line of this table is one finding of the real scan: 9 GET, 0 POST, nothing written on the site."
+        },
+        {
+          "source": {
+            "chemin": "constats",
+            "fichier": "docs/scan-jsm-2026-11-17.json"
+          },
+          "texte": "Source: docs/scan-jsm-2026-11-17.json \u00b7 drawn by tools/generer-images-scan-184.py"
+        }
+      ],
+      "md5": "c1adf4d5140210365b5e4d6db21b1500",
+      "octets": 121226,
+      "ratio": "3:2"
+    }
+  ],
+  "regles": "src/regles.js",
+  "site": "https://tgg-dev.atlassian.net",
+  "source_brute": "docs/scan-jsm-2026-11-17-reprise.json",
+  "source_principale": "docs/scan-jsm-2026-11-17.json"
+}
