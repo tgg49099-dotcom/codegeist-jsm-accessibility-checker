@@ -227,6 +227,31 @@ const resume = (findings) => {
   check('E JQL 400 reported as an incomplete read', (r.incompleteRead || []).some((w) => /search\/jql.*HTTP 400/.test(w)),
     JSON.stringify(r.incompleteRead));
 
+  // F — 3.2.6, "field" variant: the same field name is described in one
+  // request type and not in another. The rule needs the fields of SEVERAL
+  // types: without them, this half of 3.2.6 never ran in production
+  // (23/11/2026 review, minor 1).
+  const CHAMPS_AVEC_IMPACT = [
+    champ('summary', 'Summary', true, ''),
+    champ('customfield_10060', 'Impact', false, 'Tell us how this request affects you.'),
+  ];
+  const CHAMPS_SANS_IMPACT = [
+    champ('summary', 'Summary', true, ''),
+    champ('customfield_10060', 'Impact', false, ''),
+  ];
+  SCENARIO = scenarioJsm((rt) => (rt.id === '1' ? CHAMPS_AVEC_IMPACT : CHAMPS_SANS_IMPACT));
+  r = await lancerScan();
+  f = r.findings;
+  check('F 3.2.6 field variant detected (same field name: described in one type, not in the other)',
+    f.some((c) => c.critere === '3.2.6' && c.a_verifier && /Impact/.test(String(c.message))),
+    f.filter((c) => c.critere === '3.2.6').map((c) => c.emplacement + ' ' + c.message).join(' | ') || 'no 3.2.6 finding');
+  check('F the 3.2.6 finding names the request type whose field has no description',
+    f.some((c) => c.critere === '3.2.6' && /Fix an account problem/.test(String(c.ressource))),
+    f.filter((c) => c.critere === '3.2.6').map((c) => String(c.ressource)).join(' | ') || 'no 3.2.6 finding');
+  check('F the 3.2.6 finding points at the description of the field that has none',
+    f.some((c) => c.critere === '3.2.6' && /requestTypeFields\[\d+\]\.description$/.test(String(c.emplacement))),
+    f.filter((c) => c.critere === '3.2.6').map((c) => String(c.emplacement)).join(' | ') || 'no 3.2.6 finding');
+
   console.log(failures === 0 ? '== ALL PASS (' + checks + ' checks): the scan holds on a judge\'s site in English ==' : '== ' + failures + ' FAILURE(S) on ' + checks + ' checks ==');
   process.exit(failures === 0 ? 0 : 1);
 })().catch((e) => { console.error(e); process.exit(2); });

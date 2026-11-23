@@ -534,13 +534,44 @@ async function scanJsm() {
       hiddenFromPortal: caches.map((rt) => ({ id: rt.id, name: rt.name })),
     };
 
+    // Les champs de TOUS les types affichés sont lus AVANT les règles : la
+    // variante « champ » de 3.2.6 (le même nom de champ décrit dans un type
+    // de demande et absent d'un autre) a besoin des champs de PLUSIEURS
+    // types. Sans eux, cette moitié de la règle ne tournait jamais
+    // (constat de la Direction, 23/11/2026).
+    const champsParType = [];
+    for (const rt of values) {
+      const flds = await jget(
+        route`/rest/servicedeskapi/servicedesk/${desk.id}/requesttype/${rt.id}/field`,
+        JSM_HDRS
+      );
+      const requestTypeFields = (flds.body.requestTypeFields || []).slice(0, 20);
+      sources[`GET /rest/servicedeskapi/servicedesk/${desk.id}/requesttype/${rt.id}/field`] = {
+        httpStatus: flds.status,
+        excerpt: requestTypeFields.map((f) => ({
+          fieldId: f.fieldId,
+          name: f.name,
+          description: f.description || '',
+          required: f.required,
+        })),
+      };
+      champsParType.push({
+        rt,
+        champs: requestTypeFields,
+        racine: 'requestTypeFields',
+        ressource: `${desk.projectName} > ${rt.name}`,
+      });
+    }
+
     // Moteur WCAG 2.2 — E5 : types de demande (aide présente ou non d'un type
-    // à l'autre : cohérence de l'aide — 3.2.6).
+    // à l'autre : cohérence de l'aide — 3.2.6). Les champs de tous les types
+    // lui sont passés : la variante « champ » de la règle tourne enfin.
     for (const constat of regles.analyserTypesDemande(
       values,
       'values',
       'E5',
-      desk.projectName || String(desk.id)
+      desk.projectName || String(desk.id),
+      champsParType
     )) {
       findings.push({ ...constat, ou: `service desk ${desk.projectName || desk.id}` });
     }
@@ -561,21 +592,9 @@ async function scanJsm() {
       }
     }
 
-    for (const rt of values) {
-      const flds = await jget(
-        route`/rest/servicedeskapi/servicedesk/${desk.id}/requesttype/${rt.id}/field`,
-        JSM_HDRS
-      );
-      const requestTypeFields = (flds.body.requestTypeFields || []).slice(0, 20);
-      sources[`GET /rest/servicedeskapi/servicedesk/${desk.id}/requesttype/${rt.id}/field`] = {
-        httpStatus: flds.status,
-        excerpt: requestTypeFields.map((f) => ({
-          fieldId: f.fieldId,
-          name: f.name,
-          description: f.description || '',
-          required: f.required,
-        })),
-      };
+    for (const entree of champsParType) {
+      const rt = entree.rt;
+      const requestTypeFields = entree.champs;
 
       // Moteur WCAG 2.2 — E4 : champs du formulaire (étiquette vide 3.3.2,
       // champ obligatoire sans instruction 3.3.2, finalité non annoncée
