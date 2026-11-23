@@ -186,7 +186,7 @@ outbound call to any host, no storage call, and no analytics or telemetry code.
 
 ## The two Rovo MCP tools (deployed since production 2.6.0)
 
-*The deployed version of this app — **production 2.8.0**, deployed 10 November 2026 — contains
+*The version of this app deployed on 10 November 2026 — **production 2.8.0** — contains
 three more module entries than the previous version: two `action` modules and one `rovo:mcp`
 module, the last of which exposes two tools through Atlassian's MCP server. The section below describes what those tools do, so that the notice can
 be read next to the code; the published page (https://labs.chiffreo.ch/privacy.html) must be
