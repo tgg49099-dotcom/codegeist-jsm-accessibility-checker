@@ -15,7 +15,7 @@ public URL: until version 2.4.0 the app answered a web trigger declared with
 | **Data leaves your site** | The app itself sends nothing: it declares **no egress at all**, runs on Atlassian's infrastructure and calls only the REST APIs of your own site. What it *returns* is the report itself — to the administration page, or, for the two MCP tools, to the MCP client the administrator chose to call them from (that client is chosen by the admin and is outside this app; see [MCP tools](#the-two-tools-on-atlassians-mcp-server-deployed-since-production-260)) |
 | **Personal data in the answer** | A name or an e-mail **typed in the page** is masked, never returned in clear text. The content read from your site is returned **as it is** — it is what the app checks (see below) |
 | **Permissions** | Read-only: `read:jira-work`, `read:servicedesk-request` |
-| **App version in this repository** | the code of this branch (code files unchanged since commit `9a0d99f`, 16 November 2026: Forge packages updated, no known high or critical advisory left in production dependencies). Measured on 17 November 2026 with the Platform API: it is the code served by production **2.11.0** of the app (deployed 16 November 2026 at 16:38:53 UTC) **and** by the **judge copy** (a separate Forge app, `d6ddc803-a5a2-4c18-b918-4629395f97f9`, production **2.1.0**, deployed 17 November 2026 at 01:22:51 UTC, no licence) — the judges install the judge copy (see "Marketplace" below). Forge assigns the numbers itself (the manifest declares no `app.version`), so the two apps number the same code differently |
+| **App version in this repository** | the code of this branch. The code files were unchanged from commit `9a0d99f` (16 November 2026: Forge packages updated, no known high or critical advisory left in production dependencies) until the corrections of **23 November 2026** listed below (rule 1.3.5, truthful JSM probe, incomplete-read warning, CSV formula protection) — **these corrections are NOT deployed**: production still serves the engine of **2.11.0** (deployed 16 November 2026 at 16:38:53 UTC), the code measured on 17 November 2026, and the **judge copy** (a separate Forge app, `d6ddc803-a5a2-4c18-b918-4629395f97f9`, production **2.1.0**, deployed 17 November 2026 at 01:22:51 UTC, no licence) — the judges install the judge copy (see "Marketplace" below). Forge assigns the numbers itself (the manifest declares no `app.version`), so the two apps number the same code differently |
 
 
 ## In two minutes (for the Codegeist judges)
@@ -225,6 +225,27 @@ remove the gate from the MCP path: each of the three must turn the suite RED.
 > ("a verifier"), not as an automatic finding. The interface is unchanged.
 > The offline suite that proves all of this is `test-portail-par-defaut.js`
 > (28 checks, including the four English faults).
+>
+> **What this branch changed on 23 November 2026 — not deployed yet.** Four
+> corrections, each with its own test; production still serves the engine
+> measured on 17 November 2026 (2.11.0):
+>
+> * **1.3.5 now targets the fields that collect personal data.** A field named
+>   "Your work email" is reported (to verify: the `autocomplete` attribute of
+>   the rendered field is in no REST API); a field named "Steps to reproduce"
+>   or "Reference" is **not** reported any more — the old rule had it the
+>   wrong way round. The demo contract follows: 24 seeded issues, 5 negative
+>   checks (`docs/README-demo.md`, `src/demo/contrat.json`).
+> * **The JSM probe tells the truth.** When `/rest/servicedeskapi/info` does
+>   not answer (404, 403), the report no longer says "JSM is active": it says
+>   the JSM API did not answer, and that nothing was read from it.
+> * **An incomplete read warns.** A service desk list that fails, an isolated
+>   403, a JQL 400: the report carries the list of what was not read
+>   (`incompleteRead`) and the first line of its limits says so — a "0
+>   finding" on a part that was not read is not a result.
+> * **The CSV cannot carry a formula.** A value read on the site and starting
+>   with `=`, `-`, `+` or `@` leaves the export prefixed with an apostrophe
+>   (OWASP "CSV Injection"), so no spreadsheet opens it as a formula.
 >
 > **What 2.10.0 changed** (commit `1ff128d`, deployed to production on
 > 15 November 2026 at 13:36:51 UTC): a request type whose `groupIds` is empty
