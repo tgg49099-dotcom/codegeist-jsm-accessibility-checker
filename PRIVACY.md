@@ -15,6 +15,7 @@ refuses (§ 2) — the **two Rovo MCP tools**, which are now deployed (§ "The t
 MCP tools"), and the **administrator check**, which is now made on the server (§ 1). The masking contract, the sentence of § 8 and the whole of § 8's reasoning
 are unchanged, because the rules that decide the findings did not change: the interface
 moved, the code that reads your site reads it with your own permissions.
+Since 2.8.0 the production version is 2.11.0 (16 November 2026): only the rules changed — English word lists, no 1.3.5 noise on Jira system fields, and a request type hidden from the portal is neither judged nor counted. The endpoints read are the same, the app still stores nothing, and the sentence of § 8 is unchanged.
 
 ---
 
