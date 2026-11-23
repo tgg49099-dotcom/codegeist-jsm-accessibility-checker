@@ -18,9 +18,12 @@
  * ENTRY POINT. Since 05/11/2026 this file is NOT an HTTP handler
  * any more: the public trigger module has been REMOVED from the manifest and
  * replaced by a `jira:adminPage` module. This file is the ENGINE; it is called
- * by the resolver (src/resolvers.js), which the platform only lets a logged-in
- * Jira administrator reach. See the entry-point section at the bottom of this
- * file.
+ * by the resolver (src/resolvers.js). The platform names NO role and NO
+ * permission for opening that page: any signed-in user who can open the Jira
+ * administration can open it, and the app checks the rights ITSELF, on the
+ * server (src/droits-admin.js — the global permissions ADMINISTER or
+ * SYSTEM_ADMIN, asked with the caller's own identity). See the entry-point
+ * section at the bottom of this file.
  */
 
 const api = require('@forge/api');
@@ -839,8 +842,11 @@ async function scanJira() {
 // a scan of the customer's site and read the findings in clear text. The
 // manifest now declares a `jira:adminPage` module instead (see manifest.yml)
 // and this file is no longer an HTTP handler. It is the ENGINE, and it is
-// called by the resolver (src/resolvers.js), which is only reachable from the
-// administration page of a logged-in Jira administrator.
+// called by the resolver (src/resolvers.js). The platform does NOT restrict
+// that page to administrators: any signed-in user who can open the Jira
+// administration can open it. The app checks the rights ITSELF, on the server
+// (src/droits-admin.js), and refuses the scan to anyone who does not hold the
+// global permission ADMINISTER or SYSTEM_ADMIN.
 //
 // Nothing is duplicated: `executerScan()` runs the very same REST reads and
 // the very same rules (src/regles.js) as the code that used to answer the

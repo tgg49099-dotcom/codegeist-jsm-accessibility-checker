@@ -33,7 +33,10 @@
  *            module that has been removed (jury improvement 2);
  *   ADM-12  the resolver and the two MCP tools share ONE implementation of
  *            the check (src/droits-admin.js): two copies would be two doors
- *            that could drift apart.
+ *            that could drift apart;
+ *   ADM-13  the comments of the engine agree with the manifest on WHO can
+ *            reach the administration page: the platform names no role, the
+ *            app checks the rights itself, on the server.
  *
  * COUNTER-PROOFS (the suite must be able to say NO)
  *
@@ -297,6 +300,25 @@ function controlesStatiques() {
     !/webtrigger|productTrigger|scheduleTrigger|authentication: none/i.test(sansCommentaires);
   res['ADM-12 the resolver and the MCP tools share ONE implementation of the check'] =
     utiliseLeControlePartage && existe(FICHIER_DROITS);
+
+  // ADM-13 — les commentaires du moteur doivent être d'ACCORD avec le
+  // manifest sur QUI peut atteindre la page d'administration. Le manifest est
+  // la source de vérité : la référence officielle du module `jira:adminPage`
+  // ne nomme AUCUN rôle et AUCUNE permission pour l'ouvrir, l'application ne
+  // peut donc pas prétendre que la PLATEFORME réserve la page aux
+  // administrateurs — ce sont les DROITS que l'application vérifie, seule,
+  // côté serveur.
+  const manifest = fs.readFileSync(path.join(APP, 'manifest.yml'), 'utf8');
+  const sourceIndex = fs.readFileSync(path.join(SRC, 'index.js'), 'utf8');
+  res['ADM-13 the manifest declares no role for opening the administration page (source of truth)'] =
+    /names NO role and NO permission/i.test(manifest);
+  res['ADM-13b the engine does not claim that the platform restricts the page to an administrator'] =
+    !/only lets a logged-in[\s\S]{0,40}Jira administrator reach/i.test(sourceIndex) &&
+      !/only reachable from the[\s\S]{0,80}administration page of a logged-in Jira administrator/i.test(
+        sourceIndex
+      );
+  res['ADM-13c the engine says that the rights are checked by the app itself, on the server'] =
+    /checks the rights ITSELF, on the server/i.test(sourceIndex);
   return res;
 }
 
