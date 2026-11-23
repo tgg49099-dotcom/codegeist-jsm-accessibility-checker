@@ -210,7 +210,11 @@ function avertissementsLecture(scan) {
   for (const cle of Object.keys(sources)) {
     const source = sources[cle] || {};
     if (source.note) continue;
-    if (source.httpStatus !== 200) problemes.push(cle + ' answered HTTP ' + source.httpStatus);
+    if (source.httpStatus === 0) {
+      problemes.push(cle + ' could not be read (network error: the platform could not be reached)');
+    } else if (source.httpStatus !== 200) {
+      problemes.push(cle + ' answered HTTP ' + source.httpStatus);
+    }
   }
   return problemes;
 }
@@ -242,7 +246,16 @@ async function jget(path, headers) {
   // @forge/api (3.9.2 puis 8.5.0) : requestJira exige un objet route (tagged template) —
   // un simple string est refusé ("You must create your route using the 'route'
   // export"). requestJira couvre aussi les chemins /rest/servicedeskapi/*.
-  const res = await client().requestJira(path, { headers: headers || {} });
+  //
+  // Une panne réseau ne doit pas REJETER le scan : la lecture n'a pas eu
+  // lieu, elle doit être signalée comme incomplète (constat de la Direction,
+  // 23/11/2026). Le statut 0 (aucun statut HTTP n'est 0) porte la panne.
+  let res = null;
+  try {
+    res = await client().requestJira(path, { headers: headers || {} });
+  } catch (e) {
+    return { status: 0, body: { networkError: String((e && e.message) || e) } };
+  }
   let body = null;
   try {
     body = await res.json();
@@ -261,11 +274,18 @@ async function jget(path, headers) {
  * only the two read scopes, and it cannot write even if it wanted to.
  */
 async function jsearch(path, payload) {
-  const res = await client().requestJira(path, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify(payload),
-  });
+  let res = null;
+  try {
+    res = await client().requestJira(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  } catch (e) {
+    // Même règle que jget : une panne réseau est une lecture incomplète,
+    // pas un échec du scan entier.
+    return { status: 0, body: { networkError: String((e && e.message) || e) } };
+  }
   let body = null;
   try {
     body = await res.json();
@@ -524,7 +544,14 @@ async function scanJsm() {
     excerpt: (desks.body.values || []).slice(0, 3).map((d) => ({ id: d.id, projectName: d.projectName })),
   };
   if (desks.status !== 200) {
-    return { sources, findings, error: 'service desk list unavailable (HTTP ' + desks.status + ')' };
+    return {
+      sources,
+      findings,
+      error:
+        desks.status === 0
+          ? 'service desk list unavailable (network error: the platform could not be reached)'
+          : 'service desk list unavailable (HTTP ' + desks.status + ')',
+    };
   }
   for (const desk of (desks.body.values || []).slice(0, 3)) {
     // Le nom du service desk : son `projectName` quand il y en a un, sinon son

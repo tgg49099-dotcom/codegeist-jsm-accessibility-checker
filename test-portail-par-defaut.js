@@ -36,6 +36,7 @@ const client = {
   requestJira: async (r, opts) => {
     const chemin = cheminDe(r).split('?')[0];
     APPELS.push({ path: chemin, headers: (opts && opts.headers) || {} });
+    if (SCENARIO.__panneReseau__) throw new Error('getaddrinfo ENOTFOUND (network down)');
     const def = SCENARIO[chemin];
     return def ? reponse(def.status, def.body) : reponse(404, { errorMessages: ['not found'] });
   },
@@ -335,6 +336,26 @@ const resume = (findings) => {
   check('J no JSM request carries the misspelled header (X-Experimental-API)',
     appelsJsm.every((a) => a.headers['X-Experimental-API'] === undefined),
     appelsJsm.map((a) => a.path + ' ' + JSON.stringify(a.headers)).join(' | ') || 'no JSM call');
+
+  // K — a network failure must not REJECT the scan: the reads that did not
+  // happen are reported as an incomplete read (23/11/2026 review, minor 8).
+  SCENARIO = Object.assign(scenarioJsm(() => CHAMPS_BASE), { __panneReseau__: true });
+  let rPanne = null;
+  let rejet = null;
+  try {
+    rPanne = await lancerScan();
+  } catch (e) {
+    rejet = String((e && e.message) || e);
+  }
+  check('K a network failure does not reject the scan (the report comes back)',
+    rejet === null && rPanne !== null, rejet || 'no report');
+  check('K the network failure is reported as an incomplete read',
+    rPanne && Array.isArray(rPanne.incompleteRead) && rPanne.incompleteRead.some((w) => /network error/.test(w)),
+    JSON.stringify(rPanne && rPanne.incompleteRead));
+  check('K the first limit says the read was incomplete',
+    rPanne && typeof rPanne.limites[0] === 'string' && rPanne.limites[0].startsWith('INCOMPLETE READ —'),
+    String(rPanne && rPanne.limites[0]).slice(0, 90));
+  SCENARIO = scenarioJsm(() => CHAMPS_BASE);
 
   console.log(failures === 0 ? '== ALL PASS (' + checks + ' checks): the scan holds on a judge\'s site in English ==' : '== ' + failures + ' FAILURE(S) on ' + checks + ' checks ==');
   process.exit(failures === 0 ? 0 : 1);
