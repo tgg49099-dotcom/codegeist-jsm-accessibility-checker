@@ -134,8 +134,8 @@ whatever the way it arrives: in the query parameters, in the body (a JSON object
 URL. The name of the field is read with **the spaces around it ignored** (` nom ` is `nom`), and
 **every** value of a repeated parameter is collected, not only the first one (`?nom=V1&nom=V2` masks
 both `V1` and `V2`). This multi-channel coverage was measured on the **production trigger of version
-2.4.0** — the version that still had the public URL — and the engine has not changed since. The
-version deployed today (2.8.0) has a **single** channel, the payload the page sends with the scan;
+2.4.0** — the version that still had the public URL — and the masking code has not changed since. The
+version deployed today (2.11.0) has a **single** channel, the payload the page sends with the scan;
 the same masking rules apply to it, and they are proved offline by two suites of the public
 repository (`node test-contrat-http.js`, 59 checks, and its counter-proof, 28 checks).
 
