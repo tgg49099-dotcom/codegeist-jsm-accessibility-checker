@@ -38,8 +38,8 @@ Administrators"**) permission. Any other signed-in user gets a refusal, never a 
 the two tools, so the two doors cannot drift apart. An agent that calls a tool without an
 administrator's rights gets the same refusal, and nothing is read.
 
-*(This paragraph describes the code of this repository **and** the version running in
-production, **2.8.0**, deployed 10 November 2026: the two tools apply the administrator
+*(This paragraph describes the code of this repository **and** the version deployed on
+10 November 2026, **2.8.0** (production **2.11.0** today): the two tools apply the administrator
 check, before any read. The package uploaded for that deployment contains the check, called
 before the scan.)*
 
