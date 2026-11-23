@@ -192,10 +192,15 @@ const MOTIFS_SENSORIELS = [
   'round button',
 ];
 
-// 1.4.3 : seuil WCAG pour du texte de taille normale (le thème du portail,
-// qui dit si le texte est « grand », n'est pas dans l'API : on prend 4,5:1).
+// 1.4.3 : seuil WCAG pour du texte de taille normale.
+//
+// Le seuil « grand texte » (3:1) n'est PAS appliqué, et il ne peut pas
+// l'être : dire si un texte est « grand » demande la taille de la police,
+// qui est dans le THÈME du portail — qu'aucune API ne donne. Une constante
+// 3:1 déclarée et jamais utilisée laissait croire que l'app appliquait ce
+// seuil ; elle a été retirée (constat de la Direction, 23/11/2026). Le seul
+// seuil appliqué est 4,5:1, et le constat dit « contraste incertain ».
 const SEUIL_CONTRASTE_NORMAL = 4.5;
-const SEUIL_CONTRASTE_GRAND = 3.0;
 
 // ---------------------------------------------------------------------------
 // Utilitaires de texte
@@ -261,7 +266,11 @@ function cheminPremierTexte(noeud, cheminBase) {
 // ---------------------------------------------------------------------------
 
 function hexRgb(hexa) {
-  const h = String(hexa).replace('#', '');
+  let h = String(hexa).replace('#', '');
+  // Une couleur courte (#fff) est la MÊME couleur que son équivalent long
+  // (#ffffff) : sans cette extension, la règle 1.4.3 ignorait toutes les
+  // couleurs écrites en 3 chiffres (faux négatif de contraste).
+  if (h.length === 3) h = h.split('').map((c) => c + c).join('');
   return [
     parseInt(h.slice(0, 2), 16),
     parseInt(h.slice(2, 4), 16),
@@ -538,7 +547,8 @@ function regleContraste(noeud, chemin, ctx) {
   const iMarque = noeud.marks.findIndex((m) => m && m.type === 'textColor');
   if (iMarque < 0) return;
   const couleur = ((noeud.marks[iMarque].attrs || {}).color || '');
-  if (!/^#[0-9a-fA-F]{6}$/.test(couleur)) return;
+  // 3 chiffres (#fff) ou 6 (#ffffff) : les deux écritures sont valides.
+  if (!/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/.test(couleur)) return;
   const ratio = ratioContraste(hexRgb(couleur), [255, 255, 255]);
   if (ratio >= SEUIL_CONTRASTE_NORMAL) return;
   ctx.constats.push(

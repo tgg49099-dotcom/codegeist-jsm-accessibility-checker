@@ -252,6 +252,34 @@ const resume = (findings) => {
     f.some((c) => c.critere === '3.2.6' && /requestTypeFields\[\d+\]\.description$/.test(String(c.emplacement))),
     f.filter((c) => c.critere === '3.2.6').map((c) => String(c.emplacement)).join(' | ') || 'no 3.2.6 finding');
 
+  // G — 1.4.3 contrast: a colour written in 3 digits (#fff) is the same
+  // colour as its long form (#ffffff) and must be measured like it. Before
+  // the fix, every 3-digit colour was ignored (false negative), and the
+  // source declared a 3:1 threshold that no rule ever applied (the font
+  // size is in the portal theme, which no API gives).
+  const ticketCouleur = (couleur) => ticket('ITS-7', 'Coloured text', doc(
+    p(t('Text painted in a colour', [{ type: 'textColor', attrs: { color: couleur } }])),
+  ));
+  SCENARIO = scenarioJira([ticketCouleur('#fff')]);
+  r = await lancerScan();
+  f = r.findings;
+  check('G a colour written in 3 digits (#fff) is measured (1.4.3, to verify)',
+    f.some((c) => c.critere === '1.4.3' && c.a_verifier && String(c.valeur) === '#fff'),
+    f.filter((c) => c.critere === '1.4.3').map((c) => String(c.valeur) + ' ' + c.message).join(' | ') || 'no 1.4.3 finding');
+  check('G the ratio of #fff on a white background is 1:1',
+    f.some((c) => c.critere === '1.4.3' && c.ratio === 1),
+    f.filter((c) => c.critere === '1.4.3').map((c) => String(c.ratio)).join(' | ') || 'no 1.4.3 finding');
+  SCENARIO = scenarioJira([ticketCouleur('#ffffff')]);
+  r = await lancerScan();
+  f = r.findings;
+  check('G the long form of the same colour is measured too (control)',
+    f.some((c) => c.critere === '1.4.3' && String(c.valeur) === '#ffffff' && c.ratio === 1),
+    f.filter((c) => c.critere === '1.4.3').map((c) => String(c.valeur) + ' ' + c.ratio).join(' | ') || 'no 1.4.3 finding');
+  const sourceRegles = require('fs').readFileSync(require('path').join(__dirname, 'src', 'regles.js'), 'utf8');
+  check('G the engine declares no threshold it never applies (the 3:1 one is gone)',
+    !/SEUIL_CONTRASTE_GRAND/.test(sourceRegles),
+    'SEUIL_CONTRASTE_GRAND still declared');
+
   console.log(failures === 0 ? '== ALL PASS (' + checks + ' checks): the scan holds on a judge\'s site in English ==' : '== ' + failures + ' FAILURE(S) on ' + checks + ' checks ==');
   process.exit(failures === 0 ? 0 : 1);
 })().catch((e) => { console.error(e); process.exit(2); });
