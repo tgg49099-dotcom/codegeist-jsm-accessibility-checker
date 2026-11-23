@@ -332,8 +332,13 @@ function constat(critere, source, ressource, emplacement, valeur, message, optio
 
 /**
  * 1.1.1 Non-text Content — un nœud `media` sans texte alternatif (ou vide).
- * La fiche rappelle que l'app ne peut pas savoir si l'image est décorative :
- * tout constat 1.1.1 est une ALERTE, pas un échec.
+ * La fiche rappelle que l'app ne peut pas savoir si l'image est décorative
+ * (exception prévue par 1.1.1) : le constat porte donc sur un fait lu dans
+ * l'API — pas de texte alternatif — et non sur un verdict : c'est un
+ * signalement, pas une preuve (même famille que 2.4.4, dont le but réel
+ * d'un lien est aussi un jugement humain). Le drapeau du constat est donc
+ * `a_verifier: false` : le critère est de niveau « REST vérifiable »
+ * (légende de la fiche), le CONTRÔLE est automatique, le verdict ne l'est pas.
  */
 function regleTexteAlternatif(noeud, chemin, ctx) {
   if (noeud.type !== 'media') return;

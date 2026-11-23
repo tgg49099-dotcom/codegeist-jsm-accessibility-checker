@@ -156,6 +156,57 @@ check(
   constats.filter((c) => c.a_verifier === true).map((c) => c.critere).join(',')
 );
 
+// --- 5 bis. 1.1.1 : la fiche et le code annoncent le MÊME drapeau ---------
+// Le commentaire de la règle annonçait une « ALERTE » alors que le code
+// passe `aVerifier: false` : le lecteur ne pouvait pas savoir si le constat
+// demandait un humain. Le drapeau est RELU dans le moteur (les constats de
+// la démo), jamais écrit en dur ici : si le moteur change, la fiche et le
+// commentaire doivent changer avec lui.
+const flags111 = constats.filter((c) => c.critere === '1.1.1').map((c) => c.a_verifier);
+check(
+  'the engine flags the 1.1.1 findings with a_verifier: false (a REST-verifiable criterion)',
+  flags111.length === 3 && flags111.every((v) => v === false),
+  JSON.stringify(flags111)
+);
+const feuille = fs.readFileSync(path.join(__dirname, 'docs', 'CRITERES-WCAG-2.2-AA.md'), 'utf8');
+const ligne111 = feuille.split('\n').find((l) => l.startsWith('| **1.1.1 '));
+check(
+  'the sheet announces for 1.1.1 the flag the engine really uses (a_verifier: false)',
+  !!ligne111 && ligne111.indexOf('a_verifier: false') !== -1,
+  ligne111
+    ? ligne111.indexOf('a_verifier: false') !== -1
+      ? 'the row mentions a_verifier: false'
+      : 'the row does NOT mention a_verifier: false'
+    : 'the 1.1.1 row was not found'
+);
+check(
+  'the sheet no longer promises for 1.1.1 a human verification the engine does not deliver',
+  !!ligne111 && ligne111.indexOf('alerte à vérifier') === -1,
+  ligne111
+    ? ligne111.indexOf('alerte à vérifier') === -1
+      ? 'the row promises no human verification'
+      : 'the row STILL promises an "alerte à vérifier"'
+    : 'the 1.1.1 row was not found'
+);
+const sourceRegles111 = fs.readFileSync(path.join(__dirname, 'src', 'regles.js'), 'utf8');
+const debut111 = sourceRegles111.indexOf('/**\n * 1.1.1');
+const fin111 = sourceRegles111.indexOf('function regleTexteAlternatif', debut111);
+const commentaire111 = sourceRegles111.slice(debut111, fin111);
+check(
+  'the comment of the 1.1.1 rule announces the flag it uses (a_verifier: false)',
+  commentaire111.indexOf('a_verifier: false') !== -1,
+  commentaire111.indexOf('a_verifier: false') !== -1
+    ? 'the comment mentions a_verifier: false'
+    : 'the comment does NOT mention a_verifier: false'
+);
+check(
+  'the comment of the 1.1.1 rule no longer announces an "ALERTE"',
+  commentaire111.indexOf('ALERTE') === -1,
+  commentaire111.indexOf('ALERTE') === -1
+    ? 'the comment announces no ALERTE'
+    : 'the comment STILL announces an ALERTE'
+);
+
 // --- 6. the contrast ratios are recomputed, not copied ---------------------
 const ratio = (hexa) => regles._utilitaires.ratioContraste(regles._utilitaires.hexRgb(hexa), [255, 255, 255]);
 check('#f2c200 on white = 1.68:1 (sheet §10)', Math.abs(ratio('#f2c200') - 1.68) <= 0.01, ratio('#f2c200').toFixed(2));

@@ -3,7 +3,7 @@
   "index": "docs/README-demo.md",
   "md5_index": "c7eb07d507a5168acbf8c70b12032f62",
   "criteres": "docs/CRITERES-WCAG-2.2-AA.md",
-  "md5_criteres": "c50d69f698d81424eee904767c416375",
+  "md5_criteres": "e641ee952547b0474fb66aee242fab36",
   "auteur": "slot 1, 04/11/2026 ; index et contrat corrigés par le slot 4 le 23/11/2026 (règle 1.3.5)",
   "lecture": "un chemin DEMO-xx est un contrat de test : le contrôleur DOIT produire un constat dessus ; un contrôle SANTÉ-xx ne doit produire AUCUN constat."
  },
