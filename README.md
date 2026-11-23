@@ -648,7 +648,7 @@ is modified: the app reads and reports.
 ## Privacy notice
 
 **https://labs.chiffreo.ch/privacy.html** — the single published privacy URL of
-this app. The same text is in [PRIVACY.md](PRIVACY.md) in this repository.
+this app. The repository keeps the long-form notice: [PRIVACY.md](PRIVACY.md).
 
 ## License
 
