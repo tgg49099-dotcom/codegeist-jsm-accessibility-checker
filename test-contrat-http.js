@@ -216,6 +216,13 @@ check('RECU-16 the page payload (object) is read as a body',
   check('LIMITE-03 the mask really ignores the case (the statement is true)',
     !/camille dupont/i.test(String(balayage.texte)) && /C\\*\\*\\*/.test(String(balayage.texte)),
     JSON.stringify(balayage.texte));
+  const readme = fs.readFileSync(path.join(__dirname, 'README.md'), 'utf8');
+  check('LIMITE-04 the README quotes the privacy statement word for word (the one the app returns)',
+    readme.indexOf(c.PHRASE_PV) !== -1,
+    'PHRASE_PV not found verbatim in README.md');
+  check('LIMITE-05 the README no longer quotes an older version of the statement',
+    readme.indexOf('sends nothing outside your Atlassian tenant') === -1,
+    'the outdated statement is still in README.md');
   check('ROUGE-09 the demo scan is intact (24 findings)',
     rapportRouge.constats.length === 24, String(rapportRouge.constats.length));
   check('ROUGE-10 no call to the Atlassian API in demo mode', appelsApi === 0, String(appelsApi));

@@ -448,7 +448,7 @@ Every answer carries the contract in a `privacy` block, so it can be checked by 
 
 ```json
 "privacy": {
-  "statement": "This app reads your site content through Atlassian read-only REST APIs, stores nothing, and sends nothing outside your Atlassian tenant. A name or e-mail address that it receives in the request is returned as a mask, never in clear text. The content it reads from your site is returned as it is, because that content is what it checks.",
+  "statement": "This app reads your site content through Atlassian read-only REST APIs and stores nothing. It calls no external service. Scan results are returned only to the logged-in user who started the scan. A name or e-mail address that it receives in the request is returned as a mask, never in clear text. The content it reads from your site is returned as it is, because that content is what it checks.",
   "rule": "The values received in the \"nom\" and \"e-mail\" fields of the request are never returned in clear text: the app returns a mask instead, and only for the fields that were actually received.",
   "receivedFields": ["nom", "e-mail"],
   "maskedValues": { "nom": "C***", "e-mail": "c***@***" },
