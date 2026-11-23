@@ -29,7 +29,14 @@ const { route } = require('@forge/api');
 const regles = require('./regles');
 const demo = require('./demo');
 
-const JSM_HDRS = { 'X-Experimental-API': 'opt-in', Accept: 'application/json' };
+// En-tête d'opt-in de l'API JSM. Le NOM est exact : la documentation
+// officielle (developer.atlassian.com/cloud/jira/service-desk/rest/) écrit
+// « Experimental operations must include the X-ExperimentalApi: opt-in header
+// in requests. Otherwise the request will not be processed. » — sans tiret
+// entre « Experimental » et « Api ». Le code envoyait « X-Experimental-API »,
+// un nom que l'API ne reconnaît pas : l'opt-in n'était donc pas transmis
+// (constat de la Direction, 23/11/2026).
+const JSM_HDRS = { 'X-ExperimentalApi': 'opt-in', Accept: 'application/json' };
 
 // ---------- règles (fonctions pures, testables hors ligne) ----------
 

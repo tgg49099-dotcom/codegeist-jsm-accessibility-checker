@@ -29,11 +29,14 @@ function check(label, ok, detail) {
 }
 
 let SCENARIO = {};
+const APPELS = []; // every request the engine made: { path, headers }
 const reponse = (status, body) => ({ status, json: async () => body });
 const cheminDe = (r) => (typeof r === 'string' ? r : r && typeof r.value === 'string' ? r.value : String(r));
 const client = {
-  requestJira: async (r) => {
-    const def = SCENARIO[cheminDe(r).split('?')[0]];
+  requestJira: async (r, opts) => {
+    const chemin = cheminDe(r).split('?')[0];
+    APPELS.push({ path: chemin, headers: (opts && opts.headers) || {} });
+    const def = SCENARIO[chemin];
     return def ? reponse(def.status, def.body) : reponse(404, { errorMessages: ['not found'] });
   },
 };
@@ -316,6 +319,22 @@ const resume = (findings) => {
   check('I the resource of the findings names the desk by its id',
     f.every((c) => !/undefined/.test(String(c.ressource)) && !/undefined/.test(String(c.ou))),
     f.map((c) => String(c.ressource) + ' / ' + String(c.ou)).join(' | ') || 'no finding');
+
+  // J — the opt-in header of the JSM API: its NAME is exact. The official
+  // documentation (developer.atlassian.com/cloud/jira/service-desk/rest/)
+  // writes "X-ExperimentalApi: opt-in" — without a hyphen between
+  // "Experimental" and "Api". A name the API does not know means the opt-in
+  // is not transmitted (23/11/2026 review, minor 7).
+  APPELS.length = 0;
+  SCENARIO = scenarioJsm(() => CHAMPS_BASE);
+  await lancerScan();
+  const appelsJsm = APPELS.filter((a) => a.path.startsWith('/rest/servicedeskapi/'));
+  check('J the JSM requests carry the opt-in header under its EXACT name',
+    appelsJsm.length > 0 && appelsJsm.every((a) => a.headers['X-ExperimentalApi'] === 'opt-in'),
+    appelsJsm.map((a) => a.path + ' ' + JSON.stringify(a.headers)).join(' | ') || 'no JSM call');
+  check('J no JSM request carries the misspelled header (X-Experimental-API)',
+    appelsJsm.every((a) => a.headers['X-Experimental-API'] === undefined),
+    appelsJsm.map((a) => a.path + ' ' + JSON.stringify(a.headers)).join(' | ') || 'no JSM call');
 
   console.log(failures === 0 ? '== ALL PASS (' + checks + ' checks): the scan holds on a judge\'s site in English ==' : '== ' + failures + ' FAILURE(S) on ' + checks + ' checks ==');
   process.exit(failures === 0 ? 0 : 1);
