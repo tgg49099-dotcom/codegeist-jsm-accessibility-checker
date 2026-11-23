@@ -526,7 +526,8 @@ function sectionPrivacy(pvRecus) {
     receivedFields: recus,
     maskedValues: masques,
     limits: [
-      'a received value of 3 characters or more is also masked wherever it appears in this response, including in the content read from the site',
+      'a received value of 3 characters or more is also masked wherever it appears in this response, including in the content read from the site — whatever its case: the mask ignores the case, so "Camille" also masks "camille" and "CAMILLE"',
+      'the mask replaces the WHOLE occurrence, even inside a longer word: a received value of 3 characters can therefore hide part of an unrelated word',
       'a received value of less than 3 characters is masked in "maskedValues" but cannot be masked throughout the response without destroying the report',
       'the request itself is never written to the app logs',
     ],

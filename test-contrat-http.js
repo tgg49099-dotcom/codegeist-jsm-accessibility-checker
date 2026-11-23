@@ -203,6 +203,19 @@ check('RECU-16 the page payload (object) is read as a body',
     rapportRouge.privacy.statement.indexOf('never returns a name or e-mail address in clear text') === -1 &&
       rapportRouge.privacy.statement.indexOf('returned as it is') !== -1,
     rapportRouge.privacy.statement);
+  check('LIMITE-01 the limits say the mask ignores the case',
+    rapportRouge.privacy.limits.join(' ').indexOf('whatever its case') !== -1,
+    rapportRouge.privacy.limits.join(' | '));
+  check('LIMITE-02 the limits say the mask replaces the whole occurrence, even inside a longer word',
+    rapportRouge.privacy.limits.join(' ').indexOf('even inside a longer word') !== -1,
+    rapportRouge.privacy.limits.join(' | '));
+  const balayage = c.balayerNoeud(
+    { texte: 'camille dupont a ecrit CAMILLE DUPONT' },
+    c.remplacementsPv({ nom: NOM })
+  );
+  check('LIMITE-03 the mask really ignores the case (the statement is true)',
+    !/camille dupont/i.test(String(balayage.texte)) && /C\\*\\*\\*/.test(String(balayage.texte)),
+    JSON.stringify(balayage.texte));
   check('ROUGE-09 the demo scan is intact (24 findings)',
     rapportRouge.constats.length === 24, String(rapportRouge.constats.length));
   check('ROUGE-10 no call to the Atlassian API in demo mode', appelsApi === 0, String(appelsApi));

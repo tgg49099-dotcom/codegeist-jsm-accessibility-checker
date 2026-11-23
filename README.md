@@ -440,7 +440,7 @@ clear text. The engine applies the following rule, and never breaks it:
 | Where they are looked for | in the payload the page sends with the scan (`{ "nom": …, "e-mail": … }`), and — for the engine, which has not changed — in any request-shaped input: query parameters, body (object, JSON, urlencoded text or Buffer), HTTP headers, raw URL |
 | What comes back | a mask: `C***` for a name, `c***@***` for an e-mail address (first character only; the domain is never returned) |
 | Absent field | **never invented** — no `null`, no empty string, no placeholder. `receivedFields` is empty and `maskedValues` is `{}` |
-| Elsewhere in the answer | a received value of **3 characters or more is masked wherever it appears**, including in the content read from your site |
+| Elsewhere in the answer | a received value of **3 characters or more is masked wherever it appears**, including in the content read from your site — **whatever its case** (the mask ignores the case), and the mask replaces the whole occurrence, even inside a longer word |
 | Shorter values | a value of **less than 3 characters** is masked in `privacy.maskedValues` but cannot be masked throughout the answer without destroying the report — the answer says so in `privacy.limits` |
 | Logs | the request is never logged: the app contains **no logging statement at all** |
 
