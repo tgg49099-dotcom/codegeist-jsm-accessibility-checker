@@ -121,6 +121,17 @@ scan ran in **JSM** mode: **9 GET requests, 0 refused, 7 findings — 6 × crite
 read (Get IT help 1, Report a system problem 2, Report broken hardware 3, Request
 a new account 1); the numbers are verified twice — see [`docs/SCAN-JSM-2026-11-17.md`](docs/SCAN-JSM-2026-11-17.md).
 
+> **The 1.3.5 finding of that run was a false positive of the rule as it stood
+> on 17 November 2026**: it was the field `Affected hardware`
+> (`requestTypeFields[2].name`), which collects **no personal data** — the old
+> rule reported the fields that announce no purpose keyword, which is the
+> opposite of what WCAG 1.3.5 targets. The rule was corrected on 23 November
+> 2026 (see the note below): 1.3.5 now targets the fields that **collect
+> personal data** (e-mail, phone, name…). The 6 findings of criterion 3.3.2
+> are unaffected. The figures above are what the **deployed** engine (2.11.0)
+> produced on that day; this branch carries the corrected rule, which is **not
+> deployed**.
+
 A second button, **Run the demo scan (no site needed)**, runs the same engine on
 six bundled fixtures — no account, no site, no tenant.
 
@@ -213,7 +224,7 @@ remove the gate from the MCP path: each of the three must turn the suite RED.
 > with the beginning of the content is now reported as a **hint to check**
 > ("a verifier"), not as an automatic finding. The interface is unchanged.
 > The offline suite that proves all of this is `test-portail-par-defaut.js`
-> (26 checks, including the four English faults).
+> (28 checks, including the four English faults).
 >
 > **What 2.10.0 changed** (commit `1ff128d`, deployed to production on
 > 15 November 2026 at 13:36:51 UTC): a request type whose `groupIds` is empty
@@ -484,11 +495,11 @@ verify.
 
 ```
 npm install
-npm test                          # 15 suites, 374 checks — every node suite below, in one go
+npm test                          # 15 suites, 377 checks — every node suite below, in one go
 node test-ihm.js                 # 43 checks — the interface replaces the public trigger
 node test-contrat-http.js                 # 59 checks — the privacy contract (masking, absent fields, logs)
-node test-app-demo.js                     # 22 checks — the resolver returns the 23/23 verdict
-node test-demo.js                         # 55 checks — detects all 23 seeded issues in the bundled demo data
+node test-app-demo.js                     # 22 checks — the resolver returns the 24/24 verdict
+node test-demo.js                         # 56 checks — detects all 24 seeded issues in the bundled demo data
 node test-contre-epreuve.js               # 13 checks — the harness turns RED when a rule is sabotaged
 node test-contrat-http-contre-epreuve.js  # 28 checks — that harness turns RED when the contract is broken
 node test-mcp.js                  # 32 checks — the two MCP tools read the caller's site, and nothing else
@@ -500,8 +511,10 @@ node test-identite.js             # 12 checks — 0 asApp() in the active code, 
 node test-mcp-porte.js            # 16 checks — the administrator door, with five counter-proofs
 node test-refus-non-admin.js       # 14 checks — a NON-administrator is refused, on the page AND on the
                                           #            two MCP tools, and nothing of the site is read
-node test-portail-par-defaut.js    # 26 checks — a judge's English site: the default JSM portal and
-                                          #            plain Jira tickets, no false "finding"
+node test-portail-par-defaut.js    # 28 checks — a judge's English site: the default JSM portal and
+                                          #            plain Jira tickets, no false "finding"; the 1.3.5
+                                          #            rule on personal data; the truth of the JSM probe; the
+                                          #            warning on an incomplete read
 node test-types-caches.js          #  4 checks — a request type hidden from the portal is neither judged
                                           #            nor counted in the five types read
 python3 tools/verifier-manifest-cycle134.py       # 18 checks — no public module, no egress, two read scopes,
@@ -595,7 +608,7 @@ tools/            the manifest checker (and its counter-proof), the check that
                   and its counter-proof against the site
                   (tools/contre-epreuve-scan-jsm.py)
 PRIVACY.md        the privacy notice (what is read, where it goes, how long it is kept)
-test-*.js         the offline harness (374 checks in fifteen suites, plus 99 checks
+test-*.js         the offline harness (377 checks in fifteen suites, plus 99 checks
                   in the five tools of tools/)
 ```
 

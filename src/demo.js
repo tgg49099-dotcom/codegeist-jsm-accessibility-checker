@@ -10,8 +10,8 @@
  * pas d'afficher des constats : il les CONFRONTE au contrat de test
  * (src/demo/contrat.json, généré depuis l'index du slot 1) et publie un
  * verdict :
- *   - 23 fautives DEMO-xx détectées (une par chemin, avec le bon critère) ;
- *   - 0 faux positif sur les 6 contrôles négatifs SANTÉ-xx ;
+ *   - 24 fautives DEMO-xx détectées (une par chemin, avec le bon critère) ;
+ *   - 0 faux positif sur les 5 contrôles négatifs SANTÉ-xx ;
  *   - 0 constat hors contrat.
  *
  * Règle de langue : le verdict parle de DÉTECTION et de FAUX POSITIF, jamais
@@ -255,7 +255,7 @@ function rapport(horodatage) {
       'read-only: this mode writes nothing and reads nothing on any site',
       'contrast, reading order / focus order and visible labels are not checkable through the REST API: the app does not rule on them',
       'a finding is an ALERT to be checked by a human, never a verdict of conformance',
-      'the 6 negative controls SANTÉ-xx prove the absence of a false positive on those 6 cases, not on every possible content',
+      'the 5 negative controls SANTÉ-xx prove the absence of a false positive on those 5 cases, not on every possible content',
     ],
   };
 }

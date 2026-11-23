@@ -1,10 +1,10 @@
 {
  "_source": {
   "index": "docs/README-demo.md",
-  "md5_index": "da30b9b25c69f9ad9bdbc5c0fb851552",
+  "md5_index": "c7eb07d507a5168acbf8c70b12032f62",
   "criteres": "docs/CRITERES-WCAG-2.2-AA.md",
-  "md5_criteres": "2f82a94d5186e731e799f3337341c252",
-  "auteur": "slot 1, 04/11/2026",
+  "md5_criteres": "cc461cc858afca2ee93bdffc4c9c82ab",
+  "auteur": "slot 1, 04/11/2026 ; index et contrat corrigés par le slot 4 le 23/11/2026 (règle 1.3.5)",
   "lecture": "un chemin DEMO-xx est un contrat de test : le contrôleur DOIT produire un constat dessus ; un contrôle SANTÉ-xx ne doit produire AUCUN constat."
  },
  "demo": [
@@ -152,8 +152,15 @@
    "id": "DEMO-32",
    "critere": "1.3.5",
    "fichier": "demo-jsm-requesttype-fields-DEMO-303.json",
-   "chemin": "requestTypeFields[1].name",
-   "ce_qui_est_faux": "champ `Référence` sans finalité annoncée ni mot-clé de finalité (email, tel, url, nom…) |"
+   "chemin": "requestTypeFields[2].name",
+   "ce_qui_est_faux": "champ `Adresse e-mail` collectant une **donnée personnelle** : la finalité de la saisie doit être identifiable par programme au rendu (`autocomplete`), ce qu'aucune API REST ne permet de vérifier (règle du 23/11/2026) |"
+  },
+  {
+   "id": "DEMO-33",
+   "critere": "1.3.5",
+   "fichier": "demo-jsm-requesttype-fields-DEMO-303.json",
+   "chemin": "requestTypeFields[3].name",
+   "ce_qui_est_faux": "champ `Votre nom` collectant une **donnée personnelle** : même exigence (autocomplete), non vérifiable par l'API REST |"
   },
   {
    "id": "DEMO-40",
@@ -195,16 +202,9 @@
   {
    "id": "SANTÉ-04",
    "fichier": "demo-jsm-requesttype-fields-DEMO-303.json",
-   "chemin": "requestTypeFields[2]",
-   "noeud": "requestTypeFields[2]",
-   "pourquoi_c_est_sain": "champ `Adresse e-mail` avec étiquette **et** description"
-  },
-  {
-   "id": "SANTÉ-05",
-   "fichier": "demo-jsm-requesttype-fields-DEMO-303.json",
-   "chemin": "requestTypeFields[3]",
-   "noeud": "requestTypeFields[3]",
-   "pourquoi_c_est_sain": "champ `Votre nom` avec étiquette **et** description"
+   "chemin": "requestTypeFields[1]",
+   "noeud": "requestTypeFields[1]",
+   "pourquoi_c_est_sain": "champ `Référence` **sans** donnée personnelle : 1.3.5 ne le vise pas (c'était le DEMO-32 d'avant le 23/11/2026, un faux positif de l'ancienne règle)"
   },
   {
    "id": "SANTÉ-06",

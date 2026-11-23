@@ -85,7 +85,7 @@ elle ne **condamne** pas.
 | 9 | 1.4.3 Contrast (Minimum) | `contenu seulement (partiel)` | DEMO-26 | « contraste incertain : ratio calculé sur fond blanc » |
 | 10 | 1.2.2 Captions (Prerecorded) | `contenu seulement (partiel)` | DEMO-28 | « vidéo sans transcription disponible » |
 | 11 | 2.4.6 Headings and Labels | `contenu seulement (partiel)` | DEMO-07 | « titre trop vague » |
-| 12 | 1.3.5 Identify Input Purpose | `contenu seulement (partiel)` | DEMO-32 | « finalité du champ non annoncée » |
+| 12 | 1.3.5 Identify Input Purpose | `contenu seulement (partiel)` | DEMO-32 / DEMO-33 | « champ de donnée personnelle : finalité à identifier par programme » |
 | 13 | 1.3.3 Sensory Characteristics | `contenu seulement (partiel)` | DEMO-27 | « instruction qui repose sur la position ou la couleur » |
 
 **Répartition** : 7 critères `REST vérifiable`, 6 critères `contenu seulement (partiel)`, 0 critère
@@ -163,7 +163,7 @@ elle ne **condamne** pas.
 
 | Critère | Ce que l'API REST / le contenu permet de lire exactement | Un exemple RÉEL | Le test de contrôle | La limite |
 |---|---|---|---|---|
-| **1.3.5 Identify Input Purpose**<br>(niveau AA) | **E4** : `requestTypeFields[].name`, `.description`, `.jiraSchema` (type Jira du champ), `.required`, `.visible`.<br>L'attribut HTML `autocomplete` du champ **rendu par le portail** n'est dans aucune API : c'est le portail qui le fixe.<br>**Niveau : `contenu seulement (partiel)`** — l'app vérifie que le contenu **annonce** la finalité, pas que le navigateur l'identifie. | **DEMO-32** — `demo-jsm-requesttype-fields-DEMO-303.json`, `requestTypeFields[1].name` = `"Référence"`, `description` = `""` : ni le nom ni la description n'annoncent la finalité attendue (e-mail, téléphone, adresse, nom, URL…). | **Entrée** : E4.<br>**Sortie attendue** : pour chaque champ `visible == true` et `required == true`, chercher un mot-clé de finalité dans `name + " " + description` (`e-mail`, `email`, `mail`, `telephone`, `tel`, `phone`, `url`, `site web`, `nom`, `prenom`, `adresse`, `code postal`, `date de naissance`, `numero de carte`) ; si **aucun** → constat « finalité du champ non annoncée » (`a_verifier: true`).<br>**Codes retour** : idem §5. | 1.3.5 ne vise que les champs qui collectent **des informations sur la personne** : un champ « Référence de commande » n'a pas de finalité d'entrée automatique → l'app risque un faux positif ; le filtre par `name` est une heuristique, pas une preuve.<br>La condition réelle du critère (le jeton `autocomplete` du champ rendu) est **hors de portée de l'API** : l'app ne vérifie donc **pas** 1.3.5, elle vérifie un prérequis (l'annonce de la finalité), qui est utile mais ne vaut pas le critère.<br>À dire tel quel dans la vidéo de 3 minutes : « 1.3.5 n'est pas vérifiable, on vérifie que l'étiquette annonce la finalité ». |
+| **1.3.5 Identify Input Purpose**<br>(niveau AA) | **E4** : `requestTypeFields[].name`, `.description`, `.jiraSchema` (type Jira du champ), `.required`, `.visible`.<br>L'attribut HTML `autocomplete` du champ **rendu par le portail** n'est dans aucune API : c'est le portail qui le fixe.<br>**Niveau : `contenu seulement (partiel)`** — l'app vérifie que le champ **collecte une donnée personnelle**, pas que le navigateur identifie la finalité. | **DEMO-32** — `demo-jsm-requesttype-fields-DEMO-303.json`, `requestTypeFields[2].name` = `"Adresse e-mail"` : champ qui collecte une donnée personnelle (e-mail). **DEMO-33** — `requestTypeFields[3].name` = `"Votre nom"` : idem. **SANTÉ-04** — `requestTypeFields[1].name` = `"Référence"` : aucune donnée personnelle → **aucun** constat 1.3.5. | **Entrée** : E4.<br>**Sortie attendue** : pour chaque champ `visible == true` et de saisie libre, chercher un mot-clé de **donnée personnelle** dans `name + " " + description` (`e-mail`, `email`, `mail`, `telephone`, `tel`, `phone`, `url`, `site web`, `nom`, `prenom`, `adresse`, `code postal`, `date de naissance`, `numero de carte`, `name`, `first name`, `last name`, `surname`, `full name`, `username`, `address`, `postcode`, `postal code`, `zip`, `mobile`, `date of birth`, `birthday`, `website`, `organization`, `organisation`, `company`, `job title`, `card number`, `country`, `city`) ; si **un** → constat « champ de donnée personnelle : la finalité doit être identifiable par programme (autocomplete) — non vérifiable par l'API REST » (`a_verifier: true`).<br>**Codes retour** : idem §5. | **Règle du 23/11/2026 : la règle précédente était à l'envers.** Elle signalait les champs **sans** mot-clé (faux positif sur « Steps to reproduce », « Référence ») et laissait passer « Email » et « Téléphone » : or 1.3.5 ne vise que les champs qui collectent **des informations sur la personne**. Le filtre par `name + description` reste une heuristique, pas une preuve : un champ « Nom du projet » est un faux positif possible ; un champ dont l'intitulé est ambigu l'est aussi.<br>La condition réelle du critère (le jeton `autocomplete` du champ rendu) est **hors de portée de l'API** : l'app ne vérifie donc **pas** 1.3.5, elle signale les champs à vérifier par un humain.<br>À dire tel quel dans la vidéo de 3 minutes : « 1.3.5 n'est pas vérifiable, on signale les champs qui collectent une donnée personnelle ». |
 
 ## 14. Critère 13 — 1.3.3 Sensory Characteristics (niveau A)
 
@@ -259,7 +259,15 @@ libellé/aide/erreur). Le **nom accessible** d'un contrôle — l'étiquette con
 `demo-jsm-requesttype-fields-DEMO-303.json`, `demo-jsm-requesttypes-DEMO-304.json`,
 `demo-jsm-article-DEMO-305.json`, `demo-confluence-attachments-DEMO-206.json`, `README-demo.md`.
 
-**Contre-épreuve effectuée** : les 6 fichiers JSON de démonstration ont été parsés, et **chacun des
-23 chemins `DEMO-xx` et des 6 contrôles négatifs `SANTÉ-xx` a été résolu** dans les données : aucun
-chemin ne pointe dans le vide. Un `DEMO-xx` qui ne résout pas rendrait tout le §2-§14 faux ; il a
-fallu le vérifier.
+**Contre-épreuve effectuée** (slot 1, 04/11/2026) : les 6 fichiers JSON de démonstration ont été
+parsés, et **chacun des 23 chemins `DEMO-xx` et des 6 contrôles négatifs `SANTÉ-xx` a été résolu**
+dans les données : aucun chemin ne pointe dans le vide. Un `DEMO-xx` qui ne résout pas rendrait
+tout le §2-§14 faux ; il a fallu le vérifier.
+
+**Mise à jour du 23/11/2026** (correction de la règle 1.3.5, voir §13) : l'index porte
+maintenant **24 chemins `DEMO-xx` et 5 contrôles négatifs `SANTÉ-xx`** — `DEMO-32` et `DEMO-33`
+visent les champs qui collectent une donnée personnelle, `SANTÉ-04` vise le champ « Référence »
+et `SANTÉ-05` a disparu. La contre-épreuve a été refaite par la suite hors ligne
+(`test-demo.js`) : chaque `DEMO-xx` doit y produire **exactement un** constat au chemin exact
+écrit dans l'index, et chaque `SANTÉ-xx` **aucun** — un chemin qui ne résout plus ne peut donc
+pas passer inaperçu.

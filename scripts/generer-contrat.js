@@ -1,6 +1,6 @@
 /**
  * Génère `src/demo/contrat.json` à partir de `docs/README-demo.md`
- * (l'index des 23 fautives DEMO-xx et des 6 contrôles négatifs SANTÉ-xx écrit
+ * (l'index des 24 fautives DEMO-xx et des 5 contrôles négatifs SANTÉ-xx écrit
  * par le slot 1 le 04/11/2026).
  *
  * Pourquoi un script et pas un fichier écrit à la main : l'index du slot 1 est
@@ -16,6 +16,7 @@ const crypto = require('crypto');
 
 const RACINE = path.resolve(__dirname, '..');
 const SOURCE = path.join(RACINE, 'docs', 'README-demo.md');
+const CRITERES = path.join(RACINE, 'docs', 'CRITERES-WCAG-2.2-AA.md');
 const CIBLE = path.join(RACINE, 'src', 'demo', 'contrat.json');
 
 const md5 = (fichier) =>
@@ -80,16 +81,16 @@ for (const ligne of lignes) {
   }
 }
 
-if (demo.length !== 23) throw new Error('index DEMO-xx : ' + demo.length + ' entrées (23 attendues)');
-if (sante.length !== 6) throw new Error('contrôles SANTÉ-xx : ' + sante.length + ' (6 attendus)');
+if (demo.length !== 24) throw new Error('index DEMO-xx : ' + demo.length + ' entrées (24 attendues)');
+if (sante.length !== 5) throw new Error('contrôles SANTÉ-xx : ' + sante.length + ' (5 attendus)');
 
 const contrat = {
   _source: {
     index: 'docs/README-demo.md',
     md5_index: md5(SOURCE),
     criteres: 'docs/CRITERES-WCAG-2.2-AA.md',
-    md5_criteres: '2f82a94d5186e731e799f3337341c252',
-    auteur: 'slot 1, 04/11/2026',
+    md5_criteres: md5(CRITERES),
+    auteur: 'slot 1, 04/11/2026 ; index et contrat corrigés par le slot 4 le 23/11/2026 (règle 1.3.5)',
     lecture: 'un chemin DEMO-xx est un contrat de test : le contrôleur DOIT produire un constat dessus ; un contrôle SANTÉ-xx ne doit produire AUCUN constat.',
   },
   demo,

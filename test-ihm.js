@@ -304,19 +304,19 @@ async function controlesResolver() {
   res['GATE-05 rendering the page starts no scan'] =
     rendu && rendu.ok === true && rendu.report === undefined;
 
-  // The SAME engine as yesterday's trigger: the demo returns the 23 seeded
+  // The SAME engine as yesterday's trigger: the demo returns the 24 seeded
   // findings, and "scan" does call the engine (and not a frozen panel).
   const demo = await resolver.handler(
     { call: { functionKey: 'scanDemo', payload: {} }, context: { accountId: 'compte' } },
     { principal: { accountId: 'compte' } }
   );
-  res['GATE-06 the resolver calls the engine (23 demo findings)'] =
+  res['GATE-06 the resolver calls the engine (24 demo findings)'] =
     demo && demo.ok === true && demo.report && demo.report.constats &&
-    demo.report.constats.length === 23;
+    demo.report.constats.length === 24;
   res['GATE-07 the response carries the account that asked'] =
     demo && demo.requestedBy && demo.requestedBy.accountId === 'compte';
   res['GATE-08 the CSV export is produced by the resolver'] =
-    demo && typeof demo.csv === 'string' && demo.csv.trim().split(/\r?\n/).length === 24;
+    demo && typeof demo.csv === 'string' && demo.csv.trim().split(/\r?\n/).length === 25;
   return res;
 }
 

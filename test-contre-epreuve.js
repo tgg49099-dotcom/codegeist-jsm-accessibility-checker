@@ -1,7 +1,7 @@
 /**
  * Counter-proof of the demo mode test harness.
  *
- * A harness that says "55 checks PASS" proves nothing until we have shown
+ * A harness that says "56 checks PASS" proves nothing until we have shown
  * that it turns RED when the rule is broken. This script:
  *   1. replays the harness on an INTACT copy of the app (control: it must
  *      be green) ;
@@ -36,6 +36,9 @@ function copierApp(suffixe) {
   fs.cpSync(path.join(APP, 'src', 'demo.js'), path.join(cible, 'src', 'demo.js'));
   fs.cpSync(path.join(APP, 'src', 'regles.js'), path.join(cible, 'src', 'regles.js'));
   fs.cpSync(path.join(APP, 'src', 'demo'), path.join(cible, 'src', 'demo'), { recursive: true });
+  // The harness reads the two sheets it checks the md5 of (23/11/2026):
+  // without them the copy would crash on a missing file.
+  fs.cpSync(path.join(APP, 'docs'), path.join(cible, 'docs'), { recursive: true });
   fs.cpSync(path.join(APP, 'test-demo.js'), path.join(cible, 'test-demo.js'));
   return cible;
 }

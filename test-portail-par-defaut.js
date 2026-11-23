@@ -140,14 +140,22 @@ const resume = (findings) => {
     ? [...CHAMPS_BASE,
       champ('customfield_10050', '', true, ''),
       champ('customfield_10051', 'Ref', false, ''),
-      champ('customfield_10052', 'Your work email', true, 'We send the new credentials to this address.')]
+      champ('customfield_10052', 'Your work email', true, 'We send the new credentials to this address.'),
+      champ('customfield_10053', 'Steps to reproduce', false, 'What you did, in order.')]
     : CHAMPS_BASE);
   r = await lancerScan();
   f = r.findings;
   console.log('A2 JSM + faults: ' + f.length + ' findings ' + resume(f));
   check('A2 field with no name detected (3.3.2 proven)', f.some((c) => c.critere === '3.3.2' && !c.a_verifier && c.emplacement === 'requestTypeFields[3].name'));
-  check('A2 custom field "Ref" with no purpose reported (1.3.5)', f.some((c) => c.critere === '1.3.5' && c.valeur === 'Ref'));
-  check('A2 English email field recognized (no 1.3.5)', !f.some((c) => c.critere === '1.3.5' && c.valeur === 'Your work email'));
+  // 1.3.5 (rule of 23/11/2026): the criterion targets fields collecting
+  // personal data — "Your work email" IS flagged (to verify: the REST API
+  // cannot read the rendered autocomplete attribute), "Ref" is NOT (it
+  // collects no personal data).
+  check('A2 personal-data field "Your work email" reported (1.3.5 to verify)', f.some((c) => c.critere === '1.3.5' && c.a_verifier && c.valeur === 'Your work email'));
+  check('A2 non-personal field "Ref" NOT reported (no false 1.3.5)', !f.some((c) => c.critere === '1.3.5' && c.valeur === 'Ref'));
+  check('A2 non-personal field "Steps to reproduce" NOT reported (no false 1.3.5)', !f.some((c) => c.critere === '1.3.5' && c.valeur === 'Steps to reproduce'));
+  check('A2 1.3.5 message names the personal-data purpose', (f.find((c) => c.critere === '1.3.5' && c.valeur === 'Your work email') || {}).message ===
+    'Field collecting personal data ("email"): WCAG 1.3.5 requires the input purpose to be programmatically identifiable when rendered (autocomplete) — the REST API cannot read that attribute, so a human must check it');
 
   // B1 — Jira fallback, correct tickets in English
   SCENARIO = scenarioJira(TICKETS_CORRECTS);

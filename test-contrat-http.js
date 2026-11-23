@@ -203,8 +203,8 @@ check('RECU-16 the page payload (object) is read as a body',
     rapportRouge.privacy.statement.indexOf('never returns a name or e-mail address in clear text') === -1 &&
       rapportRouge.privacy.statement.indexOf('returned as it is') !== -1,
     rapportRouge.privacy.statement);
-  check('ROUGE-09 the demo scan is intact (23 findings)',
-    rapportRouge.constats.length === 23, String(rapportRouge.constats.length));
+  check('ROUGE-09 the demo scan is intact (24 findings)',
+    rapportRouge.constats.length === 24, String(rapportRouge.constats.length));
   check('ROUGE-10 no call to the Atlassian API in demo mode', appelsApi === 0, String(appelsApi));
 
   // --- 5. the entry point of the app, in DEMO mode: green case ---------------
@@ -224,8 +224,8 @@ check('RECU-16 the page payload (object) is read as a body',
       !('e-mail' in rapportVert.privacy.maskedValues) &&
       rapportVert.privacy.receivedFields.indexOf('nom') === -1 &&
       rapportVert.privacy.receivedFields.indexOf('e-mail') === -1);
-  check('VERT-04 the demo scan is unchanged (23 findings)',
-    rapportVert.constats.length === 23, String(rapportVert.constats.length));
+  check('VERT-04 the demo scan is unchanged (24 findings)',
+    rapportVert.constats.length === 24, String(rapportVert.constats.length));
   check('VERT-05 the green case response does contain a report', !!rapportVert);
 
   // --- 6. the CSV export applies the contract too ---------------------------
@@ -234,8 +234,8 @@ check('RECU-16 the page payload (object) is read as a body',
   const csv = String(csvRep.csv);
   check('CSV-01 the CSV export does not contain the name in clear text',
     csv.indexOf(NOM) === -1);
-  check('CSV-02 the CSV export is still a CSV (24 lines)',
-    csv.trim().split('\r\n').length === 24,
+  check('CSV-02 the CSV export is still a CSV (25 lines)',
+    csv.trim().split('\r\n').length === 25,
     String(csv.trim().split('\r\n').length));
 
   // --- 7. SCAN mode: the scan applies to the site data too ------------------

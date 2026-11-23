@@ -124,7 +124,8 @@ const TITRES_VAGUES = [
   'appendix',
 ];
 
-// 1.3.5 : mots-clés de finalité de saisie (le champ annonce-t-il à quoi il sert ?).
+// 1.3.5 : mots-clés de DONNÉE PERSONNELLE (le champ collecte-t-il une
+// information sur la personne ? C'est le seul cas que 1.3.5 vise).
 const MOTS_CLES_FINALITE = [
   'e-mail',
   'email',
@@ -643,8 +644,11 @@ function analyserDocument(adf, racine, source, ressource) {
  * `a_verifier` (l'instruction n'est pas obligatoire si le nom suffit).
  * La fiche demande de ne traiter que les champs `visible == true`.
  *
- * 1.3.5 : le contenu annonce-t-il la FINALITÉ du champ ? Contrôle de présence
- * d'un mot-clé de finalité dans « nom + description ».
+ * 1.3.5 : le champ collecte-t-il une DONNÉE PERSONNELLE (mot-clé de finalité
+ * dans « nom + description ») ? La finalité doit alors être identifiable par
+ * programme au rendu (autocomplete) — hors de portée de l'API REST, donc un
+ * constat « à vérifier » ; les champs sans donnée personnelle ne relèvent
+ * pas de 1.3.5.
  */
 function analyserChampsJsm(champs, racine, source, ressource) {
   const constats = [];
@@ -680,7 +684,7 @@ function analyserChampsJsm(champs, racine, source, ressource) {
     //    rapport d'un portal réel (la plupart des champs optionnels n'ont pas
     //    de description). 3.3.2 demande « une étiquette OU une instruction » :
     //    un champ facultatif sans description n'est pas un défaut. Ces champs
-    //    restent repris par le contrôle 1.3.5 (finalité non annoncée).
+    //    ne sont repris par 1.3.5 que s'ils collectent une donnée personnelle.
     if (description.trim() === '' && champ.required === true) {
       constats.push(
         constat(
@@ -695,13 +699,20 @@ function analyserChampsJsm(champs, racine, source, ressource) {
       );
     }
 
-    // 1.3.5 : finalité annoncée. Un champ sans étiquette n'est pas repris ici
+    // 1.3.5 : donnée personnelle. Un champ sans étiquette n'est pas repris ici
     // (3.3.2 le signale déjà : on ne peut pas demander la finalité d'un champ
     // qui n'a pas de nom).
-    // 1.3.5 ne concerne que les champs de SAISIE LIBRE que l'administrateur a
-    // ajoutés (champs personnalisés texte). Les champs système de Jira
-    // (summary, description, attachment…) et les listes, dates, personnes ne
-    // collectent pas une donnée personnelle saisie : aucun constat 1.3.5.
+    // WCAG 1.3.5 vise les champs qui collectent une information SUR LA
+    // PERSONNE (e-mail, téléphone, nom, adresse…) : la finalité de la saisie
+    // doit être identifiable PAR PROGRAMME (attribut autocomplete du champ
+    // rendu). Cet attribut n'est exposé par AUCUNE API REST : le constat est
+    // donc « à vérifier », et il ne vise QUE les champs de saisie libre dont
+    // le nom ou la description annonce une donnée personnelle. Un champ sans
+    // rapport avec la personne (« Steps to reproduce », « Référence »…)
+    // relève de 1.2.2/1.3.3 au besoin, pas de 1.3.5 : aucun constat.
+    // (Règle du 23/11/2026 — l'ancienne, qui signalait les champs SANS
+    // mot-clé, était à l'envers : faux positif sur « Steps to reproduce »,
+    // silence sur « Email ». Voir docs/CRITERES-WCAG-2.2-AA.md § 13.)
     const fieldId = champ.fieldId == null ? '' : String(champ.fieldId);
     const schema = champ.jiraSchema || {};
     const saisieLibre =
@@ -710,8 +721,8 @@ function analyserChampsJsm(champs, racine, source, ressource) {
       !/(select|radio|checkbox|multi|cascading|picker|labels)/i.test(String(schema.custom || ''));
     if (nom.trim() !== '' && saisieLibre) {
       const tout = normaliser(nom + ' ' + description);
-      const annonce = MOTS_CLES_FINALITE_ND.find((mot) => contientMots(tout, mot));
-      if (!annonce) {
+      const donneePersonnelle = MOTS_CLES_FINALITE_ND.find((mot) => contientMots(tout, mot));
+      if (donneePersonnelle) {
         constats.push(
           constat(
             '1.3.5',
@@ -719,7 +730,9 @@ function analyserChampsJsm(champs, racine, source, ressource) {
             ressource,
             prop(chemin, 'name'),
             nom,
-            'Purpose of the field not stated (no purpose keyword in the name or the description)',
+            'Field collecting personal data ("' +
+              donneePersonnelle +
+              '"): WCAG 1.3.5 requires the input purpose to be programmatically identifiable when rendered (autocomplete) — the REST API cannot read that attribute, so a human must check it',
             { aVerifier: true }
           )
         );

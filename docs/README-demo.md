@@ -46,7 +46,8 @@ pas le constat attendu sur `DEMO-xx`, il est cassé ; s'il produit un constat su
 | **DEMO-28** | 1.2.2 | `demo-confluence-attachments-DEMO-206.json` | `results[0].mediaType` | pièce jointe `video/mp4` dans la page, **aucune** pièce jointe `text/vtt` |
 | **DEMO-30** | 3.3.2 | `demo-jsm-requesttype-fields-DEMO-303.json` | `requestTypeFields[0].name` | `name` **vide** : le champ du formulaire n'a pas d'étiquette |
 | **DEMO-31** | 3.3.2 | `demo-jsm-requesttype-fields-DEMO-303.json` | `requestTypeFields[0].description` | `description` **vide** : aucune instruction |
-| **DEMO-32** | 1.3.5 | `demo-jsm-requesttype-fields-DEMO-303.json` | `requestTypeFields[1].name` (+ `.description` vide) | champ `Référence` sans finalité annoncée ni mot-clé de finalité (email, tel, url, nom…) |
+| **DEMO-32** | 1.3.5 | `demo-jsm-requesttype-fields-DEMO-303.json` | `requestTypeFields[2].name` | champ `Adresse e-mail` collectant une **donnée personnelle** : la finalité de la saisie doit être identifiable par programme au rendu (`autocomplete`), ce qu'aucune API REST ne permet de vérifier (règle du 23/11/2026) |
+| **DEMO-33** | 1.3.5 | `demo-jsm-requesttype-fields-DEMO-303.json` | `requestTypeFields[3].name` | champ `Votre nom` collectant une **donnée personnelle** : même exigence (autocomplete), non vérifiable par l'API REST |
 | **DEMO-40** | 3.2.6 | `demo-jsm-requesttypes-DEMO-304.json` | `values[1].helpText` | type de demande n° 42 **sans** `helpText`, alors que le n° 41 en a un |
 | **DEMO-50** | 2.4.2 | `demo-jsm-article-DEMO-305.json` | `title` | titre d'article de la base de connaissances = `Mise à jour` |
 
@@ -57,8 +58,7 @@ pas le constat attendu sur `DEMO-xx`, il est cassé ; s'il produit un constat su
 | **SANTÉ-01** | `demo-jira-issue-DEMO-101.json` → `fields.description.content[12].content[0].attrs.alt` | image avec `alt` descriptif → rien à signaler en 1.1.1 |
 | **SANTÉ-02** | `demo-jira-issue-DEMO-101.json` → `fields.description.content[9].content[1]` | nœud `status` avec `text` **et** `color` → la couleur ne porte pas seule l'information |
 | **SANTÉ-03** | `demo-jira-issue-DEMO-101.json` → `fields.description.content[10].content[0].attrs.state` | `taskItem` avec `state: DONE` → nom (texte) et valeur (état) présents |
-| **SANTÉ-04** | `demo-jsm-requesttype-fields-DEMO-303.json` → `requestTypeFields[2]` | champ `Adresse e-mail` avec étiquette **et** description |
-| **SANTÉ-05** | `demo-jsm-requesttype-fields-DEMO-303.json` → `requestTypeFields[3]` | champ `Votre nom` avec étiquette **et** description |
+| **SANTÉ-04** | `demo-jsm-requesttype-fields-DEMO-303.json` → `requestTypeFields[1]` | champ `Référence` **sans** donnée personnelle : 1.3.5 ne le vise pas (c'était le DEMO-32 d'avant le 23/11/2026, un faux positif de l'ancienne règle) |
 | **SANTÉ-06** | `demo-jsm-requesttypes-DEMO-304.json` → `values[0].helpText` | type de demande n° 41 avec `helpText` renseigné |
 
 ## Rappel de méthode

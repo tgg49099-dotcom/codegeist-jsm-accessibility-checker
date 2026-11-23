@@ -3,7 +3,7 @@
  * (src/resolvers.js).
  *
  * test-demo.js proves that the ENGINE (src/regles.js + src/demo.js) detects
- * the 23 issues. This test proves that the APP itself — the resolver that
+ * the 24 issues (1.3.5 rule updated 23/11/2026). This test proves that the APP itself — the resolver that
  * the administration page calls, that is to say the code that will really
  * be deployed — returns that verdict, and that it makes NO call to any site
  * in demo mode.
@@ -79,7 +79,7 @@ api.asApp = () => {
     typeof rapport.generatedAt === 'string' && !isNaN(Date.parse(rapport.generatedAt)),
     rapport.generatedAt
   );
-  check('the report contains 23 findings', rapport.constats.length === 23, String(rapport.constats.length));
+  check('the report contains 24 findings', rapport.constats.length === 24, String(rapport.constats.length));
   check(
     'the verdict is "ok"',
     rapport.contrat.ok === true,
@@ -90,8 +90,8 @@ api.asApp = () => {
     })
   );
   check(
-    '23 seeded issues detected out of 23',
-    rapport.contrat.fautives_detectees === 23 && rapport.contrat.fautives_total === 23,
+    '24 seeded issues detected out of 24',
+    rapport.contrat.fautives_detectees === 24 && rapport.contrat.fautives_total === 24,
     rapport.contrat.fautives_detectees + '/' + rapport.contrat.fautives_total
   );
   check(
@@ -100,8 +100,8 @@ api.asApp = () => {
     rapport.contrat.fautives_manquees.join(',')
   );
   check(
-    '0 false positive on the 6 negative checks',
-    rapport.contrat.faux_positifs.length === 0 && rapport.contrat.controles_negatifs_total === 6,
+    '0 false positive on the 5 negative checks',
+    rapport.contrat.faux_positifs.length === 0 && rapport.contrat.controles_negatifs_total === 5,
     rapport.contrat.faux_positifs.join(',')
   );
   check(
@@ -136,7 +136,7 @@ api.asApp = () => {
   // --- 3. CSV export through the same entry point ---------------------------
   const reponseCsv = await appelerDemo();
   const lignesCsv = String(reponseCsv.csv).trim().split('\r\n');
-  check('the CSV has 24 lines (1 header + 23 findings)', lignesCsv.length === 24, String(lignesCsv.length));
+  check('the CSV has 25 lines (1 header + 24 findings)', lignesCsv.length === 25, String(lignesCsv.length));
   check(
     'the CSV carries the 9 columns of the sheet, in English',
     lignesCsv[0] === '"criterion","level","confidence","source","resource","location","value","message","to_verify"',
@@ -159,7 +159,7 @@ api.asApp = () => {
 
   console.log('');
   if (failures === 0) {
-    console.log('== ALL PASS (' + checks + ' checks): the resolver returns the 23/23 verdict ==');
+    console.log('== ALL PASS (' + checks + ' checks): the resolver returns the 24/24 verdict ==');
     process.exit(0);
   }
   console.log('== ' + failures + ' FAILURE(S) on ' + checks + ' checks ==');

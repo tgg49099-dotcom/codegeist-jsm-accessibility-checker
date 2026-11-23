@@ -8,7 +8,7 @@
  *     checks (AA target) to what was read;
  *  2. the DEMO mode: runs the SAME engine on the 6 bundled demo fixtures — no
  *     account, no tenant — and publishes the proof that the rules detect the
- *     23 seeded issues without a false positive on the 6 negative controls.
+ *     24 seeded issues without a false positive on the 5 negative controls.
  *
  * The application rules cover 13 WCAG 2.2 criteria (7 "REST-verifiable",
  * 6 "content only (partial)") — see docs/CRITERES-WCAG-2.2-AA.md. Every

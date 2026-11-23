@@ -2,8 +2,9 @@
  * Offline test of the DEMO mode — "Portal Accessibility Checker for JSM".
  *
  * This test does not check that the portal is at fault: it checks that the
- * RULES ENGINE detects the 23 documented issues (slot 1 test contract)
- * and produces NO false positive on the 6 negative checks.
+ * RULES ENGINE detects the 24 documented issues (slot 1 test contract,
+ * updated 23/11/2026: 1.3.5 now targets personal-data fields) and produces
+ * NO false positive on the 5 negative checks.
  *
  * It uses the REAL functions (src/regles.js + src/demo.js), no hand-copied
  * copy, and the contract PARSED from docs/README-demo.md
@@ -14,6 +15,8 @@
  * passes, RC 1 = at least one check fails.
  */
 const path = require('path');
+const fs = require('fs');
+const crypto = require('crypto');
 const demo = require(path.join(__dirname, 'src', 'demo.js'));
 const regles = require(path.join(__dirname, 'src', 'regles.js'));
 
@@ -32,14 +35,30 @@ const contrat = demo.CONTRAT;
 
 // --- 0. the test contract is indeed the one from slot 1 ---------------------
 check(
-  'contract parsed from docs/README-demo.md: 23 seeded issues + 6 negative checks',
-  contrat.demo.length === 23 && contrat.sante.length === 6,
+  'contract parsed from docs/README-demo.md: 24 seeded issues + 5 negative checks',
+  contrat.demo.length === 24 && contrat.sante.length === 5,
   contrat.demo.length + ' / ' + contrat.sante.length
 );
+// The contract claims to be the PARSE of docs/README-demo.md: its md5 must be
+// the md5 of that file, read now (23/11/2026). A hard-coded constant would
+// only say what the file was on the day it was written.
+const md5Index = crypto
+  .createHash('md5')
+  .update(fs.readFileSync(path.join(__dirname, 'docs', 'README-demo.md')))
+  .digest('hex');
 check(
-  'md5 of the slot 1 index recorded in the contract',
-  contrat._source.md5_index === 'da30b9b25c69f9ad9bdbc5c0fb851552',
-  contrat._source.md5_index
+  'the md5 of the index recorded in the contract is the md5 of the index on disk',
+  contrat._source.md5_index === md5Index,
+  contrat._source.md5_index + ' != ' + md5Index
+);
+const md5Criteres = crypto
+  .createHash('md5')
+  .update(fs.readFileSync(path.join(__dirname, 'docs', 'CRITERES-WCAG-2.2-AA.md')))
+  .digest('hex');
+check(
+  'the md5 of the criteria sheet recorded in the contract is the md5 of the sheet on disk',
+  contrat._source.md5_criteres === md5Criteres,
+  contrat._source.md5_criteres + ' != ' + md5Criteres
 );
 
 // --- 1. every DEMO-xx issue must be detected, at the right path and the
@@ -59,7 +78,7 @@ for (const entree of contrat.demo) {
   );
 }
 
-// --- 2. the 6 negative checks SANTÉ-xx must produce NO finding
+// --- 2. the 5 negative checks SANTÉ-xx must produce NO finding
 //        (the check is made on the NODE, not only on the leaf) ---
 for (const controle of contrat.sante) {
   const surNoeud = constats.filter(
@@ -82,7 +101,7 @@ check(
   verdict.constats_hors_contrat.length === 0,
   verdict.constats_hors_contrat.join(' | ')
 );
-check('total number of findings = 23', constats.length === 23, String(constats.length));
+check('total number of findings = 24', constats.length === 24, String(constats.length));
 check(
   'every finding carries its contract identifier (proof)',
   constats.every((c) => typeof c.preuve === 'string' && c.preuve.startsWith('DEMO-'))
@@ -128,7 +147,7 @@ check(
 const prv = constats.filter((c) => c.a_verifier === false).length;
 const aver = constats.filter((c) => c.a_verifier === true).length;
 check('14 proven findings (a_verifier = false)', prv === 14, String(prv));
-check('9 findings to verify (a_verifier = true)', aver === 9, String(aver));
+check('10 findings to verify (a_verifier = true)', aver === 10, String(aver));
 check(
   'no "to verify" finding on a "REST-verifiable" criterion… except 3.3.2 (instruction) and 3.2.6 (help position)',
   constats
@@ -152,7 +171,7 @@ check(
 // --- 7. the CSV export is usable --------------------------------------------
 const csv = demo.csv();
 const lignesCsv = csv.trim().split('\r\n');
-check('CSV: one header line + 23 finding lines', lignesCsv.length === 24, String(lignesCsv.length));
+check('CSV: one header line + 24 finding lines', lignesCsv.length === 25, String(lignesCsv.length));
 check(
   'CSV: header with the 9 expected columns',
   lignesCsv[0] === '"criterion","level","confidence","source","resource","location","value","message","to_verify"',
@@ -162,7 +181,7 @@ check('CSV: terminated by a newline', csv.endsWith('\r\n'));
 
 // --- 8. safeguard: the engine must NOT know the test contract --------------
 // (otherwise the test would prove nothing: it would validate a copy, not a rule)
-const fs = require('fs');
+// (`fs` is required at the top of this file)
 const sourceRegles = fs.readFileSync(path.join(__dirname, 'src', 'regles.js'), 'utf8');
 check(
   'the rules engine contains no DEMO-/SANTÉ- identifier',
@@ -172,7 +191,7 @@ check(
 // --- verdict ----------------------------------------------------------------
 console.log('');
 if (failures === 0) {
-  console.log('== ALL PASS (' + checks + ' checks): 23/23 seeded issues detected, 0 false positives ==');
+  console.log('== ALL PASS (' + checks + ' checks): 24/24 seeded issues detected, 0 false positives ==');
   process.exit(0);
 }
 console.log('== ' + failures + ' FAILURE(S) on ' + checks + ' checks ==');
