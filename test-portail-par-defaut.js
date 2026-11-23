@@ -182,6 +182,43 @@ const resume = (findings) => {
   check('C jsmProbe says the JSM API did not answer (HTTP 404)', /did not answer \(HTTP 404\)/.test(String(r.jsmProbe && r.jsmProbe.note)), String(r.jsmProbe && r.jsmProbe.note).slice(0, 80));
   check('C jsmProbe admits nothing was read from it', /nothing was read from it/.test(String(r.jsmProbe && r.jsmProbe.note)));
 
+  // D — incomplete reads warn instead of staying silent (23/11/2026 review,
+  // point 4): an isolated 403 among reads that succeed, and a service desk
+  // list that fails without being a 401/403, both used to give "0 finding"
+  // with no alert.
+  SCENARIO = Object.assign(scenarioJsm(() => CHAMPS_BASE), {
+    '/rest/servicedeskapi/servicedesk/1/requesttype': { status: 403, body: { errorMessages: ['forbidden'] } },
+  });
+  r = await lancerScan();
+  f = r.findings;
+  check('D1 isolated 403: 0 finding BUT a warning (not a silent empty report)', f.length === 0 && r.incompleteRead !== null && r.incompleteRead.length > 0,
+    f.length + ' findings, incompleteRead=' + JSON.stringify(r.incompleteRead));
+  check('D1 the warning names the refused endpoint and its status', (r.incompleteRead || []).some((w) => /requesttype.*HTTP 403/.test(w)),
+    JSON.stringify(r.incompleteRead));
+  check('D1 the scan stays in jsm mode (the identity was not refused)', r.mode === 'jsm', r.mode);
+
+  SCENARIO = Object.assign(scenarioJsm(() => CHAMPS_BASE), {
+    '/rest/servicedeskapi/servicedesk': { status: 500, body: { errorMessages: ['internal error'] } },
+  });
+  r = await lancerScan();
+  f = r.findings;
+  check('D2 desk list HTTP 500: 0 finding BUT the scan error is carried', f.length === 0 && (r.incompleteRead || []).some((w) => /service desk list unavailable \(HTTP 500\)/.test(w)),
+    f.length + ' findings, incompleteRead=' + JSON.stringify(r.incompleteRead));
+  check('D2 the first limites line says INCOMPLETE READ', typeof r.limites[0] === 'string' && r.limites[0].startsWith('INCOMPLETE READ —'), String(r.limites[0]).slice(0, 80));
+
+  SCENARIO = scenarioJsm(() => CHAMPS_BASE);
+  const controle = await lancerScan();
+  check('D3 a complete scan carries no incompleteRead (control)', controle.incompleteRead === null && !controle.limites[0].startsWith('INCOMPLETE READ'),
+    JSON.stringify(controle.incompleteRead));
+
+  // E — a JQL 400 (bad query) is a partial failure too, not a silent empty list
+  SCENARIO = Object.assign(scenarioJira(TICKETS_CORRECTS), {
+    '/rest/api/3/search/jql': { status: 400, body: { errorMessages: ['The JQL is not valid'] } },
+  });
+  r = await lancerScan();
+  check('E JQL 400 reported as an incomplete read', (r.incompleteRead || []).some((w) => /search\/jql.*HTTP 400/.test(w)),
+    JSON.stringify(r.incompleteRead));
+
   console.log(failures === 0 ? '== ALL PASS (' + checks + ' checks): the scan holds on a judge\'s site in English ==' : '== ' + failures + ' FAILURE(S) on ' + checks + ' checks ==');
   process.exit(failures === 0 ? 0 : 1);
 })().catch((e) => { console.error(e); process.exit(2); });

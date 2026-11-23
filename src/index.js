@@ -184,6 +184,31 @@ function lecturesRefusees(sources) {
 }
 
 /**
+ * The reads of the scan that did NOT fully succeed — an incomplete scan.
+ *
+ * `lecturesRefusees` (above) only speaks when EVERY real read was refused
+ * with 401/403. This one catches the rest: the scan-level error (the service
+ * desk list was unavailable), an ISOLATED 401/403 among reads that succeeded,
+ * a JQL 400, a 429… "No finding" on a part that was not read is not a
+ * result: the report must say so instead of staying silent. Only the REAL
+ * reads count (a synthetic `note` line is not an HTTP call).
+ *
+ * @param {object} scan  the scan result ({ sources, findings, error? })
+ * @returns {string[]} one entry per problem — empty when the read is complete
+ */
+function avertissementsLecture(scan) {
+  const problemes = [];
+  if (scan && scan.error) problemes.push(scan.error);
+  const sources = (scan && scan.sources) || {};
+  for (const cle of Object.keys(sources)) {
+    const source = sources[cle] || {};
+    if (source.note) continue;
+    if (source.httpStatus !== 200) problemes.push(cle + ' answered HTTP ' + source.httpStatus);
+  }
+  return problemes;
+}
+
+/**
  * Le refus affiché quand la plateforme refuse la lecture avec l'identité de
  * l'appelant.
  *
@@ -862,12 +887,16 @@ async function executerScan() {
  *
  * The shape is the one documented in the submission (§0.4): the data that was
  * read (`read`), the findings (`findings`), what could not be checked
- * (`limites`), and the privacy statement.
+ * (`limites`), and the privacy statement. When a read did not fully succeed,
+ * the report ALSO carries an incomplete-read warning (`incompleteRead`), and
+ * the first line of `limites` says it in plain words: a part of the site was
+ * not read, so "no finding" there is not a result.
  *
  * @param {object} args
  * @returns {object} the report (not yet masked)
  */
 function construireRapport({ mode, jsmProbe, scan, autorisation, horodatage, pvRecus }) {
+  const lecturesIncompletes = avertissementsLecture(scan);
   return {
     // No version number here: the deployed version is the one in
     // package.json (read in the README and in the Atlassian console). A
@@ -881,7 +910,15 @@ function construireRapport({ mode, jsmProbe, scan, autorisation, horodatage, pvR
     jsmProbe,
     read: scan.sources,
     findings: scan.findings,
+    incompleteRead: lecturesIncompletes.length > 0 ? lecturesIncompletes : null,
     limites: [
+      ...(lecturesIncompletes.length > 0
+        ? [
+            'INCOMPLETE READ — ' +
+              lecturesIncompletes.join(' ; ') +
+              '. The findings cover ONLY what could be read; the parts listed here were not read, and "no finding" on them is not a result.',
+          ]
+        : []),
       'read-only: this scan writes nothing on your site',
       'the REST API does not render the portal: contrast (1.4.3), focus order (2.4.7), target size (2.5.8) and status messages (4.1.3) are NOT checkable here',
       'the presence of a field on a screen is read through createmeta; where a field does not appear, the finding is about its metadata, not about a rendering',
