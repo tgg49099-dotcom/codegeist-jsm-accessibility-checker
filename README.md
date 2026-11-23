@@ -621,9 +621,18 @@ is modified: the app reads and reports.
 * **Marketplace**: the app is **not published** and has **no listing** yet. Atlassian stops
   sharing an app by installation link once it is submitted for a Marketplace listing, so the
   judges install a separate **judge copy** (same code, its own app id, no licence, sharing
-  enabled); its installation link was measured **active** on 17 November 2026 (HTTP 200,
-  products `["jira"]`). The listing itself is a separate, human step (partner profile, then
-  listing, then review submission). Until that exists the app is **free** and its revenue is **0 $**.
+  enabled). Its installation link is the one provided with the submission.
+  Re-measured on 23 November 2026: the link answers HTTP 200 — but that 200 is
+  the developer console shell (271 bytes), and it is **the same shell for every
+  app id**: a link with an entirely invented app id and an entirely invented
+  signature gives exactly the same answers (200, then 401 when the console asks
+  who you are, then 302 to the Atlassian sign-in, then 405). The app id and the
+  signature are therefore checked **only after the sign-in**, which this network
+  cannot reach — the sign-in screen answers HTTP 405 with an anti-bot challenge,
+  which is not bypassed. So the link is **provided with the submission, but its
+  existence and its signature are not verified end to end**. The listing itself
+  is a separate, human step (partner profile, then listing, then review
+  submission). Until that exists the app is **free** and its revenue is **0 $**.
 * **Demonstration video**: published on 17 November 2026 and public:
   **https://youtu.be/JAEoj9jpHMg** (channel *Tgg Labs*, 3 min 12 s, English
   subtitles; YouTube's public oEmbed answers HTTP 200). It shows the **captured**
