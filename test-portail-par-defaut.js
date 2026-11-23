@@ -357,6 +357,30 @@ const resume = (findings) => {
     String(rPanne && rPanne.limites[0]).slice(0, 90));
   SCENARIO = scenarioJsm(() => CHAMPS_BASE);
 
+  // L — the report names the read that actually failed (23/11/2026 review,
+  // minor 9): the JSM probe endpoint was cited whatever the failure was.
+  SCENARIO = scenarioJsm(() => CHAMPS_BASE);
+  SCENARIO['/rest/api/3/serverInfo'] = { status: 401, body: { errorMessages: ['unauthorized'] } };
+  r = await lancerScan();
+  check('L the JSM endpoint is not cited when it was never probed',
+    r.jsmProbe && r.jsmProbe.endpoint === null, String(r.jsmProbe && r.jsmProbe.endpoint));
+  check('L the note says the JSM API was not even probed',
+    /not even probed/.test(String(r.jsmProbe && r.jsmProbe.note)), String(r.jsmProbe && r.jsmProbe.note).slice(0, 90));
+  check('L the refusal names the read that failed (the identity probe)',
+    r.autorisation && r.autorisation.endpoint === 'GET /rest/api/3/serverInfo',
+    String(r.autorisation && r.autorisation.endpoint));
+  SCENARIO = scenarioJira(TICKETS_CORRECTS);
+  SCENARIO['/rest/servicedeskapi/info'] = { status: 200, body: { isLicensedForUse: false } };
+  SCENARIO['/rest/api/3/field'] = { status: 403, body: { errorMessages: ['forbidden'] } };
+  SCENARIO['/rest/api/3/project'] = { status: 403, body: { errorMessages: ['forbidden'] } };
+  SCENARIO['/rest/api/3/search/jql'] = { status: 403, body: { errorMessages: ['forbidden'] } };
+  r = await lancerScan();
+  check('L when every CONTENT read is refused, the refusal names that read, not the JSM probe',
+    r.autorisation && r.autorisation.ok === false && /\/rest\/api\/3\//.test(String(r.autorisation.endpoint)) &&
+      !/servicedeskapi/.test(String(r.autorisation.endpoint)),
+    String(r.autorisation && r.autorisation.endpoint));
+  SCENARIO = scenarioJsm(() => CHAMPS_BASE);
+
   console.log(failures === 0 ? '== ALL PASS (' + checks + ' checks): the scan holds on a judge\'s site in English ==' : '== ' + failures + ' FAILURE(S) on ' + checks + ' checks ==');
   process.exit(failures === 0 ? 0 : 1);
 })().catch((e) => { console.error(e); process.exit(2); });

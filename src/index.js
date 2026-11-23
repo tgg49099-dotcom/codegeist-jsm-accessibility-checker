@@ -871,10 +871,14 @@ async function executerScan() {
     return {
       mode: 'refus-acces',
       jsmProbe: {
-        endpoint: 'GET /rest/servicedeskapi/info',
+        // L'API JSM n'a pas été sondée : le scan s'est arrêté à la sonde
+        // d'identité. Aucune URL ne peut donc être citée ici (constat de la
+        // Direction, 23/11/2026).
+        endpoint: null,
         httpStatus: null,
         isLicensedForUse: null,
-        note: 'nothing was read: the platform refused to read with the caller\'s identity',
+        note:
+          'nothing was read: the platform refused to read with the caller\'s identity — the JSM API was not even probed',
       },
       scan: { sources: {}, findings: [] },
       autorisation: {
@@ -920,6 +924,14 @@ async function executerScan() {
   // read" and "nothing was found" are two different answers.
   const refuse = lecturesRefusees(scan.sources);
   if (refuse !== null) {
+    // La lecture refusée est celle qui a échoué : elle est nommée, pas la
+    // sonde JSM (qui a pu répondre 200 alors que la lecture de contenu a
+    // été refusée) — constat de la Direction, 23/11/2026.
+    const endpointRefuse =
+      Object.keys(scan.sources).find((cle) => {
+        const src = scan.sources[cle] || {};
+        return !src.note && src.httpStatus === refuse;
+      }) || null;
     return {
       mode: 'refus-acces',
       jsmProbe,
@@ -928,7 +940,7 @@ async function executerScan() {
         ok: false,
         identity: IDENTITE_LECTURE,
         httpStatus: refuse,
-        endpoint: 'GET /rest/servicedeskapi/info',
+        endpoint: endpointRefuse,
         message: refusAutorisation(refuse),
       },
     };
