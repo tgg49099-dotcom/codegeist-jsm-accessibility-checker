@@ -106,7 +106,8 @@ allows, and offers the button as a convenience that says what happened.
 
 The scanner probes Jira Service Management first (`GET /rest/servicedeskapi/info`).
 If JSM is licensed on the site, it scans the customer portal content: request
-types, their fields, help texts, article content. If JSM is not licensed
+types, their fields and help texts. Knowledge-base articles are **not** read:
+no knowledge-base endpoint is called. If JSM is not licensed
 (`isLicensedForUse: false` — the situation of the test site until 17 November
 2026), the same rule engine automatically falls back to the Jira equivalent:
 custom fields, field descriptions, create-screen metadata and issue summaries.
