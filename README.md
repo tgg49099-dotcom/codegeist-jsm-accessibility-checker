@@ -495,7 +495,7 @@ verify.
 
 ```
 npm install
-npm test                          # 15 suites, 377 checks — every node suite below, in one go
+npm test                          # 15 suites, 380 checks — every node suite below, in one go
 node test-ihm.js                 # 43 checks — the interface replaces the public trigger
 node test-contrat-http.js                 # 59 checks — the privacy contract (masking, absent fields, logs)
 node test-app-demo.js                     # 22 checks — the resolver returns the 24/24 verdict
@@ -504,7 +504,8 @@ node test-contre-epreuve.js               # 13 checks — the harness turns RED 
 node test-contrat-http-contre-epreuve.js  # 28 checks — that harness turns RED when the contract is broken
 node test-mcp.js                  # 32 checks — the two MCP tools read the caller's site, and nothing else
 node test-admin.js                # 18 checks — the administrator check on the page's path
-node test-csv.js                  # 15 checks — the CSV is written in a copyable field
+node test-csv.js                  # 18 checks — the CSV is written in a copyable field, and no
+                                          #            value read on the site can become a spreadsheet formula
 node test-mcp-admin.js            # 17 checks — the SAME administrator check on the two MCP tools
 node test-identite.js             # 12 checks — 0 asApp() in the active code, and a refusal when the
                                           #            platform refuses the caller's identity
@@ -608,7 +609,7 @@ tools/            the manifest checker (and its counter-proof), the check that
                   and its counter-proof against the site
                   (tools/contre-epreuve-scan-jsm.py)
 PRIVACY.md        the privacy notice (what is read, where it goes, how long it is kept)
-test-*.js         the offline harness (377 checks in fifteen suites, plus 99 checks
+test-*.js         the offline harness (380 checks in fifteen suites, plus 99 checks
                   in the five tools of tools/)
 ```
 

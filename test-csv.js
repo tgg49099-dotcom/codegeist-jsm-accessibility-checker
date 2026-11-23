@@ -37,7 +37,15 @@
  *           imports the tested module;
  *   CSV-10  the page shows the same CSV in a READ-ONLY field;
  *   CSV-11  the button still exists and calls the tested function;
- *   CSV-12  that field has an accessible name (aria-labelledby + an id).
+ *   CSV-12  that field has an accessible name (aria-labelledby + an id);
+ *   CSV-13  a value starting with "=", "-", "+" or "@" (read on the site,
+ *           e.g. a ticket summary "=HYPERLINK(...)") leaves the export
+ *           prefixed with an apostrophe: no spreadsheet opens it as a
+ *           formula (OWASP "CSV Injection", rule of 23/11/2026);
+ *   CSV-14  ordinary values are NOT prefixed (the protection changes
+ *           nothing else);
+ *   CSV-15  the same protection holds through the resolver's export
+ *           (`csvRapport`), the path the page actually uses.
  *
  * THE COUNTER-PROOFS (the suite must be able to say NO)
  *
@@ -312,7 +320,34 @@ function avecSabotage(nom, mutation) {
   Object.keys(resPage).forEach((k) => check(k, resPage[k]));
 
   console.log('');
-  console.log('== 3. THE COUNTER-PROOFS (the suite must be able to say NO) ==');
+  console.log('== 3. THE CSV TEXT ITSELF (formula injection, 23/11/2026) ==');
+  const regles = require(path.join(SRC, 'regles.js'));
+  const moteur = require(path.join(SRC, 'index.js'));
+  const constatsPieges = [
+    { critere: '2.4.2', niveau: 'A', confiance: 'REST-verifiable', source: 'E1', ressource: 'T-1',
+      emplacement: 'fields.summary', valeur: '=HYPERLINK("https://example.test","click")', message: 'generic title', a_verifier: true },
+    { critere: '3.3.2', niveau: 'A', confiance: 'REST-verifiable', source: 'E4', ressource: 'T-2',
+      emplacement: 'requestTypeFields[0].name', valeur: '-5', message: 'no label', a_verifier: false },
+    { critere: '2.4.4', niveau: 'A', confiance: 'REST-verifiable', source: 'E1', ressource: 'T-3',
+      emplacement: 'content[0].text', valeur: '@sum', message: 'non-descriptive link', a_verifier: true },
+    { critere: '1.3.3', niveau: 'A', confiance: 'content only (partial)', source: 'E1', ressource: 'T-4',
+      emplacement: 'content[1].text', valeur: '+3 days', message: 'sensory instruction', a_verifier: true },
+  ];
+  const csvPiege = regles.versCsv(constatsPieges);
+  const lignesPiege = csvPiege.trim().split('\r\n');
+  check('CSV-13 formula-carrying values (leading =, -, @, +) leave the export apostrophe-prefixed',
+    lignesPiege[1].includes('"\'=HYPERLINK') && !lignesPiege[1].includes('"=HYPERLINK') &&
+    lignesPiege[2].includes('"\'-5"') && lignesPiege[3].includes('"\'@sum"') && lignesPiege[4].includes('"\'+3 days"'),
+    lignesPiege.slice(1).join(' || '));
+  check('CSV-14 ordinary values are not prefixed (the protection changes nothing else)',
+    lignesPiege[1].includes('"generic title"') && lignesPiege[2].includes('"no label"') &&
+    !lignesPiege[0].includes("'"),
+    lignesPiege[0]);
+  check('CSV-15 the same protection on the export path the page uses (csvRapport)',
+    moteur.csvRapport({ findings: constatsPieges }) === csvPiege);
+
+  console.log('');
+  console.log('== 4. THE COUNTER-PROOFS (the suite must be able to say NO) ==');
 
   // CP-1 : the link is never clicked -> the click must be detected.
   try {

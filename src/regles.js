@@ -962,10 +962,17 @@ function versCsv(constats) {
     ['message', 'message'],
     ['a_verifier', 'to_verify'],
   ];
+  // Injection de formule (règle du 23/11/2026) : une valeur lue sur le site
+  // et commençant par =, +, -, @, tabulation ou CR serait interprétée comme
+  // une FORMULE par le tableur qui ouvre le CSV (=HYPERLINK…), même entre
+  // guillemets — l'échappement RFC 4180 ne neutralise pas ça. La parade
+  // usuelle (OWASP « CSV Injection») : préfixer d'une apostrophe.
+  const AMORCE_FORMULE = /^[=+\-@\t\r]/;
   const echapper = (v) => {
     if (v === null || v === undefined) return '""';
     const s = typeof v === 'string' ? v : JSON.stringify(v);
-    return '"' + s.replace(/"/g, '""') + '"';
+    const protege = AMORCE_FORMULE.test(s) ? "'" + s : s;
+    return '"' + protege.replace(/"/g, '""') + '"';
   };
   const lignes = [colonnes.map((p) => '\"' + p[1] + '\"').join(',')];
   for (const c of constats) {
