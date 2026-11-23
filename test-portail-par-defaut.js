@@ -297,6 +297,26 @@ const resume = (findings) => {
     (r.findings || []).some((c) => c.critere === '1.4.3') && /contrast \(1\.4\.3\)/.test(limites),
     (r.findings || []).filter((c) => c.critere === '1.4.3').length + ' finding(s) 1.4.3');
 
+  // I — a service desk without `projectName`: the resource of the findings
+  // must still name the desk (its id), never "undefined > ..." (23/11/2026
+  // review, minor 6).
+  SCENARIO = scenarioJsm((rt) => (rt.id === '4'
+    ? [...CHAMPS_BASE, champ('customfield_10070', '', true, '')]
+    : CHAMPS_BASE));
+  SCENARIO['/rest/servicedeskapi/servicedesk'] = {
+    status: 200, body: { values: [{ id: '1' }] },
+  };
+  r = await lancerScan();
+  f = r.findings;
+  check('I the scenario really produced a finding (the check below is not empty)',
+    f.length >= 1, f.length + ' finding(s)');
+  check('I no finding names "undefined" when the service desk has no projectName',
+    !JSON.stringify(f).includes('undefined'),
+    f.map((c) => String(c.ressource)).join(' | ') || 'no finding');
+  check('I the resource of the findings names the desk by its id',
+    f.every((c) => !/undefined/.test(String(c.ressource)) && !/undefined/.test(String(c.ou))),
+    f.map((c) => String(c.ressource) + ' / ' + String(c.ou)).join(' | ') || 'no finding');
+
   console.log(failures === 0 ? '== ALL PASS (' + checks + ' checks): the scan holds on a judge\'s site in English ==' : '== ' + failures + ' FAILURE(S) on ' + checks + ' checks ==');
   process.exit(failures === 0 ? 0 : 1);
 })().catch((e) => { console.error(e); process.exit(2); });

@@ -520,6 +520,11 @@ async function scanJsm() {
     return { sources, findings, error: 'service desk list unavailable (HTTP ' + desks.status + ')' };
   }
   for (const desk of (desks.body.values || []).slice(0, 3)) {
+    // Le nom du service desk : son `projectName` quand il y en a un, sinon son
+    // identifiant. TOUJOURS une chaîne : sans ce repli, un service desk sans
+    // `projectName` produisait « undefined > Nom du type » (constat de la
+    // Direction, 23/11/2026).
+    const nomDesk = desk.projectName || String(desk.id);
     const rts = await jget(route`/rest/servicedeskapi/servicedesk/${desk.id}/requesttype`, JSM_HDRS);
     // A request type that belongs to NO portal group (`groupIds` empty) is
     // "Hidden from portal": customers never see it (e.g. "Emailed request").
@@ -567,7 +572,7 @@ async function scanJsm() {
         rt,
         champs: requestTypeFields,
         racine: 'requestTypeFields',
-        ressource: `${desk.projectName} > ${rt.name}`,
+        ressource: `${nomDesk} > ${rt.name}`,
       });
     }
 
@@ -578,11 +583,11 @@ async function scanJsm() {
       values,
       'values',
       'E5',
-      desk.projectName || String(desk.id),
+      nomDesk,
       champsParType,
       indices
     )) {
-      findings.push({ ...constat, ou: `service desk ${desk.projectName || desk.id}` });
+      findings.push({ ...constat, ou: `service desk ${nomDesk}` });
     }
     // Moteur WCAG 2.2 — E5 : titre de page du type de demande (2.4.2).
     for (let i = 0; i < values.length; i += 1) {
@@ -591,13 +596,13 @@ async function scanJsm() {
         rt.name,
         `values[${indices[i]}].name`,
         'E5',
-        desk.projectName || String(desk.id),
+        nomDesk,
         // The request type description is a one-line subtitle, not the start
         // of a page: comparing words with it flags correct default names such
         // as "Get IT help". Only the empty / generic title checks apply here.
         null
       )) {
-        findings.push({ ...constat, ou: `service desk ${desk.projectName || desk.id}` });
+        findings.push({ ...constat, ou: `service desk ${nomDesk}` });
       }
     }
 
@@ -612,9 +617,9 @@ async function scanJsm() {
         requestTypeFields,
         'requestTypeFields',
         'E4',
-        `${desk.projectName} > ${rt.name}`
+        `${nomDesk} > ${rt.name}`
       )) {
-        findings.push({ ...constat, ou: `${desk.projectName} > ${rt.name}` });
+        findings.push({ ...constat, ou: `${nomDesk} > ${rt.name}` });
       }
 
       // Règle d'étiquette « technique interne » (2.4.6) : absente du moteur
@@ -629,14 +634,14 @@ async function scanJsm() {
               '2.4.6',
               'AA',
               'E4',
-              `${desk.projectName} > ${rt.name}`,
+              `${nomDesk} > ${rt.name}`,
               `requestTypeFields[${i}].name`,
               f.name,
               `Non-descriptive field label: ${il.why}. A label must describe the subject or the purpose of the field for the end user.`,
               true
             )
           );
-          findings[findings.length - 1].ou = `${desk.projectName} > ${rt.name}`;
+          findings[findings.length - 1].ou = `${nomDesk} > ${rt.name}`;
         }
       }
     }
