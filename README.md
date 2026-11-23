@@ -320,9 +320,10 @@ This is not a choice, it is the rule the Marketplace security review applies:
 > — *Security requirements for cloud apps*, section « Forge apps »
 
 The second rule asks for a permissions check **before** the app widens the
-identity. This app cannot call the permissions API (it declares two read
-scopes, and such a check would need a third), so it **removes the `asApp()`
-call altogether** rather than justify it halfway. The application contains
+identity. This app **removes the `asApp()` call altogether** rather than
+justify it halfway — and it *does* call the permissions API, with the caller's
+own identity (`GET /rest/api/3/mypermissions`, the check described above), so
+the two read scopes are the only ones it declares. The application contains
 **zero** `asApp()` calls, so it cannot read anything the person who started the
 scan could not read themselves.
 
