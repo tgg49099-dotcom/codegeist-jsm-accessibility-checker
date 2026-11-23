@@ -208,8 +208,8 @@ reads nothing.
 **Whether the tools are reserved to administrators.** Yes — the two tools run the administrator
 check of § 1 (the same one, the same endpoint, before any read), so they are reserved to Jira
 administrators on the MCP path exactly as the button is on the page. *The production version
-running today, **2.8.0**, applies this check: it was deployed on 10 November 2026, and the
-package uploaded for that deployment contains it, called before any read.*
+deployed on 10 November 2026, **2.8.0**, applies this check: the package uploaded for that
+deployment contains it, called before any read — production **2.11.0** applies the same check.*
 
 **Whose site they read.** Only the site where the app is installed. The URL given to
 `scan_accessibility` is compared with the host of that site and is **never fetched**; a URL
