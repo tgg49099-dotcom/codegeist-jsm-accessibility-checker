@@ -203,12 +203,16 @@ check('RECU-16 the page payload (object) is read as a body',
     rapportRouge.privacy.statement.indexOf('never returns a name or e-mail address in clear text') === -1 &&
       rapportRouge.privacy.statement.indexOf('returned as it is') !== -1,
     rapportRouge.privacy.statement);
+  // A harness must not CRASH when a part of the report is missing: a crash
+  // cannot tell "detected" from "broken" (the counter-proof suite checks
+  // that). A missing list is therefore read as an empty one.
+  const limitesRouge = (rapportRouge.privacy && rapportRouge.privacy.limits) || [];
   check('LIMITE-01 the limits say the mask ignores the case',
-    rapportRouge.privacy.limits.join(' ').indexOf('whatever its case') !== -1,
-    rapportRouge.privacy.limits.join(' | '));
+    limitesRouge.join(' ').indexOf('whatever its case') !== -1,
+    limitesRouge.join(' | '));
   check('LIMITE-02 the limits say the mask replaces the whole occurrence, even inside a longer word',
-    rapportRouge.privacy.limits.join(' ').indexOf('even inside a longer word') !== -1,
-    rapportRouge.privacy.limits.join(' | '));
+    limitesRouge.join(' ').indexOf('even inside a longer word') !== -1,
+    limitesRouge.join(' | '));
   const balayage = c.balayerNoeud(
     { texte: 'camille dupont a ecrit CAMILLE DUPONT' },
     c.remplacementsPv({ nom: NOM })
@@ -216,13 +220,20 @@ check('RECU-16 the page payload (object) is read as a body',
   check('LIMITE-03 the mask really ignores the case (the statement is true)',
     !/camille dupont/i.test(String(balayage.texte)) && /C\\*\\*\\*/.test(String(balayage.texte)),
     JSON.stringify(balayage.texte));
-  const readme = fs.readFileSync(path.join(__dirname, 'README.md'), 'utf8');
+  // Same rule as above: a file that cannot be read makes the check FAIL,
+  // it does not make the harness CRASH.
+  let readme = '';
+  try {
+    readme = fs.readFileSync(path.join(__dirname, 'README.md'), 'utf8');
+  } catch (e) {
+    readme = '';
+  }
   check('LIMITE-04 the README quotes the privacy statement word for word (the one the app returns)',
-    readme.indexOf(c.PHRASE_PV) !== -1,
-    'PHRASE_PV not found verbatim in README.md');
+    readme !== '' && readme.indexOf(c.PHRASE_PV) !== -1,
+    readme === '' ? 'README.md could not be read here' : 'PHRASE_PV not found verbatim in README.md');
   check('LIMITE-05 the README no longer quotes an older version of the statement',
-    readme.indexOf('sends nothing outside your Atlassian tenant') === -1,
-    'the outdated statement is still in README.md');
+    readme !== '' && readme.indexOf('sends nothing outside your Atlassian tenant') === -1,
+    readme === '' ? 'README.md could not be read here' : 'the outdated statement is still in README.md');
   check('ROUGE-09 the demo scan is intact (24 findings)',
     rapportRouge.constats.length === 24, String(rapportRouge.constats.length));
   check('ROUGE-10 no call to the Atlassian API in demo mode', appelsApi === 0, String(appelsApi));

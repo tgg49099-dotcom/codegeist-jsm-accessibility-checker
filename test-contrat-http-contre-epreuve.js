@@ -47,6 +47,11 @@ function copierApp(suffixe) {
   fs.cpSync(path.join(APP, 'src', 'regles.js'), path.join(cible, 'src', 'regles.js'));
   fs.cpSync(path.join(APP, 'src', 'demo'), path.join(cible, 'src', 'demo'), { recursive: true });
   fs.cpSync(path.join(APP, 'test-contrat-http.js'), path.join(cible, 'test-contrat-http.js'));
+  // The README is a file of the delivered app: the harness reads it (the
+  // privacy statement must be quoted word for word), so the copy of the
+  // counter-proof must contain it — otherwise the harness would FAIL on a
+  // file that the copy simply does not carry.
+  fs.cpSync(path.join(APP, 'README.md'), path.join(cible, 'README.md'));
   try {
     fs.symlinkSync(path.join(APP, 'node_modules'), path.join(cible, 'node_modules'), 'dir');
   } catch (e) {
