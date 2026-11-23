@@ -436,23 +436,38 @@ this repository.
 
 Target: WCAG 2.2 level AA. Each criterion below is level A or AA, so all of them
 are inside an AA target. The engine is deliberately explicit about what a REST
-API can and cannot prove:
+API can and cannot prove.
 
-| Criterion | Title | Level | What the engine checks |
-|---|---|---|---|
-| 1.1.1 | Non-text Content | A | Provable from REST — image/media node without an `alt`, or with an empty one |
-| 1.3.1 | Info and Relationships | A | Provable from REST — skipped heading levels; table whose first row has no header cell |
-| 2.4.2 | Page Titled | A | Provable from REST — empty or generic title (English and French lists); a title sharing no word with the start of the content is only flagged "to verify" |
-| 2.4.4 | Link Purpose (In Context) | A | Provable from REST — link text that is a bare URL or a non-descriptive label ("click here" and friends) |
-| 3.2.6 | Consistent Help | A | Provable from REST — help present on one request type/field and absent on its sibling |
-| 3.3.2 | Labels or Instructions | A | Provable from REST — form field without a label; **required** field without instruction/description |
-| 4.1.2 | Name, Role, Value | A | Provable from REST — inline node (mention, status) carrying no `text` label |
-| 1.2.2 | Captions (Prerecorded) | A | Content-only (partial) — media attachment without a `text/vtt` or `.vtt`/`.srt` transcription |
-| 1.3.3 | Sensory Characteristics | A | Content-only (partial) — instructions relying on shape/color/position words alone |
-| 1.3.5 | Identify Input Purpose | AA | Content-only (partial) — free-text custom field whose purpose is not announced (no purpose keyword, English or French, in name or description); Jira system fields such as Summary or Attachment are not flagged |
-| 1.4.1 | Use of Color | A | Content-only (partial) — information carried by a color mark alone, with no other mark |
-| 1.4.3 | Contrast (Minimum) | AA | Content-only (partial) — ratio computed under a **white background assumption**, reported as "uncertain contrast", never as "non-conformant" |
-| 2.4.6 | Headings and Labels | AA | Content-only (partial) — internal-looking labels (lowercase technical names, ≥ 4-digit numeric IDs) |
+**One scan does not run all 13.** What is read depends on the mode, and the
+table says where each criterion actually runs:
+
+* **JSM mode** (JSM licensed on the site — the customer portal is scanned):
+  request types, their names, their help texts and their fields are read —
+  **5 criteria** run (3.3.2, 1.3.5, 3.2.6, 2.4.2, 2.4.6).
+* **Jira fallback** (JSM not licensed or its API not answering — Jira issues
+  are scanned instead): custom fields, create-screen metadata, issue summaries
+  and issue bodies are read — **10 criteria** run (2.4.6, 3.3.2, 2.4.2 on
+  fields and summaries; 1.1.1, 1.3.1, 2.4.4, 4.1.2, 1.4.1, 1.4.3, 1.3.3 on
+  issue bodies).
+* **1.2.2 never runs in a scan of a site**: attachments are not fetched by any
+  scan. It runs on the bundled demo data only (the six fixtures of the demo
+  scan include attachments). The demo scan exercises all 13 criteria.
+
+| Criterion | Title | Level | Where it runs in a scan | What the engine checks |
+|---|---|---|---|---|
+| 1.1.1 | Non-text Content | A | Jira fallback (issue bodies) | Provable from REST — image/media node without an `alt`, or with an empty one |
+| 1.3.1 | Info and Relationships | A | Jira fallback (issue bodies) | Provable from REST — skipped heading levels; table whose first row has no header cell |
+| 2.4.2 | Page Titled | A | Both modes (request-type names; issue summaries) | Provable from REST — empty or generic title (English and French lists); a title sharing no word with the start of the content is only flagged "to verify" |
+| 2.4.4 | Link Purpose (In Context) | A | Jira fallback (issue bodies) | Provable from REST — link text that is a bare URL or a non-descriptive label ("click here" and friends) |
+| 3.2.6 | Consistent Help | A | JSM mode only (request types) | Provable from REST — help present on one request type/field and absent on its sibling |
+| 3.3.2 | Labels or Instructions | A | Both modes (request-type fields; ambiguous custom fields) | Provable from REST — form field without a label; **required** field without instruction/description |
+| 4.1.2 | Name, Role, Value | A | Jira fallback (issue bodies) | Provable from REST — inline node (mention, status) carrying no `text` label |
+| 1.2.2 | Captions (Prerecorded) | A | **Never in a scan** — bundled demo data only | Content-only (partial) — media attachment without a `text/vtt` or `.vtt`/`.srt` transcription |
+| 1.3.3 | Sensory Characteristics | A | Jira fallback (issue bodies) | Content-only (partial) — instructions relying on shape/color/position words alone |
+| 1.3.5 | Identify Input Purpose | AA | JSM mode only (request-type fields) | Content-only (partial) — free-text custom field that **collects personal data** (e-mail, phone, name…; English or French): the input purpose must be identifiable **by programme** when rendered (`autocomplete`), which no REST API exposes — so the finding is a signal to verify. A field that collects no personal data ("Steps to reproduce", "Reference") is **not** a 1.3.5 finding; neither are the Jira system fields (Summary, Attachment) |
+| 1.4.1 | Use of Color | A | Jira fallback (issue bodies) | Content-only (partial) — information carried by a color mark alone, with no other mark |
+| 1.4.3 | Contrast (Minimum) | AA | Jira fallback (issue bodies) | Content-only (partial) — ratio computed under a **white background assumption**, reported as "uncertain contrast", never as "non-conformant" |
+| 2.4.6 | Headings and Labels | AA | Both modes (field labels; custom field names) | Content-only (partial) — internal-looking labels (lowercase technical names, ≥ 4-digit numeric IDs) |
 
 Three things are **not** checkable through the REST API and the app says so in
 its method note rather than inventing a result: rendered contrast, reading/focus
