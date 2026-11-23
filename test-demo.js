@@ -167,6 +167,19 @@ check(
   constatsContraste.length === 1 && constatsContraste[0].valeur === '#f2c200',
   constatsContraste.map((c) => c.valeur).join(',')
 );
+// the limits of the demo report must not contradict the engine: it DOES
+// report a 1.4.3 finding (23/11/2026 review, minor 4)
+const limitesDemo = (demo.rapport(new Date().toISOString()).limites || []).join(' ');
+check(
+  'the demo limits do not say that the app does not rule on the contrast',
+  !/contrast, reading order \/ focus order and visible labels are not checkable/.test(limitesDemo),
+  limitesDemo.slice(0, 160)
+);
+check(
+  'the demo limits say the contrast ratio is computed under an assumption',
+  /white-background assumption/.test(limitesDemo),
+  limitesDemo.slice(0, 160)
+);
 
 // --- 7. the CSV export is usable --------------------------------------------
 const csv = demo.csv();

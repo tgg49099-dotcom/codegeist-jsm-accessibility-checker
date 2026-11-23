@@ -948,7 +948,7 @@ function construireRapport({ mode, jsmProbe, scan, autorisation, horodatage, pvR
           ]
         : []),
       'read-only: this scan writes nothing on your site',
-      'the REST API does not render the portal: contrast (1.4.3), focus order (2.4.7), target size (2.5.8) and status messages (4.1.3) are NOT checkable here',
+      'the REST API does not render the portal: contrast (1.4.3) is ESTIMATED, not measured — the ratio uses the DECLARED colour under a WHITE-background assumption (uncertain, to be verified); focus order (2.4.7), target size (2.5.8) and status messages (4.1.3) are NOT checkable here',
       'the presence of a field on a screen is read through createmeta; where a field does not appear, the finding is about its metadata, not about a rendering',
       'a finding is an ALERT to be checked by a human: the app does not certify any conformance',
     ],

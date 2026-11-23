@@ -280,6 +280,23 @@ const resume = (findings) => {
     !/SEUIL_CONTRASTE_GRAND/.test(sourceRegles),
     'SEUIL_CONTRASTE_GRAND still declared');
 
+  // H — the limits of the report must not contradict the engine: the engine
+  // DOES produce 1.4.3 findings (a ratio computed on the declared colour),
+  // so the report may not list 1.4.3 among the criteria that are "NOT
+  // checkable here" (23/11/2026 review, minor 4).
+  SCENARIO = scenarioJira([ticketCouleur('#ffffff')]);
+  r = await lancerScan();
+  const limites = (r.limites || []).join(' ');
+  check('H the report does not list 1.4.3 among the criteria that are NOT checkable',
+    !/contrast \(1\.4\.3\)[^;]*NOT checkable/.test(limites),
+    limites.slice(0, 160));
+  check('H the report says the contrast ratio is computed under an assumption',
+    /contrast \(1\.4\.3\)/.test(limites) && /WHITE-background assumption/.test(limites),
+    limites.slice(0, 160));
+  check('H the report that carries a 1.4.3 finding also carries that limit',
+    (r.findings || []).some((c) => c.critere === '1.4.3') && /contrast \(1\.4\.3\)/.test(limites),
+    (r.findings || []).filter((c) => c.critere === '1.4.3').length + ' finding(s) 1.4.3');
+
   console.log(failures === 0 ? '== ALL PASS (' + checks + ' checks): the scan holds on a judge\'s site in English ==' : '== ' + failures + ' FAILURE(S) on ' + checks + ' checks ==');
   process.exit(failures === 0 ? 0 : 1);
 })().catch((e) => { console.error(e); process.exit(2); });
