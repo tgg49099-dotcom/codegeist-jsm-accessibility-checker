@@ -28,13 +28,14 @@ const SC = {
   '/rest/servicedeskapi/servicedesk': { status: 200, body: { values: [{ id: '1', projectName: 'IT Help', projectKey: 'ITH' }] } },
   '/rest/servicedeskapi/servicedesk/1/requesttype': { status: 200, body: { values: TYPES } },
 };
+let SCENARIO = SC;
 for (const rt of TYPES) {
   const f = [champ('summary', 'Summary', true, 'Tell us in one line.'), champ('description', 'Description', false)];
   if (rt.id === '90') f.push(champ('customfield_10090', '', true, ''));          // default on a HIDDEN type
   if (rt.id === '5') f.push(champ('customfield_10055', '', true, ''));           // real default on the 5th DISPLAYED type
   SC['/rest/servicedeskapi/servicedesk/1/requesttype/' + rt.id + '/field'] = { status: 200, body: { requestTypeFields: f } };
 }
-const client = { requestJira: async (r) => { const d = SC[chemin(r).split('?')[0]]; return d ? rep(d.status, d.body) : rep(404, { errorMessages: ['not found'] }); } };
+const client = { requestJira: async (r) => { const d = SCENARIO[chemin(r).split('?')[0]]; return d ? rep(d.status, d.body) : rep(404, { errorMessages: ['not found'] }); } };
 api.asUser = () => client; api.asApp = () => client;
 const { lancerScan } = require('./src/index.js');
 (async () => {
@@ -48,6 +49,37 @@ const { lancerScan } = require('./src/index.js');
   check('the hidden request type does not take one of the 5 read slots', !lu);
   const vrai = F.filter((f) => ou(f).includes('Report a system problem') && JSON.stringify(f).includes('without a label'));
   check('real default of the 5th displayed request type detected (field with no label)', vrai.length >= 1, vrai.length + ' finding(s)');
+
+  // The path of a finding points at the RAW response: a type hidden from the
+  // portal keeps its place in `values[]` of the JSON read, even though it is
+  // not judged (23/11/2026 review, minor 2). Before the fix, the path was
+  // computed on the FILTERED list and therefore designated another type.
+  const TYPES_BRUT = [
+    { id: '90', name: 'Emailed request', description: 'Request received from your email channel.', helpText: '', groupIds: [] },
+    { id: '1', name: 'New page', description: 'Get assistance with general IT problems.', helpText: 'Describe the problem.', groupIds: ['1'] },
+    { id: '2', name: 'Fix an account problem', description: 'Having trouble signing in?', helpText: '', groupIds: ['1'] },
+  ];
+  SCENARIO = {
+    '/rest/api/3/serverInfo': { status: 200, body: { baseUrl: 'https://juge.atlassian.net' } },
+    '/rest/servicedeskapi/info': { status: 200, body: { isLicensedForUse: true } },
+    '/rest/servicedeskapi/servicedesk': { status: 200, body: { values: [{ id: '1', projectName: 'IT Help', projectKey: 'ITH' }] } },
+    '/rest/servicedeskapi/servicedesk/1/requesttype': { status: 200, body: { values: TYPES_BRUT } },
+  };
+  for (const rt of TYPES_BRUT) {
+    SCENARIO['/rest/servicedeskapi/servicedesk/1/requesttype/' + rt.id + '/field'] = {
+      status: 200, body: { requestTypeFields: [champ('summary', 'Summary', true, 'Tell us in one line.')] },
+    };
+  }
+  const out2 = await lancerScan({ accountId: 'juge' });
+  const F2 = (out2 && out2.findings) || [];
+  const emplacements = (critere) => F2.filter((c) => c.critere === critere).map((c) => String(c.emplacement)).join(' | ') || 'none';
+  check('the 3.2.6 finding points at the RAW response (values[2].helpText)',
+    F2.some((c) => c.critere === '3.2.6' && c.emplacement === 'values[2].helpText'), emplacements('3.2.6'));
+  check('the 3.2.6 finding does NOT point at the hidden type (values[0].helpText)',
+    !F2.some((c) => c.critere === '3.2.6' && c.emplacement === 'values[0].helpText'), emplacements('3.2.6'));
+  check('the 2.4.2 finding points at the RAW response (values[1].name)',
+    F2.some((c) => c.critere === '2.4.2' && c.emplacement === 'values[1].name'), emplacements('2.4.2'));
+
   console.log(failures ? `== ${failures} FAILURE(S) on ${checks} checks ==` : `== ALL PASS (${checks} checks): hidden request types ignored`);
   process.exit(failures ? 1 : 0);
 })().catch((e) => { console.log('ERROR ' + (e && e.stack)); process.exit(2); });

@@ -527,7 +527,15 @@ async function scanJsm() {
     // given one of the 5 places read. A type without `groupIds` is kept.
     const tousTypes = rts.body.values || [];
     const caches = tousTypes.filter((rt) => Array.isArray(rt.groupIds) && rt.groupIds.length === 0);
-    const values = tousTypes.filter((rt) => !caches.includes(rt)).slice(0, 5);
+    // Les types visibles gardent leur place dans la réponse BRUTE : le chemin
+    // d'un constat (`values[i]`) désigne le JSON lu, pas la liste filtrée
+    // (constat de la Direction, 23/11/2026).
+    const visibles = tousTypes
+      .map((rt, i) => ({ rt, i }))
+      .filter(({ rt }) => !caches.includes(rt))
+      .slice(0, 5);
+    const values = visibles.map((v) => v.rt);
+    const indices = visibles.map((v) => v.i);
     sources[`GET /rest/servicedeskapi/servicedesk/${desk.id}/requesttype`] = {
       httpStatus: rts.status,
       excerpt: values.map((rt) => ({ id: rt.id, name: rt.name, description: rt.description || '' })),
@@ -571,7 +579,8 @@ async function scanJsm() {
       'values',
       'E5',
       desk.projectName || String(desk.id),
-      champsParType
+      champsParType,
+      indices
     )) {
       findings.push({ ...constat, ou: `service desk ${desk.projectName || desk.id}` });
     }
@@ -580,7 +589,7 @@ async function scanJsm() {
       const rt = values[i];
       for (const constat of regles.analyserTitre(
         rt.name,
-        `values[${i}].name`,
+        `values[${indices[i]}].name`,
         'E5',
         desk.projectName || String(desk.id),
         // The request type description is a one-line subtitle, not the start

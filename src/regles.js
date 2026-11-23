@@ -756,8 +756,13 @@ function analyserChampsJsm(champs, racine, source, ressource) {
  * Variante champ : deux champs de MÊME NOM dans deux types, l'un avec
  * description et l'autre sans → même constat (nécessite les champs de
  * plusieurs types : `champsParType`).
+ *
+ * @param {number[]|undefined} indices  index de chaque type dans la réponse
+ *        BRUTE (`values[]` du JSON lu). Sans lui, le chemin du constat
+ *        désigne la position dans la liste FILTRÉE — donc le mauvais type
+ *        quand un type caché du portail a été retiré (23/11/2026).
  */
-function analyserTypesDemande(types, racine, source, ressource, champsParType) {
+function analyserTypesDemande(types, racine, source, ressource, champsParType, indices) {
   const constats = [];
   const liste = Array.isArray(types) ? types : [];
   const avecAide = [];
@@ -770,12 +775,13 @@ function analyserTypesDemande(types, racine, source, ressource, champsParType) {
   if (avecAide.length > 0 && sansAide.length > 0) {
     for (const i of sansAide) {
       const type = liste[i] || {};
+      const pos = Array.isArray(indices) && indices[i] !== undefined ? indices[i] : i;
       constats.push(
         constat(
           '3.2.6',
           source,
           ressource,
-          prop(index(racine, i), 'helpText'),
+          prop(index(racine, pos), 'helpText'),
           type.helpText === undefined ? null : type.helpText,
           'Inconsistent help between request types: another request type of the same service desk has help text, this one has none',
           { aVerifier: true }
