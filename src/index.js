@@ -796,14 +796,22 @@ async function executerScan() {
   }
 
   const info = await jget(route`/rest/servicedeskapi/info`, JSM_HDRS);
+  // The note says what was REALLY read — never "JSM is active" when the JSM
+  // API did not even answer (404: JSM not installed, 403: caller may not read
+  // it): in that case nothing was read from the JSM API and the scan falls
+  // back to Jira issues.
   const jsmProbe = {
     endpoint: 'GET /rest/servicedeskapi/info',
     httpStatus: info.status,
     isLicensedForUse: info.status === 200 ? info.body.isLicensedForUse : null,
     note:
-      info.status === 200 && info.body.isLicensedForUse === false
-        ? "the site's own JSM API reports that JSM is not licensed or not active on it: falling back to Jira issues (same REST API, content equivalent to the portal: field labels, descriptions, summaries)"
-        : 'JSM is active',
+      info.status !== 200
+        ? 'the JSM API did not answer (HTTP ' +
+          info.status +
+          '): nothing was read from it — falling back to Jira issues (same REST API, content equivalent to the portal: field labels, descriptions, summaries)'
+        : info.body.isLicensedForUse === false
+          ? "the site's own JSM API reports that JSM is not licensed or not active on it: falling back to Jira issues (same REST API, content equivalent to the portal: field labels, descriptions, summaries)"
+          : 'JSM is active',
   };
 
   let mode = 'jira-fallback';

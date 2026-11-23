@@ -213,7 +213,7 @@ remove the gate from the MCP path: each of the three must turn the suite RED.
 > with the beginning of the content is now reported as a **hint to check**
 > ("a verifier"), not as an automatic finding. The interface is unchanged.
 > The offline suite that proves all of this is `test-portail-par-defaut.js`
-> (14 checks, including the four English faults).
+> (19 checks, including the four English faults).
 >
 > **What 2.10.0 changed** (commit `1ff128d`, deployed to production on
 > 15 November 2026 at 13:36:51 UTC): a request type whose `groupIds` is empty
@@ -484,7 +484,7 @@ verify.
 
 ```
 npm install
-npm test                          # 15 suites, 362 checks — every node suite below, in one go
+npm test                          # 15 suites, 367 checks — every node suite below, in one go
 node test-ihm.js                 # 43 checks — the interface replaces the public trigger
 node test-contrat-http.js                 # 59 checks — the privacy contract (masking, absent fields, logs)
 node test-app-demo.js                     # 22 checks — the resolver returns the 23/23 verdict
@@ -500,7 +500,7 @@ node test-identite.js             # 12 checks — 0 asApp() in the active code, 
 node test-mcp-porte.js            # 16 checks — the administrator door, with five counter-proofs
 node test-refus-non-admin.js       # 14 checks — a NON-administrator is refused, on the page AND on the
                                           #            two MCP tools, and nothing of the site is read
-node test-portail-par-defaut.js    # 14 checks — a judge's English site: the default JSM portal and
+node test-portail-par-defaut.js    # 19 checks — a judge's English site: the default JSM portal and
                                           #            plain Jira tickets, no false "finding"
 node test-types-caches.js          #  4 checks — a request type hidden from the portal is neither judged
                                           #            nor counted in the five types read
@@ -595,7 +595,7 @@ tools/            the manifest checker (and its counter-proof), the check that
                   and its counter-proof against the site
                   (tools/contre-epreuve-scan-jsm.py)
 PRIVACY.md        the privacy notice (what is read, where it goes, how long it is kept)
-test-*.js         the offline harness (362 checks in fifteen suites, plus 99 checks
+test-*.js         the offline harness (367 checks in fifteen suites, plus 99 checks
                   in the five tools of tools/)
 ```
 

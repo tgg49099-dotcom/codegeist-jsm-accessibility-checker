@@ -169,6 +169,19 @@ const resume = (findings) => {
   check('B2 "red button at the top right" detected (1.3.3)', f.some((c) => c.critere === '1.3.3'));
   check('B2 descriptive link not reported', !f.some((c) => c.critere === '2.4.4' && /guide/i.test(String(c.valeur))));
 
+  // C — jsmProbe tells the truth when the JSM API does not answer (23/11/2026
+  // review, point 3): HTTP 404 on /rest/servicedeskapi/info used to show
+  // "JSM is active" while the scan fell back to Jira.
+  SCENARIO = Object.assign(scenarioJira(TICKETS_CORRECTS), {
+    '/rest/servicedeskapi/info': { status: 404, body: { errorMessages: ['JSM is not installed'] } },
+  });
+  r = await lancerScan();
+  check('C mode jira-fallback when the JSM API answers 404', r.mode === 'jira-fallback', r.mode);
+  check('C jsmProbe carries the measured HTTP status', r.jsmProbe && r.jsmProbe.httpStatus === 404, String(r.jsmProbe && r.jsmProbe.httpStatus));
+  check('C jsmProbe no longer claims "JSM is active"', r.jsmProbe && r.jsmProbe.note !== 'JSM is active', String(r.jsmProbe && r.jsmProbe.note).slice(0, 80));
+  check('C jsmProbe says the JSM API did not answer (HTTP 404)', /did not answer \(HTTP 404\)/.test(String(r.jsmProbe && r.jsmProbe.note)), String(r.jsmProbe && r.jsmProbe.note).slice(0, 80));
+  check('C jsmProbe admits nothing was read from it', /nothing was read from it/.test(String(r.jsmProbe && r.jsmProbe.note)));
+
   console.log(failures === 0 ? '== ALL PASS (' + checks + ' checks): the scan holds on a judge\'s site in English ==' : '== ' + failures + ' FAILURE(S) on ' + checks + ' checks ==');
   process.exit(failures === 0 ? 0 : 1);
 })().catch((e) => { console.error(e); process.exit(2); });
