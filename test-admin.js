@@ -17,6 +17,8 @@
  *   ADM-03  that refusal happens BEFORE any read of the site: the site is not
  *            read once for a caller who is not an administrator;
  *   ADM-04  the refusal names the permission that is missing;
+ *   ADM-04b the refusal names BOTH global permissions the app accepts
+ *            (ADMINISTER and SYSTEM_ADMIN);
  *   ADM-05  the permission is asked with the CALLER's identity (`asUser`),
  *            never with the app's (`asApp` throws in this harness);
  *   ADM-06  the check FAILS CLOSED: if the platform refuses the permission
@@ -221,6 +223,16 @@ async function controles(resolver) {
     typeof repNonAdmin.message === 'string' &&
     /administrator/i.test(repNonAdmin.message) &&
     /ADMINISTER|Administer Jira/i.test(repNonAdmin.message);
+  // ADM-04b — le contrôle accepte DEUX permissions globales (ADMINISTER ou
+  // SYSTEM_ADMIN : c'est ce que fait l'endpoint officiel, et ce que disent le
+  // manifest, le README et l'en-tête de src/droits-admin.js). Le message de
+  // refus doit donc nommer LES DEUX : un message qui n'en cite qu'une
+  // décrit mal le contrôle que l'app applique réellement.
+  res['ADM-04b the refusal names BOTH global permissions that open the administration area'] =
+    repNonAdmin &&
+    typeof repNonAdmin.message === 'string' &&
+    /ADMINISTER/.test(repNonAdmin.message) &&
+    /SYSTEM_ADMIN/.test(repNonAdmin.message);
 
   // --- ADM-05 : the identity used ----------------------------------------
   res['ADM-05 the permission is asked with the caller identity (asUser), never asApp'] =

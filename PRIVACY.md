@@ -103,8 +103,9 @@ signed-in account**, so an anonymous visitor gets a refusal and never a report. 
 former trigger were measured on 7 November 2026: they answer HTTP 424 with no scan data.
 
 The consequence for you: the scan is now started by a named, signed-in **administrator** — the
-server checks the account's global "Administer Jira" permission before reading anything, and
-refuses anyone else — and the findings are shown to that administrator and to nobody else. The advice of the previous version —
+server checks the account's global "Administer Jira" (or "Jira System Administrators") permission
+before reading anything, and refuses anyone else — and the findings are shown to that
+administrator and to nobody else. The advice of the previous version —
 "do not install the app on a site whose issue titles contain personal data you would not want a
 stranger to be able to read" — no longer applies, because there is no stranger-facing URL.
 
@@ -223,10 +224,10 @@ at the time of the call, and says so in its answer. The tool output lists the en
 read with their HTTP status, and no content and no account identifier.
 
 **Who can call them.** A signed-in Atlassian user who has granted the app access, through
-Atlassian's MCP server, **and who holds the same global "Administer Jira" permission as the
-person who may press the button**: the tools run the administrator check of § 1 before they
-read anything, so they are reserved to administrators on the MCP path exactly as they are on
-the page. Whether MCP clients outside Atlassian may use them is a setting of your
+Atlassian's MCP server, **and who holds the same global "Administer Jira" (or "Jira System
+Administrators") permission as the person who may press the button**: the tools run the
+administrator check of § 1 before they read anything, so they are reserved to administrators on
+the MCP path exactly as they are on the page. Whether MCP clients outside Atlassian may use them is a setting of your
 site, controlled by your administrators.
 
 **What they need your site to have.** The MCP server is part of **Rovo**, which Atlassian

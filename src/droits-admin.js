@@ -132,7 +132,7 @@ const REFUS_ADMINISTRATEUR = {
   ok: false,
   error: 'NOT_ADMINISTRATOR',
   message:
-    'This scan is reserved to Jira administrators: the account signed in on this site does not hold the global permission "Administer Jira" (ADMINISTER). Nothing was read.',
+    'This scan is reserved to Jira administrators: the account signed in on this site does not hold the global permission "Administer Jira" (ADMINISTER) nor "Jira System Administrators" (SYSTEM_ADMIN). Nothing was read.',
 };
 
 /**
