@@ -847,26 +847,39 @@ function analyserTypesDemande(types, racine, source, ressource, champsParType, i
 
 /**
  * Pièces jointes d'une page (E3 : `results[]`).
- * 1.2.2 : un média `video/*` ou `audio/*` sans aucune piste de transcription
- * (`text/vtt`, ou un lien `.vtt`/`.srt`) → « média sans transcription
- * disponible ». L'app ne transcrit rien : elle signale l'absence de piste.
+ * 1.2.2 : un média `video/*` sans transcription disponible → constat.
+ *
+ * Deux précisions que la fiche (CRITERES-WCAG-2.2-AA.md § 11) pose déjà :
+ *
+ *  - la présence d'un fichier `.vtt` sur la page ne prouve pas qu'il est
+ *    RATTACHÉ au média (le lien se fait dans le corps de la page, hors API).
+ *    Une page qui porte UNE vidéo et une piste ne pose pas de question ;
+ *    une page qui en porte PLUSIEURS ne permet pas d'attribuer la piste :
+ *    le constat passe alors en « à vérifier » au lieu de disparaître
+ *    (constat de la Direction, 23/11/2026) ;
+ *  - 1.2.2 est « Captions (Prerecorded) » : elle vise la VIDÉO. Un fichier
+ *    `audio/*` seul relève de 1.2.1, que cette app n'implémente pas (elle
+ *    n'en annonce que 13 critères) : il n'y a donc AUCUN constat 1.2.2 pour
+ *    un média audio (constat de la Direction, 23/11/2026).
  */
 function analyserPieceJointes(attachments, racine, source, ressource) {
   const constats = [];
   const liste = Array.isArray(attachments) ? attachments : [];
-  const medias = [];
-  let aTranscription = false;
+  const videos = [];
+  let nbTranscriptions = 0;
   liste.forEach((piece, i) => {
     const type = piece && piece.mediaType != null ? String(piece.mediaType) : '';
     const lien = piece && piece.downloadLink != null ? String(piece.downloadLink) : '';
     if (type === 'text/vtt' || /\.(vtt|srt)$/i.test(lien)) {
-      aTranscription = true;
+      nbTranscriptions += 1;
       return;
     }
-    if (/^(video|audio)\//.test(type)) medias.push(i);
+    if (/^video\//.test(type)) videos.push(i);
   });
-  if (medias.length === 0 || aTranscription) return constats;
-  for (const i of medias) {
+  if (videos.length === 0) return constats;
+  // Une piste existe ET la page ne porte qu'une vidéo : rien d'ambigu.
+  if (nbTranscriptions > 0 && videos.length === 1) return constats;
+  for (const i of videos) {
     const piece = liste[i] || {};
     constats.push(
       constat(
@@ -875,7 +888,9 @@ function analyserPieceJointes(attachments, racine, source, ressource) {
         ressource,
         prop(index(racine, i), 'mediaType'),
         piece.mediaType === undefined ? null : piece.mediaType,
-        'Media without an available transcript (no `text/vtt` attachment and no `.vtt`/`.srt` track)',
+        nbTranscriptions === 0
+          ? 'Media without an available transcript (no `text/vtt` attachment and no `.vtt`/`.srt` track)'
+          : 'Media whose transcript cannot be attributed: the page carries a transcript track, but the REST API does not say which media it belongs to — a human must check',
         { aVerifier: true }
       )
     );

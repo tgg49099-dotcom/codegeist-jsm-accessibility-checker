@@ -181,6 +181,52 @@ check(
   limitesDemo.slice(0, 160)
 );
 
+// --- 6 bis. 1.2.2: one track does not cover every media, and audio-only is
+// not 1.2.2 (23/11/2026 review, minor 5) -------------------------------------
+const PJ = (mediaType, downloadLink) => ({ mediaType, downloadLink: downloadLink || '', fileId: 'f1' });
+const pj = (liste) => regles.analyserPieceJointes(liste, 'results', 'E3', 'DEMO-206');
+const uneVideo = pj([PJ('video/mp4', '/wiki/download/attachments/20202/tuto.mp4'), PJ('image/png', '/x.png')]);
+check(
+  '1.2.2: one video and no track at all -> one finding (control)',
+  uneVideo.length === 1 && uneVideo[0].critere === '1.2.2' && uneVideo[0].emplacement === 'results[0].mediaType',
+  uneVideo.map((c) => c.critere + ' ' + c.emplacement).join(' | ')
+);
+const uneVideoAvecPiste = pj([PJ('video/mp4', '/x.mp4'), PJ('text/vtt', '/x.vtt')]);
+check(
+  '1.2.2: one video and one track on the page -> no finding (nothing ambiguous)',
+  uneVideoAvecPiste.length === 0,
+  uneVideoAvecPiste.map((c) => c.critere + ' ' + c.emplacement).join(' | ') || 'none'
+);
+const deuxVideosUnePiste = pj([
+  PJ('video/mp4', '/a.mp4'),
+  PJ('video/mp4', '/b.mp4'),
+  PJ('text/vtt', '/a.vtt'),
+]);
+check(
+  '1.2.2: two videos and ONE track -> the track covers only one of them: both are reported (to verify)',
+  deuxVideosUnePiste.length === 2 &&
+    deuxVideosUnePiste.every((c) => c.critere === '1.2.2' && c.a_verifier === true) &&
+    deuxVideosUnePiste.every((c) => /cannot be attributed/.test(String(c.message))),
+  deuxVideosUnePiste.map((c) => c.critere + ' ' + c.emplacement + ' ' + c.message).join(' | ') || 'none'
+);
+const audioSeul = pj([PJ('audio/mpeg', '/note.mp3')]);
+check(
+  '1.2.2: an audio-only media is NOT reported as 1.2.2 (that criterion is 1.2.1, not implemented)',
+  audioSeul.length === 0,
+  audioSeul.map((c) => c.critere + ' ' + c.emplacement).join(' | ') || 'none'
+);
+const deuxVideosAvecPiste = pj([
+  PJ('video/mp4', '/a.mp4'),
+  PJ('video/mp4', '/b.mp4'),
+  PJ('text/vtt', '/a.vtt'),
+  PJ('text/vtt', '/b.vtt'),
+]);
+check(
+  '1.2.2: two videos and two tracks -> still reported (to verify): the API cannot say which is which',
+  deuxVideosAvecPiste.length === 2 && deuxVideosAvecPiste.every((c) => c.a_verifier === true),
+  deuxVideosAvecPiste.map((c) => c.critere + ' ' + c.emplacement).join(' | ') || 'none'
+);
+
 // --- 7. the CSV export is usable --------------------------------------------
 const csv = demo.csv();
 const lignesCsv = csv.trim().split('\r\n');
