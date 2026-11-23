@@ -5,11 +5,11 @@
 **Source code:** the repository this file lives in (MIT licence) — every line of the app is public, so the behaviour described below can be read in the code that implements it
 **Published notice:** **https://labs.chiffreo.ch/privacy.html** — this is the **only** published privacy URL of this app; this file is the long-form version of that notice (it also covers the judge copy `d6ddc803-a5a2-4c18-b918-4629395f97f9`, an unlicensed copy of the same code), kept in the repository so that the code and the notice can be read side by side.
 
-*Last updated: 10 November 2026.* This notice describes the app as it is deployed today
-(production version **2.8.0**, deployed 10 November 2026 at 01:15:28 UTC — 02:15:28 in
-Zurich, measured from the deployment record; the development
-environment runs **2.10.0**). It replaces the version of 9 November 2026, which described
-the app as it was then (production 2.7.0). Three things changed since: the **identity of
+*Last updated: 23 November 2026.* This notice describes the app as it is deployed today
+(production version **2.11.0**, deployed 16 November 2026 at 16:39:12 UTC — 17:39:12 in
+Zurich, measured with the Platform API on 23 November 2026; the development
+environment runs **2.12.0**). It replaces the version of 9 November 2026, which described
+the app as it was then (production 2.7.0). Three things changed between 2.7.0 and 2.8.0: the **identity of
 the reads** — the app now reads with `asUser` only, and refuses when the platform
 refuses (§ 2) — the **two Rovo MCP tools**, which are now deployed (§ "The two Rovo
 MCP tools"), and the **administrator check**, which is now made on the server (§ 1). The masking contract, the sentence of § 8 and the whole of § 8's reasoning
