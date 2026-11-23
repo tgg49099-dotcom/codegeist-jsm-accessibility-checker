@@ -187,7 +187,7 @@ run and the caller gets a refusal. The site is not read once for a caller who is
 not an administrator. The demo scan reads no site at all, so it stays available
 to any signed-in user.
 
-The check is covered by `test-admin.js` (18 checks, with three
+The check is covered by `test-admin.js` (22 checks, with three
 counter-proofs: without the check a non-administrator would get the report; a
 wrong permission key refuses the administrator; a check that fails open would let
 anybody through — the three sabotages must each turn the suite RED) and by
@@ -224,7 +224,7 @@ remove the gate from the MCP path: each of the three must turn the suite RED.
 > with the beginning of the content is now reported as a **hint to check**
 > ("a verifier"), not as an automatic finding. The interface is unchanged.
 > The offline suite that proves all of this is `test-portail-par-defaut.js`
-> (28 checks, including the four English faults).
+> (50 checks, including the four English faults).
 >
 > **What this branch changed on 23 November 2026 — not deployed yet.** Four
 > corrections, each with its own test; production still serves the engine
@@ -255,7 +255,7 @@ remove the gate from the MCP path: each of the three must turn the suite RED.
 > on a page the customer never opens, and a visible type could be pushed out of
 > the five. After the fix the hidden type is neither judged nor counted; a type
 > **without** a `groupIds` field is kept. The new test `test-types-caches.js`
-> (4 checks) proves it, and it turns RED on the code before the fix.
+> (7 checks) proves it, and it turns RED on the code before the fix.
 
 `manifest.yml` declares **four module types** and nothing else:
 
@@ -457,7 +457,7 @@ Every answer carries the contract in a `privacy` block, so it can be checked by 
 ```
 
 The rule is implemented in `src/index.js` (section *privacy contract*) and proved
-three times: by an offline test suite (`node test-contrat-http.js`, 59 checks), by
+three times: by an offline test suite (`node test-contrat-http.js`, 64 checks), by
 its counter-proof (`node test-contrat-http-contre-epreuve.js`, 28 checks — the
 suite must turn **red** when the contract is broken, and must name the broken
 check), and by the live page itself (the "Privacy" panel of the administration
@@ -516,15 +516,15 @@ verify.
 
 ```
 npm install
-npm test                          # 15 suites, 380 checks — every node suite below, in one go
+npm test                          # 15 suites, 426 checks — every node suite below, in one go
 node test-ihm.js                 # 43 checks — the interface replaces the public trigger
-node test-contrat-http.js                 # 59 checks — the privacy contract (masking, absent fields, logs)
+node test-contrat-http.js                 # 64 checks — the privacy contract (masking, absent fields, logs)
 node test-app-demo.js                     # 22 checks — the resolver returns the 24/24 verdict
-node test-demo.js                         # 56 checks — detects all 24 seeded issues in the bundled demo data
+node test-demo.js                         # 68 checks — detects all 24 seeded issues in the bundled demo data
 node test-contre-epreuve.js               # 13 checks — the harness turns RED when a rule is sabotaged
 node test-contrat-http-contre-epreuve.js  # 28 checks — that harness turns RED when the contract is broken
 node test-mcp.js                  # 32 checks — the two MCP tools read the caller's site, and nothing else
-node test-admin.js                # 18 checks — the administrator check on the page's path
+node test-admin.js                # 22 checks — the administrator check on the page's path
 node test-csv.js                  # 18 checks — the CSV is written in a copyable field, and no
                                           #            value read on the site can become a spreadsheet formula
 node test-mcp-admin.js            # 17 checks — the SAME administrator check on the two MCP tools
@@ -533,11 +533,11 @@ node test-identite.js             # 12 checks — 0 asApp() in the active code, 
 node test-mcp-porte.js            # 16 checks — the administrator door, with five counter-proofs
 node test-refus-non-admin.js       # 14 checks — a NON-administrator is refused, on the page AND on the
                                           #            two MCP tools, and nothing of the site is read
-node test-portail-par-defaut.js    # 28 checks — a judge's English site: the default JSM portal and
+node test-portail-par-defaut.js    # 50 checks — a judge's English site: the default JSM portal and
                                           #            plain Jira tickets, no false "finding"; the 1.3.5
                                           #            rule on personal data; the truth of the JSM probe; the
                                           #            warning on an incomplete read
-node test-types-caches.js          #  4 checks — a request type hidden from the portal is neither judged
+node test-types-caches.js          #  7 checks — a request type hidden from the portal is neither judged
                                           #            nor counted in the five types read
 python3 tools/verifier-manifest-cycle134.py       # 18 checks — no public module, no egress, two read scopes,
                                                    #           one rovo:mcp module with two tools
@@ -630,7 +630,7 @@ tools/            the manifest checker (and its counter-proof), the check that
                   and its counter-proof against the site
                   (tools/contre-epreuve-scan-jsm.py)
 PRIVACY.md        the privacy notice (what is read, where it goes, how long it is kept)
-test-*.js         the offline harness (380 checks in fifteen suites, plus 99 checks
+test-*.js         the offline harness (426 checks in fifteen suites, plus 99 checks
                   in the five tools of tools/)
 ```
 
