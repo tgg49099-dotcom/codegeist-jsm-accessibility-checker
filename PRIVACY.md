@@ -3,7 +3,7 @@
 **App type:** Atlassian Forge app (Jira / Jira Service Management)
 **App ID:** `33f1227e-0df1-4008-b181-ea9c50b116f5`
 **Source code:** the repository this file lives in (MIT licence) — every line of the app is public, so the behaviour described below can be read in the code that implements it
-**Published notice:** **https://labs.chiffreo.ch/privacy.html** — this is the **only** published privacy URL of this app; this file is the same notice, kept in the repository so that the code and the notice can be read side by side.
+**Published notice:** **https://labs.chiffreo.ch/privacy.html** — this is the **only** published privacy URL of this app; this file is the long-form version of that notice (it also covers the judge copy `d6ddc803-a5a2-4c18-b918-4629395f97f9`, an unlicensed copy of the same code), kept in the repository so that the code and the notice can be read side by side.
 
 *Last updated: 10 November 2026.* This notice describes the app as it is deployed today
 (production version **2.8.0**, deployed 10 November 2026 at 01:15:28 UTC — 02:15:28 in
