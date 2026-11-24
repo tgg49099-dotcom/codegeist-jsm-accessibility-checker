@@ -516,7 +516,7 @@ verify.
 
 ```
 npm install
-npm test                          # 15 suites, 426 checks — every node suite below, in one go
+npm test                          # 16 suites, 443 checks — every node suite below, in one go
 node test-ihm.js                 # 43 checks — the interface replaces the public trigger
 node test-contrat-http.js                 # 64 checks — the privacy contract (masking, absent fields, logs)
 node test-app-demo.js                     # 22 checks — the resolver returns the 24/24 verdict
@@ -539,6 +539,8 @@ node test-portail-par-defaut.js    # 50 checks — a judge's English site: the d
                                           #            warning on an incomplete read
 node test-types-caches.js          #  7 checks — a request type hidden from the portal is neither judged
                                           #            nor counted in the five types read
+node test-mcp-hote.js              # 17 checks — the URL given to scan_accessibility can only name the
+                                          #            installed site; it is compared, never fetched (two counter-proofs)
 python3 tools/verifier-manifest-cycle134.py       # 18 checks — no public module, no egress, two read scopes,
                                                    #           one rovo:mcp module with two tools
 python3 tools/contre-epreuve-verificateur.py      # 29 checks — that checker turns RED on 9 sabotages
@@ -630,7 +632,7 @@ tools/            the manifest checker (and its counter-proof), the check that
                   and its counter-proof against the site
                   (tools/contre-epreuve-scan-jsm.py)
 PRIVACY.md        the privacy notice (what is read, where it goes, how long it is kept)
-test-*.js         the offline harness (426 checks in fifteen suites, plus 99 checks
+test-*.js         the offline harness (443 checks in sixteen suites, plus 99 checks
                   in the five tools of tools/)
 ```
 
