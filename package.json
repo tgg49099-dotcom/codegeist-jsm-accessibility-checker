@@ -16,9 +16,10 @@
   },
   "scripts": {
     "lint": "forge lint",
-    "test": "node test-ihm.js && node test-mcp.js && node test-identite.js && node test-contrat-http.js && node test-app-demo.js && node test-demo.js && node test-contre-epreuve.js && node test-contrat-http-contre-epreuve.js && node test-admin.js && node test-csv.js && node test-mcp-admin.js && node test-mcp-porte.js && node test-refus-non-admin.js && node test-portail-par-defaut.js && node test-types-caches.js && node test-mcp-hote.js",
+    "test": "node test-ihm.js && node test-mcp.js && node test-identite.js && node test-contrat-http.js && node test-app-demo.js && node test-demo.js && node test-contre-epreuve.js && node test-contrat-http-contre-epreuve.js && node test-admin.js && node test-csv.js && node test-mcp-admin.js && node test-mcp-porte.js && node test-refus-non-admin.js && node test-portail-par-defaut.js && node test-types-caches.js && node test-mcp-hote.js && node test-mcp-hote-egress.js",
     "test:portail-par-defaut": "node test-portail-par-defaut.js",
     "test:mcp-hote": "node test-mcp-hote.js",
+    "test:mcp-hote-egress": "node test-mcp-hote-egress.js",
     "test:ihm": "node test-ihm.js",
     "test:mcp": "node test-mcp.js",
     "test:contrat": "node test-contrat-http.js",

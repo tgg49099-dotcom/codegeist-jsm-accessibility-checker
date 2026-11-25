@@ -108,7 +108,18 @@ print("== Contre-epreuve du controleur de push ==")
 print("")
 
 # --- 0. le contrôleur est VERT sur l'état servi tel quel -----------------
-code, sortie = lancer(DOSSIER_GIT)
+# La MÊME base que les falsifications a) et b) : l'état SERVI, extrait par
+# `git archive`. AVANT, cette base était le DOSSIER DE TRAVAIL : le
+# contrôleur y comparait le diff ANCIEN..NOUVEAU, et un dossier simplement
+# modifié (ou en avance sur NOUVEAU) faisait apparaître des « contradictions »
+# sans rapport avec l'état servi — un ROUGE faux. La base était donc
+# ASYMÉTRIQUE (dossier de travail d'un côté, archive de l'autre) ; elle est
+# maintenant la même des trois côtés.
+dossier, racine = copier_serve(DOSSIER_GIT)
+try:
+    code, sortie = lancer(dossier)
+finally:
+    shutil.rmtree(racine, ignore_errors=True)
 verifier("the controller is GREEN on the served state (RC 0)", code == 0,
          "RC %d" % code)
 
