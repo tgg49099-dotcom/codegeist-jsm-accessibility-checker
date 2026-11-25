@@ -19,9 +19,13 @@ WHAT IS CHECKED
   5. the limits quoted in the images are the limits the app itself reports
      (docs/scan-jsm-2026-11-17-reprise.json), and the titles of the criteria
      are the ones of the engine's catalogue (src/regles.js);
-  6. REPRODUCIBILITY: the generator is replayed in a sandbox and the 4 md5
-     come out identical — the images are computed from the sources, they are
-     not drawn by hand;
+  6. REPRODUCIBILITY: the generator is replayed in a sandbox and the 4 images
+     come out identical PIXEL FOR PIXEL (md5 of the decoded RGB pixels, size
+     and mode) — the images are computed from the sources, they are not drawn
+     by hand. The md5 of the PNG FILE is also shown, for information only: it
+     depends on the zlib build that compresses the PNG (zlib or zlib-ng give
+     different bytes for the same pixels), so it can differ on another
+     machine while the image is the same;
   7. the counter-proof: when a fact of the measurement is changed in the
      sandbox, the md5 of the images CHANGES — the images really depend on the
      measurement (a check that cannot fail proves nothing).
@@ -98,6 +102,21 @@ def sandbox():
 
 def md5_images(dossier):
     return {n: md5_fichier(os.path.join(dossier, "media", n)) for n in IMAGES}
+
+
+def md5_pixels(chemin_):
+    """md5 of what the image SHOWS: mode, size and the decoded RGB pixels.
+    Independent of the PNG compression (zlib build, optimize level)."""
+    im = Image.open(chemin_)
+    rgb = im.convert("RGB")
+    h = hashlib.md5()
+    h.update(("%s %dx%d\n" % (im.mode, im.size[0], im.size[1])).encode("ascii"))
+    h.update(rgb.tobytes())
+    return h.hexdigest()
+
+
+def md5_pixels_images(dossier):
+    return {n: md5_pixels(os.path.join(dossier, "media", n)) for n in IMAGES}
 
 
 def main():
@@ -202,11 +221,17 @@ def main():
                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=d)
         controle("REPRO-01 le generateur rejoue dans un bac a sable reussit", p.returncode == 0,
                  p.stdout.decode("utf-8", "replace")[-400:])
-        md5_sable = md5_images(d)
+        md5_sable = md5_pixels_images(d)
+        md5_fichiers_sable = md5_images(d)
         for nom in IMAGES:
-            reel = md5_fichier(os.path.join(MEDIA, nom))
-            controle("REPRO-02 %s : le rejeu donne le meme md5 (image calculee, pas dessinee)" % nom,
-                     md5_sable.get(nom) == reel, "%s / %s" % (md5_sable.get(nom), reel))
+            reel = md5_pixels(os.path.join(MEDIA, nom))
+            controle("REPRO-02 %s : le rejeu donne les memes pixels (image calculee, pas dessinee)" % nom,
+                     md5_sable.get(nom) == reel, "pixels %s / %s" % (md5_sable.get(nom), reel))
+            fichier_reel = md5_fichier(os.path.join(MEDIA, nom))
+            print("INFO  REPRO-03 %s : md5 du fichier PNG %s (rejeu %s) — %s" % (
+                nom, fichier_reel, md5_fichiers_sable.get(nom),
+                "identique" if fichier_reel == md5_fichiers_sable.get(nom)
+                else "different : autre compression zlib, memes pixels si REPRO-02 PASS"))
         # -- 7 : the counter-proof ------------------------------------------
         # (a) the two runs must agree: a measurement that contradicts itself
         #     must be REFUSED by the generator, not drawn.
@@ -227,9 +252,9 @@ def main():
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=d)
         controle("CE-02 le generateur accepte la mesure sabotee (la generation ne echoue pas)",
                  p3.returncode == 0, p3.stdout.decode("utf-8", "replace")[-300:])
-        md5_sable2 = md5_images(d)
+        md5_sable2 = md5_pixels_images(d)
         change = [n for n in IMAGES if md5_sable2.get(n) != md5_sable.get(n)]
-        controle("CE-03 un fait sabote change le md5 d'au moins une image (le controle sait dire NON)",
+        controle("CE-03 un fait sabote change les pixels d'au moins une image (le controle sait dire NON)",
                  len(change) > 0, "images changees : %s" % ", ".join(change))
         # and the verifier itself must go red on the sabotaged measurement
         with open(os.path.join(d, "docs", "scan-jsm-2026-11-17.json"), "w", encoding="utf-8") as f:

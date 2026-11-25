@@ -36,11 +36,13 @@ The 4 images:
   4. scan-jsm-violations-1500x1000.png — the list of the 7 findings, in the
      table the administration page shows.
 
-DETERMINISM: the same inputs produce the same PNG, byte for byte (no
-timestamp is drawn and PIL does not write a tIME chunk). The companion
-verifier `tools/verifier-images-scan-184.py` re-generates the images in a
-sandbox and compares the md5, then checks that every drawn string really is
-in the file it claims.
+DETERMINISM: the same inputs produce the same pixels (no timestamp is drawn
+and PIL does not write a tIME chunk). On the same machine the PNG files are
+identical byte for byte; on another machine the bytes of the file can differ
+because the zlib build that compresses the PNG differs (zlib or zlib-ng), the
+pixels do not. The companion verifier `tools/verifier-images-scan-184.py`
+re-generates the images in a sandbox and compares the md5 of the decoded
+pixels, then checks that every drawn string really is in the file it claims.
 
 Usage: python3 tools/generer-images-scan-184.py [racine-du-depot]
 Exit code: 0 = the 4 images and the manifest are written, 1 = otherwise.
