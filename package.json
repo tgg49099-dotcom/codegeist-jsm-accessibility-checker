@@ -34,7 +34,8 @@
     "test:mcp-admin": "node test-mcp-admin.js",
     "test:mcp-porte": "node test-mcp-porte.js",
     "test:refus-non-admin": "node test-refus-non-admin.js",
-    "audit:prod": "npm audit --omit=dev --audit-level=high"
+    "audit:prod": "npm audit --omit=dev --audit-level=high",
+    "verify:accueil": "python3 tools/verifier-accueil-readme.py"
   },
   "overrides": {
     "prosemirror-view": "1.42.9"

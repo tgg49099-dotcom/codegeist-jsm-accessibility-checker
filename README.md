@@ -1,22 +1,36 @@
 # Portal Accessibility Checker for JSM
 
-**An Atlassian Forge app that reads the customer-facing content of your Jira Service
-Management site through the official REST APIs and reports WCAG 2.2 accessibility
-findings — as findings to verify, never as a compliance verdict.**
+**Your customers never open Jira: they open your service portal. This Forge app
+finds the accessibility problems of that portal where they are written (request
+types, field labels, descriptions, page titles) and ties each one to a WCAG 2.2
+criterion. Findings to verify, never a compliance verdict.**
 
-The scan is started **from a button in the Jira administration page**. There is no
-public URL: until version 2.4.0 the app answered a web trigger declared with
-`authentication: none`, and that module has been removed.
+**[▶ Watch the demo (3 min 12 s, English subtitles)](https://youtu.be/JAEoj9jpHMg)**
+· Codegeist 2026, *Apps for Business Teams* · bonus claimed: **Best app with Atlassian MCP**
 
-| | |
-|---|---|
-| **Runs on** | Atlassian Forge — on Atlassian's infrastructure, inside your own site |
-| **Price** | Free (hackathon prototype, Codegeist 2026) |
-| **Data leaves your site** | The app itself sends nothing: it declares **no egress at all**, runs on Atlassian's infrastructure and calls only the REST APIs of your own site. What it *returns* is the report itself — to the administration page, or, for the two MCP tools, to the MCP client the administrator chose to call them from (that client is chosen by the admin and is outside this app; see [MCP tools](#the-two-tools-on-atlassians-mcp-server-deployed-since-production-260)) |
-| **Personal data in the answer** | A name or an e-mail **typed in the page** is masked, never returned in clear text. The content read from your site is returned **as it is** — it is what the app checks (see below) |
-| **Permissions** | Read-only: `read:jira-work`, `read:servicedesk-request` |
-| **App version in this repository** | the code of this branch. The code files were unchanged from commit `9a0d99f` (16 November 2026: Forge packages updated, no known high or critical advisory left in production dependencies) until the corrections of **23 November 2026** listed below (rule 1.3.5, truthful JSM probe, incomplete-read warning, CSV formula protection) — **these corrections are NOT deployed**: production still serves the engine of **2.11.0** (deployed 16 November 2026 at 16:38:53 UTC), the code measured on 17 November 2026, and the **judge copy** (a separate Forge app, `d6ddc803-a5a2-4c18-b918-4629395f97f9`, production **2.1.0**, deployed 17 November 2026 at 01:22:51 UTC, no licence) — the judges install the judge copy (see "Marketplace" below). Forge assigns the numbers itself (the manifest declares no `app.version`), so the two apps number the same code differently |
+**Try it in three steps (judges)**
 
+1. Install the **judge copy** from the installation link given with the submission.
+2. In Jira: **Administration → Apps → Portal Accessibility Checker for JSM →
+   Run the demo scan (no site needed)**.
+3. Click **Run the scan** to read your own portal, then copy the findings as CSV.
+
+No Atlassian account at all? `npm install && npm test` runs the rule engine and
+the whole offline harness ([Run the tests](#run-the-tests-offline-no-atlassian-account-needed)).
+
+**Measured, not claimed**
+
+- A real JSM portal, 17 November 2026: 9 GET calls, 0 refused, **7 findings**
+  (6 on 3.3.2, 1 on 1.3.5) — [the measurement](docs/SCAN-JSM-2026-11-17.md).
+- [13 WCAG 2.2 criteria](#the-13-wcag-22-criteria-it-checks) checked; what only
+  exists in the rendered page is marked "human review", never guessed.
+- Read-only: two scopes, **no egress**, no storage, Jira administrators only
+  (checked on the server with the caller's own identity).
+- An AI agent can run the same scan through
+  [two read-only tools on Atlassian's MCP server](#the-two-tools-on-atlassians-mcp-server-deployed-since-production-260).
+- What has **not** been run yet: [Limitations, stated plainly](#limitations-stated-plainly).
+
+[![The scan of a real JSM portal: 9 GET calls, 0 refused, 7 findings](media/scan-jsm-vignette-1500x1000.png)](media/scan-jsm-vignette-1500x1000.png)
 
 ## In two minutes (for the Codegeist judges)
 
@@ -58,6 +72,21 @@ What has **not** been run yet is stated plainly in
 [Deploy](#deploy-it-on-your-own-site) · [Architecture](#architecture) ·
 [Limitations](#limitations-stated-plainly) ·
 [Contest entry](#contest-entry-and-marketplace-listing--state-on-17-november-2026)
+
+## Facts at a glance
+
+The scan is started **from a button in the Jira administration page**. There is no
+public URL: until version 2.4.0 the app answered a web trigger declared with
+`authentication: none`, and that module has been removed.
+
+| | |
+|---|---|
+| **Runs on** | Atlassian Forge — on Atlassian's infrastructure, inside your own site |
+| **Price** | Free (hackathon prototype, Codegeist 2026) |
+| **Data leaves your site** | The app itself sends nothing: it declares **no egress at all**, runs on Atlassian's infrastructure and calls only the REST APIs of your own site. What it *returns* is the report itself — to the administration page, or, for the two MCP tools, to the MCP client the administrator chose to call them from (that client is chosen by the admin and is outside this app; see [MCP tools](#the-two-tools-on-atlassians-mcp-server-deployed-since-production-260)) |
+| **Personal data in the answer** | A name or an e-mail **typed in the page** is masked, never returned in clear text. The content read from your site is returned **as it is** — it is what the app checks (see below) |
+| **Permissions** | Read-only: `read:jira-work`, `read:servicedesk-request` |
+| **App version in this repository** | the code of this branch. The code files were unchanged from commit `9a0d99f` (16 November 2026: Forge packages updated, no known high or critical advisory left in production dependencies) until the corrections of **23 November 2026** listed below (rule 1.3.5, truthful JSM probe, incomplete-read warning, CSV formula protection) — **these corrections are NOT deployed**: production still serves the engine of **2.11.0** (deployed 16 November 2026 at 16:38:53 UTC), the code measured on 17 November 2026, and the **judge copy** (a separate Forge app, `d6ddc803-a5a2-4c18-b918-4629395f97f9`, production **2.1.0**, deployed 17 November 2026 at 01:22:51 UTC, no licence) — the judges install the judge copy (see "Marketplace" below). Forge assigns the numbers itself (the manifest declares no `app.version`), so the two apps number the same code differently |
 
 ## The scan of a real JSM portal, in images
 
