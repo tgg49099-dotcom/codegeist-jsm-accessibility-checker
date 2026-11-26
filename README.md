@@ -38,8 +38,8 @@ the whole offline harness ([Run the tests](#run-the-tests-offline-no-atlassian-a
 Since 28 June 2025, the European Accessibility Act (Directive (EU) 2019/882)
 requires the websites and online applications of consumer services such as
 e-commerce and consumer banking to be "perceivable, operable, understandable
-and robust" (Annex I, Section IV). Many of those teams run support through a
-service portal.
+and robust" (Annex I, Section III, point (c)). Many of those teams run support
+through a service portal.
 
 **Who it is for.** The service desk owners of those teams: the people who write
 the request types, field labels, descriptions and page titles that customers

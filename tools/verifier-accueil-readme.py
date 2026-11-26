@@ -9,7 +9,8 @@ What a judge reads first must be true and must lead somewhere:
     the rows of its table;
   - the button labels it names exist in the administration page source;
   - the video link is the one stated in the "Contest entry" section;
-  - every relative link exists, every #anchor matches a heading.
+  - every relative link exists, every #anchor matches a heading;
+  - the European Accessibility Act quote cites Annex I, Section III, point (c).
 No network. Usage: python3 tools/verifier-accueil-readme.py [README.md]
 Exit code 0 = GREEN, 1 = RED.
 """
@@ -78,6 +79,16 @@ contest = text[text.find("## Contest entry"):]
 v2 = re.findall(r"https://youtu\.be/[\w-]+", contest)
 check("video link on the first screen = video of the 'Contest entry' section",
       bool(v) and bool(v2) and v[0] == v2[0], "%s vs %s" % (v[:1], v2[:1]))
+
+
+# The legal sentence of "In two minutes": Directive (EU) 2019/882 puts the
+# "perceivable, operable, understandable and robust" requirement for websites
+# and online applications of services in Annex I, Section III, point (c)
+# (general requirements for all services, made binding by Article 4(3)).
+# Section IV holds service-specific requirements and does not say this.
+law = re.findall(r'robust"\s*\(Annex I, ([^)]*\))', re.sub(r"\s+", " ", text))
+check("the EAA quote cites Annex I, Section III, point (c)",
+      bool(law) and all(x.startswith("Section III, point (c)") for x in law), str(law))
 
 
 def slug(s):
