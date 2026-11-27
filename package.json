@@ -38,7 +38,11 @@
     "verify:accueil": "python3 tools/verifier-accueil-readme.py"
   },
   "overrides": {
-    "prosemirror-view": "1.42.9"
+    "prosemirror-view": "1.42.9",
+    "@forge/manifest": {
+      "glob": "14.0.2"
+    },
+    "minimatch": "11.0.1"
   },
   "devDependencies": {
     "acorn": "8.19.0"
